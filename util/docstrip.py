@@ -152,8 +152,12 @@ def make_syntax_tree(src, dest):
 				continue
 			fh.seek(0)
 			ensure_directory(destdir)
-			with open(os.path.join(destdir, "title"), 'w') as fname_file:
+
+			# Write the title file
+			with codecs.open(os.path.join(destdir, "title"), 'w', "utf-8") as fname_file:
 				fname_file.write(file_title(soup))
+
+			# Write the toplevel forms
 			for i in range(len(strings)):
 				out = codecs.open(os.path.join(destdir, '{}.txt'.format(i)), 'w', "utf-8")
 				out.write(strings[i])
