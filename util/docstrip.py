@@ -170,7 +170,6 @@ def make_syntax_tree(src, dest):
 				out = codecs.open(os.path.join(destdir, '{}.txt'.format(i)), 'w', "utf-8")
 				out.write(strings[i])
 				out.close()
-			fh.close()
 		
 
 if __name__ == "__main__":
