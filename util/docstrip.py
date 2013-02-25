@@ -69,10 +69,10 @@ def syntax_section(soup):
 			return (syntax_tables, special)
 		if isSyntaxNoteTag(i):
 			special = True
-			syntax_tables.append(i)
 		if i.name == "div" and i.pre is not None:
 			i.pre.string = ''.join(filter_pre(i.pre))
-			syntax_tables.append(i)
+			if not special:
+				syntax_tables.append(i)
 	return (syntax_tables, special)
 
 def syntax_html(soup):
