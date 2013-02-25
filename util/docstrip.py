@@ -63,6 +63,9 @@ def syntax_section(soup):
 	for i in syntax.find_next_siblings():
 		special = False
 		if not isinstance(i, bs4.element.Tag):
+			continue
+		if isParameterTag(i) or isExamplesTag(i):
+			# Done
 			return (syntax_tables, special)
 		if isSyntaxNoteTag(i):
 			special = True
