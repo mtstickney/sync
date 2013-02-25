@@ -73,6 +73,13 @@ def syntax_section(soup):
 			i.pre.string = ''.join(filter_pre(i.pre))
 			if not special:
 				syntax_tables.append(i)
+		else:
+			# If it isn't a div, it might have one instead
+			for t in i.findAll('div'):
+				if t.pre is not None:
+					t.pre.string = ''.join(filter_pre(t.pre))
+					if not special:
+						syntax_tables.append(t)
 	return (syntax_tables, special)
 
 def syntax_html(soup):
