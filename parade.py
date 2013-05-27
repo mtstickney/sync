@@ -3,7 +3,7 @@ import itertools
 import sys
 from collections import defaultdict, deque
 
-def before_countries(line):
+def leader_follower(line):
     bm = re.match(r"^(.*) comes before (.*)$", line)
     am = re.match(r"^(.*) comes after (.*)$", line)
     if bm is not None:
@@ -14,44 +14,65 @@ def before_countries(line):
         raise Exception("Couldn't parse input file")
 
 def load_requests(fh):
-    leaders = frozenset()
-    non_leaders = frozenset()
-    followers = defaultdict(frozenset)
+    leaders = set()
+    non_leaders = set()
+    followers = defaultdict(set)
     for line in fh:
-        follower, leader = before_countries(line)
+        leader, follower = leader_follower(line)
 
         # Update the set of possible leaders
-        non_leaders = non_leaders | frozenset([follower])
-        leaders = leaders - frozenset([follower])
+        non_leaders.add(follower)
+        leaders.discard(follower)
         if leader not in non_leaders:
-            leaders = leaders | frozenset([leader])
+            leaders.add(leader)
 
-        followers[leader] = followers[leader] | frozenset([follower])
+        followers[leader].add(follower)
 
     return (followers, leaders)
 
-def linearize(followers, leaders):
-    q = deque(leaders)
+def linear_extension(followers, leaders):
+    processed = set()
     order = deque()
-    
+
+    def linearize(leader):
+        q = deque([leader])
+        linearization = deque()
+        path_nodes = set()
+
+        while len(q) != 0:
+            country = q.popleft()
+
+            if country in processed:
+                continue
+            if country in path_nodes:
+                # Already traversed, time for post-processing
+                linearization.appendleft(country)
+                processed.add(country)
+                path_nodes.remove(country)
+            else:
+                path_nodes.add(country)
+                q.appendleft(country)
+                for c in followers[country] - processed:
+                    if c in path_nodes:
+                        # cycle, bail
+                        return None
+                    q.appendleft(c)
+        return linearization
 
     if len(leaders) == 0:
-        print "No Leaders"
         return None
 
-    while len(q) != 0:
-        level, country = q.popleft()
-        if country in visited:
-            print "Already visited", country
+    for l in leaders:
+        sub_order = linearize(l)
+        if sub_order is None:
             return None
-        order.append(country)
-        q.extend(followers[country])
+        order.extend(sub_order)
     return order
 
 def print_order(filename):
     with open(filename) as fh:
         reqs, leaders = load_requests(fh)
-        order = linearize(reqs, leaders)
+        order = linear_extension(reqs, leaders)
         if order is None:
             print "Illegal request file!"
         else:
