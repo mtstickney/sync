@@ -11,11 +11,14 @@ class JitteredSorter:
             max_time = heapq.nlargest(1, queue)
             min_time = heapq.nsmallest(1, queue)
 
-        while time_window(self.queue) <= self.window:
-            heapq.heappush(self.queue, self.source.__next__())
+        try:
+            while time_window(self.queue) <= self.window:
+                heapq.heappush(self.queue, self.source.__next__())
+        except StopIteration:
+            # All the data's in, we're good to return an element
+            pass
 
         return heapq.heappop(self.queue)
 
     def __iter__(self):
-
         return self
