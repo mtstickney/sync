@@ -23,5 +23,6 @@ class JitteredSorter:
             # All the data's in, we're good to return an element
             pass
 
-        return heapq.heappop(self.queue)
+        while len(self.queue) > 0:
+            yield heapq.heappop(self.queue)
 
