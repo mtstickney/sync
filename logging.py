@@ -10,6 +10,9 @@ class JitteredSorter:
         def time_window(queue):
             max_time = heapq.nlargest(1, queue)
             min_time = heapq.nsmallest(1, queue)
+            if len(max_time) == 0 or len(min_time) == 0:
+                return 0
+            return max_time[0] - min_time[0]
 
         try:
             while True:
