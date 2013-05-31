@@ -2,6 +2,7 @@ import heapq
 
 def jittered_sorter(max_jitter, iterable):
     queue = []
+    input = iter(iterable)
 
     def time_window(queue):
         max_time = heapq.nlargest(1, queue)
@@ -13,7 +14,7 @@ def jittered_sorter(max_jitter, iterable):
     try:
         while True:
             while time_window(queue) <= max_jitter:
-                heapq.heappush(queue, next(iterable))
+                heapq.heappush(queue, next(input))
             yield heapq.heappop(queue)
     except StopIteration:
         # No more data, set to yield the rest of the elements
