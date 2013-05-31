@@ -6,11 +6,11 @@ def jittered_sorter(max_jitter, iterable):
     input = iter(iterable)
 
     def time_window(queue):
-        max_time = heapq.nlargest(1, queue)
-        min_time = heapq.nsmallest(1, queue)
-        if len(queue) == 0:
+        if len(queue) == 0 or len(queue) == 1:
             return 0
-        return max_time[0][0] - min_time[0][0]
+        min_time = queue[0][0]
+        max_time = max(queue[-1][0], queue[-2][0])
+        return max_time - min_time
 
     try:
         while True:
