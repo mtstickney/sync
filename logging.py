@@ -1,4 +1,5 @@
 import heapq
+import sys
 
 def jittered_sorter(max_jitter, iterable):
     queue = []
@@ -21,3 +22,15 @@ def jittered_sorter(max_jitter, iterable):
         pass
     while len(queue) > 0:
         yield heapq.heappop(queue)
+
+def event_stream(filename):
+    with open(filename) as fh:
+        lines = iter(fh)
+        splitlines = (l.split() for l in lines)
+        events = ((float(l[0]), ' '.join(l[1:])) for l in splitlines)
+        for evt in jittered_sorter(300, events):
+            yield evt
+
+if __name__ == "__main__":
+    for evt in event_stream(sys.argv[1]):
+        print "%f   %s" % (evt[0], evt[1])
