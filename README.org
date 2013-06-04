@@ -1,0 +1,53 @@
+* Running
+  Each program accepts an input filename as its first argument and
+  will print apprpopriate output for the problem. The program's rely
+  on Python 2's =print= statement, but should otherwise be completely
+  portable to Py3K.
+
+* Logging
+  In addition to the =event_stream= interface, =logging.py= provides a
+  generic generator for sorting data with a bounded jitter in the
+  ordering without using unecessary memory. There are a few areas for
+  improvement (you could use a regular expression to parse out the
+  leading timestamp instead of allocating a list with =.split()=, for
+  example). Also, to make verification of correctness easier,
+  =event_stream= generates =(timestamp, input_line.rstrip())=
+  pairs. Since the input lines are produced (almost) exactly the way
+  they came in, the output of the program can be =diff=ed with
+  : sort -n input.txt
+
+  Unfortunately, performance isn't very good. Sorting a million
+  random elements with a heapñ takes about 30 seconds,
+  while using =.sort()= on the same array takes less than a
+  second. An implementation of heapsort in Common Lisp also displays
+  the same performance characteristics. =cProfile= and =statprof=
+  both show that the bottleneck is =heapq.heappop=; interestingly,
+  the ratio of time spent in =heapq.heappop= to =heapq.heappush=
+  isn't constant with input size, which suggests that the true time
+  complexity for one of them isn't C*log n as you'd expect.
+
+* Party Potential
+  The code should be pretty self-explanatory here. The only unusual
+  bits are that the program will print invite lists for both the CEO
+  and non-CEO invite lists. To produce the CEO invite list, the CEO is
+  artificially weighted to be invited by the algorithm; the
+  artificial weight destroys the actual party potential score, though
+  it wouldn't be hard to recover.
+
+* Parade Order
+  The essence of this problem is taking a partial order defined by
+  the given constraints and extending it to a total order. The
+  algorithm is relatively straightforward (it's a slightly modified
+  postorder DFS traversal of the partial order graph), the trickiest
+  bit being that it uses a deque to avoid recursion.
+
+  If you take the logging problem and assume that timestamps are
+  generated locally rather than remotely (maybe the remote clocks
+  can't be trusted), you have a similar problem, where there's a
+  partial ordering of events (the order relation applies to every
+  event outside of the 300 second bubble around any given
+  event). While you could produce a total order with this algorithm,
+  an arbitrary order isn't useful: there's an *actual* order, you
+  just don't know what it is. More likely you'd want to know how much
+  you could infer from the partial order, or identify sets of places
+  that have an ambiguous order.
