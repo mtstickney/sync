@@ -60,7 +60,7 @@ def select_invitees(node, invitees=None, may_go=True):
 def ceo_graph(ceo):
     new_root = Node(ceo.name, ceo.score, None)
 
-    # Ensure the CEO should go
+    # Cheat and pretend we selected the CEO
     new_root.take_score = 1
     new_root.leave_score = 0
     new_root.children = ceo.children
