@@ -26,11 +26,11 @@ def jittered_sorter(max_jitter, iterable):
 def event_stream(filename):
     with open(filename) as fh:
         lines = iter(fh)
-        splitlines = (l.split() for l in lines)
-        events = ((float(l[0]), ' '.join(l[1:])) for l in splitlines)
+        splitlines = ((l.split()[0], l.rstrip()) for l in lines)
+        events = ((float(key), line) for key, line in splitlines)
         for evt in jittered_sorter(300, events):
             yield evt
 
 if __name__ == "__main__":
     for evt in event_stream(sys.argv[1]):
-        print "%f   %s" % (evt[0], evt[1])
+        print evt[1]
