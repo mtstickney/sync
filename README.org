@@ -16,15 +16,16 @@
   they came in, the output of the program can be =diff=ed with
   : sort -n input.txt
 
-  Unfortunately, performance isn't very good. Sorting a million
-  random elements with a heapñ takes about 30 seconds,
-  while using =.sort()= on the same array takes less than a
-  second. An implementation of heapsort in Common Lisp also displays
-  the same performance characteristics. =cProfile= and =statprof=
-  both show that the bottleneck is =heapq.heappop=; interestingly,
-  the ratio of time spent in =heapq.heappop= to =heapq.heappush=
-  isn't constant with input size, which suggests that the true time
-  complexity for one of them isn't C*log n as you'd expect.
+  Unfortunately, performance isn't very good. Sorting a million random
+  elements with a heapñ takes about 30 seconds, while using =.sort()=
+  on the same array takes less than a second (the system's =sort -n=
+  command will also sort the file in a similar amount of time). An
+  implementation of heapsort in Common Lisp also displays the same
+  performance characteristics. =cProfile= and =statprof= both show
+  that the bottleneck is =heapq.heappop=; interestingly, the ratio of
+  time spent in =heapq.heappop= to =heapq.heappush= isn't constant
+  with input size, which suggests that the true time complexity for
+  one of them isn't C*log n as you'd expect.
 
 * Party Potential
   The code should be pretty self-explanatory here. The only unusual
