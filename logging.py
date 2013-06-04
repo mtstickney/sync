@@ -1,27 +1,45 @@
 import heapq
 import sys
 
-def jittered_sorter(max_jitter, iterable):
-    queue = []
-    input = iter(iterable)
+class SpanHeap:
+    "A heap that keeps track of the range of values stored."
+    def __init__(self):
+        self.max = None
+        self.queue = []
 
-    def time_window(queue):
-        if len(queue) == 0 or len(queue) == 1:
+    def push(self, item):
+        heapq.heappush(self.queue, item)
+        if len(self.queue) == 1 or item > self.max:
+            self.max = item
+
+    def pop(self):
+        return heapq.heappop(self.queue)
+
+    def span(self):
+        if len(self.queue) == 0:
             return 0
-        min_time = queue[0][0]
-        max_time = max(queue[-1][0], queue[-2][0])
-        return max_time - min_time
+        maximum = self.max[0]
+        minimum = self.queue[0][0]
+        return maximum - minimum
+
+    def size(self):
+        return len(self.queue)
+
+def jittered_sorter(max_jitter, iterable, heap=None):
+    if heap is None:
+        heap = SpanHeap()
+    input = iter(iterable)
 
     try:
         while True:
-            while time_window(queue) <= max_jitter:
-                heapq.heappush(queue, next(input))
-            yield heapq.heappop(queue)
+            while heap.span() <= max_jitter:
+                heap.push(next(input))
+            yield heap.pop()
     except StopIteration:
         # No more data, set to yield the rest of the elements
         pass
-    while len(queue) > 0:
-        yield heapq.heappop(queue)
+    while heap.size() > 0:
+        yield heap.pop()
 
 def event_stream(filename):
     with open(filename) as fh:
