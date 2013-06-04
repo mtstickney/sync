@@ -2,7 +2,8 @@
   Each program accepts an input filename as its first argument and
   will print apprpopriate output for the problem. The program's rely
   on Python 2's =print= statement, but should otherwise be completely
-  portable to Py3K.
+  portable to Py3K. Sample inputs are included in the =input/=
+  directory.
 
 * Logging
   In addition to the =event_stream= interface, =logging.py= provides a
