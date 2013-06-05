@@ -5,6 +5,6 @@
   :description "Describe cl-persist here"
   :author "Your Name <your.name@example.com>"
   :license "Specify license here"
+  :depends-on (#:alexandria)
   :components ((:file "package")
                (:file "cl-persist")))
-
