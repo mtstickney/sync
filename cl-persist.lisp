@@ -9,81 +9,83 @@
 (defgeneric update (collection x &rest xs)
   (:documentation "Return a new collection updated with items X and XS. The meaning of X and XS may vary from collection to collection."))
 
+(defgeneric add (collection x &rest xs)
+  (:documentation "Return a collection with an item described by X and XS added."))
+
 ;;; Persistent Array container
 
 (defclass persistent-array ()
   ((root :initform (make-array-node)
          :initarg :root
          :reader array-root)
+   (tail :initform nil
+         :initarg :tail
+         :reader array-tail)
    (size :initform 0
          :initarg :size
          :reader array-size)))
 
-(declaim (inline index-height))
-(defun index-height (index)
-  (ceiling (/ (integer-length index) +node-bits+)))
-
-(defun %build-path (max-height index value)
-  (let ((node value))
-    (loop for i from 1 to max-height
-       do (setf node (%build-node i
-                                  (level-index index i)
-                                  node)))
-    node))
-
-(defun tree-insert (root index value)
+(defun update-tree (root index value)
   (check-type root array-node)
-  (check-type index integer)
+  (check-type index (integer 0))
   (let* ((height (array-node-height root))
          (node-index (level-index index height)))
-    (cond
-      ((= (array-node-height root) 1)
-       (update root node-index value))
-      ((not (has-index-p root node-index))
-       (update root node-index (%build-path (1- height) index value)))
-      (t
-       (update root node-index (tree-insert (node-item root node-index)
-                                            index
-                                            value))))))
+    (if (= (array-node-height root) 1)
+        (update root node-index value)
+        (update root node-index (update-tree (node-item root node-index)
+                                             index
+                                             value)))))
 
 ;; TODO: replace elt with aref where necessary, add range checks (aref/elt
 ;; may or may not error on invalid access)
 ;; For now, vector must be continguous: (insert [a b c] 20 3) will
 ;; blow up
-(defmethod update ((coll persistent-array) index value)
+(defmethod update ((array persistent-array) index &rest values)
   (check-type index integer)
-  (when )
-  )
+  (when (evenp (length values))
+    (error "Object of type PERSISTENT-ARRAY requires an even number of arguments for UPDATE."))
+  (loop for (index . (value . rest))
+     on (cons index values)
+     by #'cddr
+     with size = (array-size array)
+     with node = (array-root array)
+     do (when (>= index size)
+          (error "Index ~S is out of bounds, should be <~S" index size))
+       (setf node (update-tree node index value))
+     finally (return-from update node)))
 
-(defun array-insert (array index value)
-  (check-type array persistent-array)
-  (check-type index integer) ; Global index, can be a bignum
-  (let ((index-height (index-height index))
-        (tree-height (array-node-height (array-root array)))
-        (new-root (array-root array)))
-    ;; Create the new superstructure
-    (loop for i from (1+ tree-height) to index-height
-       do (setf new-root (%build-node i
-                                      (level-index index i)
-                                      new-root)))
-    ;; Now go set
-
-    )
-  )
-;; TODO: This is broken now that array-leaf-node is out
-;; (defgeneric array-push (array item)
-;;   (:method ((array persistent-array) item)
-;;     (let* ((new (make-instance 'persistent-array :size (1+ (array-size array))))
-;;            (root (array-root array)))
-;;       (cond
-;;         ((and (typep root 'array-leaf-node)
-;;               (< (fill-pointer (array-leaf-node-leafs root)) 32))
-;;          (setf (slot-value new 'root) (node-push root item)))
-;;         ((typep root 'array-leaf-node)
-;;          ;; TODO: create a non-leaf root
-;;          )
-;;         )
-;;       new)))
+(defmethod add ((array persistent-array) x &rest xs)
+  (when (not endp xs)
+    (error "Too many arguments supplied to ADD for object of type PERSISTENT-ARRAY (expects 1)"))
+  (let ((size (array-size array))
+        (root (array-root array))
+        (tail (array-tail array)))
+    (cond
+      ((< size +node-size+)
+       ;; Still in the first node, don't have a tail yet
+       (make-instance 'persistent-array
+                      :size (1+ size)
+                      :root (add root x)))
+      ((= size +node-size+)
+       ;; first root is full, need a tail
+       (make-instance 'persistent-array
+                      :size (1+ size)
+                      :root root
+                      :tail (%build-array-node 1 x)))
+      ((= (length tail) +node-size+)
+       ;; Integrate tail and generate a new one
+       (let* ((height (array-node-height root))
+              (new-root (%build-array-node (1+ height)
+                                          root
+                                          (%build-array-path height x))))
+         (make-instance 'persistent-array
+                        :size (1+ size)
+                        :root new-root
+                        :tail (make-array-node))))
+      (t (make-instance 'persistent-array
+                        :size (1+ size)
+                        :root root
+                        :tail (add tail x))))))
 
 (defmethod size ((array persistent-array))
   (array-size array))
