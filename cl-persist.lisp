@@ -61,18 +61,18 @@
         (root (array-root array))
         (tail (array-tail array)))
     (cond
-      ((< size +node-size+)
+      ((< size +node-length+)
        ;; Still in the first node, don't have a tail yet
        (make-instance 'persistent-array
                       :size (1+ size)
                       :root (add root x)))
-      ((= size +node-size+)
+      ((= size +node-length+)
        ;; first root is full, need a tail
        (make-instance 'persistent-array
                       :size (1+ size)
                       :root root
                       :tail (%build-array-node 1 x)))
-      ((= (length tail) +node-size+)
+      ((= (length tail) +node-length+)
        ;; Integrate tail and generate a new one
        (let* ((height (array-node-height root))
               (new-root (%build-array-node (1+ height)
