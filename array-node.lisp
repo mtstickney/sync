@@ -49,6 +49,13 @@
         (values (elt (array-node-children node) index)
                 t))))
 
+(defun array-node-index (node index)
+  (check-type node array-node)
+  (check-type index integer)
+  (let ((height (array-node-height node)))
+    (logand (the fixnum (ash index (* +node-bits+ (1- height))))
+            (the fixnum #x1F))))
+
 (defun add-to-tree (root x)
   (check-type root array-node)
   (let* ((height (array-node-height root))

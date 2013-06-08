@@ -29,7 +29,7 @@
   (check-type root array-node)
   (check-type index (integer 0))
   (let* ((height (array-node-height root))
-         (node-index (level-index index height)))
+         (node-index (array-node-index node index)))
     (if (= (array-node-height root) 1)
         (update root node-index value)
         (update root node-index (update-tree (node-item root node-index)
