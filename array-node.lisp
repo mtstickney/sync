@@ -28,7 +28,7 @@
 
 ;; Like update, but without having to create a copy of the initial
 ;; empty node
-(defun %build-node (height &rest indices)
+(defun %build-array-node (height &rest indices)
   (let* ((node (make-array-node :height height))
          (children (array-node-children node)))
     (loop for value in indices
