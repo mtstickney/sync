@@ -12,6 +12,9 @@
 (defgeneric add (collection x &rest xs)
   (:documentation "Return a collection with an item described by X and XS added."))
 
+(defgeneric lookup (collection x &rest xs)
+  (:documentation "Return the element of COLLECTION described by X and XS."))
+
 ;;; Persistent Array container
 
 (defclass persistent-array ()
@@ -86,6 +89,24 @@
                         :size (1+ size)
                         :root root
                         :tail (add tail x))))))
+
+(defmethod lookup ((array persistent-array) x &rest xs)
+  (unless (endp xs)
+    (error "Too many arguments supplied to LOOKUP for object of type PERSISTENT-ARRAY (expects 1)"))
+  (let* ((node (array-root array))
+         (height (array-node-height node)))
+    (when (>= x (array-size array))
+      (error "Index ~S out of bounds for array, should be < ~S"
+             x
+             (array-size array)))
+    (cond
+      ;; In the tail
+      ((typep x `(integer ,(- (array-size array) +node-le))))
+      )
+    ;; Last one will set node to the stored item
+    (loop for i from 1 to height
+       do (setf node (array-node-item node (array-node-index node x))))
+    node))
 
 (defmethod size ((array persistent-array))
   (array-size array))
