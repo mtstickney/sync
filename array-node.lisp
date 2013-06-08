@@ -41,13 +41,13 @@
        do (setf node (%build-node node)))
     node))
 
-(defgeneric node-item (node index)
-  (:method ((node array-node) index)
-    (check-type index fixnum)
-    (if (not (has-index-p node index))
-        (values nil nil)
-        (values (elt (array-node-children node) index)
-                t))))
+(defun array-node-item (node index)
+  (check-type index fixnum)
+  (when (> index (length (array-node-children node)))
+    (error "Index ~S out of bounds for array node, should be <~S"
+           index
+           (length (array-node-children node))))
+  (elt (array-node-children node) index))
 
 (defun array-node-index (node index)
   (check-type node array-node)
