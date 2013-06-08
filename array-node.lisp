@@ -70,10 +70,6 @@
       (t (update root
                  (1- num-children) (add-to-tree last-child x))))))
 
-(defun array-tree-add (root val size)
-
-  )
-
 (defmethod add ((node array-node) value &rest values)
   (unless (endp values)
     (error "Too many arguments supplied to ADD for object of type ARRAY-NODE (expects 1)"))
