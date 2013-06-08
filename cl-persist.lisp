@@ -58,7 +58,7 @@
      finally (return-from update node)))
 
 (defmethod add ((array persistent-array) x &rest xs)
-  (when (not endp xs)
+  (unless (endp xs)
     (error "Too many arguments supplied to ADD for object of type PERSISTENT-ARRAY (expects 1)"))
   (let ((size (array-size array))
         (root (array-root array))
