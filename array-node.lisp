@@ -1,42 +1,40 @@
 (in-package #:cl-persist)
 
-(defconstant +node-bits+ 5)
-(defconstant +node-length+ (expt 2 +node-bits+))
+;; Used for dispatching
+(defstruct (array-node (:copier nil)
+                       (:constructor %make-array-node))
+  (children #() :type vector :read-only t))
 
-(declaim (type fixnum +node-length+))
-(declaim (type fixnum +node-bits+))
+(defun make-array-node (&key size leaf)
+  "Return a new array node to hold SIZE elements, as an edge node if LEAF is true."
+  (check-type size (integer 1))
+  (make-array size
+              :fill-pointer 0
+              :element-type (if leaf t `(vector * ,size))))
 
-(defstruct (array-node (:copier nil))
-  (children (make-array +node-length+ :fill-pointer 0 :element-type 'array-node))
-  (height 1))
+(defun copy-array-node (node)
+  (check-type node vector)
+  (alexandria:copy-array node))
 
 ;; This ensures the doubling behavior (not in the standard), and works
 ;; well with +NODE-SIZE+ = 32
-(defun node-vector-push (item vector)
+(defun node-push (item vector)
   (check-type vector vector)
-  (when (>= (fill-pointer vector) +node-length+)
-    (error "Node vector is full, cannot push ~S." item))
-  (let ((capacity (array-total-size vector)))
-    (when (= (fill-pointer vector) capacity)
-      (setf vector (adjust-array vector (if (= capacity 0) 1 (* 2 capacity)))))
-    (vector-push item vector)))
-
-(defun copy-array-node (node)
-  (check-type node array-node)
-  (make-array-node :children (alexandria:copy-array (array-node-children node))
-                   :height (array-node-height node)))
+  (when (not (vector-push item vector))
+    (error "Node vector is full, cannot push ~S." item)))
 
 ;; Like update, but without having to create a copy of the initial
 ;; empty node
-(defun %build-array-node (height &rest indices)
-  (let* ((node (make-array-node :height height))
-         (children (array-node-children node)))
-    (loop for value in indices
-       do (node-vector-push value children))
+(defun %build-array-node (size leaf-p &rest items)
+  (check-type size (integer 1))
+  (let ((node (make-array-node :size size :leaf leaf-p)))
+    (loop for i in items
+       do (node-push i node))
     node))
 
-(defun %build-node-path (max-height &rest values)
-  (let ((node (apply #'%build-node 1 values)))
+(defun %build-node-path (size max-height &rest values)
+  "Construct a node from VALUES and a string of parent nodes up to MAX-HEIGHT."
+  (let ((node (apply #'%build-array-node size t values)))
     (loop for i from 2 to max-height
        do (setf node (%build-node node)))
     node))
