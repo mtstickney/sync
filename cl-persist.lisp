@@ -18,17 +18,20 @@
 ;;; Persistent Array container
 
 (defclass persistent-array ()
-  ((root :initform (make-array-node)
-         :initarg :root
+  ((root :initarg :root
          :reader array-root)
-   (tail :initform nil
-         :initarg :tail
+   (tail :initarg :tail
          :reader array-tail)
-   (size :initform 0
-         :initarg :size
-         :reader array-size)))
+   (size :initarg :size
+         :reader array-size)
    (node-bits :initarg :node-bits
               :reader array-node-bits)
+   (node-size :reader array-node-size))
+  (:default-initargs
+   :root (make-array-node)
+    :tail nil
+    :size 0
+    :node-bits 5))
 
 (defun update-tree (root index value)
   (check-type root array-node)
