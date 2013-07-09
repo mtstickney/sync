@@ -27,6 +27,8 @@
    (size :initform 0
          :initarg :size
          :reader array-size)))
+   (node-bits :initarg :node-bits
+              :reader array-node-bits)
 
 (defun update-tree (root index value)
   (check-type root array-node)
