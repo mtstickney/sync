@@ -33,6 +33,14 @@
     :size 0
     :node-bits 5))
 
+(defmethod initialize-instance :after
+    ((arr persistent-array) &key node-bits &allow-other-keys)
+  (check-type node-bits (integer 1))
+  (setf (slot-value arr 'node-size) (expt 2 node-bits)))
+
+(defstruct leaf
+  (value))
+
 (defun update-tree (root index value)
   (check-type root array-node)
   (check-type index (integer 0))
