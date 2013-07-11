@@ -36,7 +36,7 @@
    (node-size :reader array-node-size)
    (key-mask :reader array-key-mask))
   (:default-initargs
-   :root (make-array-node)
+   :root nil ;;(make-array-node)
     :tail nil
     :size 0
     :node-bits 5))
