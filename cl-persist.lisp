@@ -33,7 +33,8 @@
          :reader array-size)
    (node-bits :initarg :node-bits
               :reader array-node-bits)
-   (node-size :reader array-node-size))
+   (node-size :reader array-node-size)
+   (key-mask :reader array-key-mask))
   (:default-initargs
    :root (make-array-node)
     :tail nil
@@ -43,7 +44,8 @@
 (defmethod initialize-instance :after
     ((arr persistent-array) &key node-bits &allow-other-keys)
   (check-type node-bits (integer 1))
-  (setf (slot-value arr 'node-size) (expt 2 node-bits)))
+  (setf (slot-value arr 'node-size) (expt 2 node-bits)
+        (slot-value arr 'key-mask) (1- (ash 1 node-bits))))
 
 (defstruct leaf
   (value))
