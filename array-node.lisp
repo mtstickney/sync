@@ -1,58 +1,136 @@
 (in-package #:cl-persist)
 
-;; Used for dispatching
-(defstruct (array-node (:copier nil)
-                       (:constructor %make-array-node))
+;; TODO: There will be less type dispatching to do if we use a leaf
+;; structs instead of node + edge node. If we do that it costs some
+;; memory (there are more leafs than leaf-parents), and we have to
+;; relax the type decl for node children (it becomes '(or node leaf))
+;; rather than a static 'node or t. It boils down to whether you get
+;; more benefit out of avoiding gf type dispatch or array element
+;; optimization.
+
+
+;; TODO: benchmark a gf MAKE-INTERNAL-NODE/MAKE-EDGE-NODE (with a call
+;; to ARRAY-NODE-SIZE vs. a closure returned from a gf
+;; NODE-CONSTRUCTOR.
+
+(defstruct (node (:conc-name nil)))
+
+(defstruct (internal-node (:include node)
+                          (:constructor mk-internal-node)
+                          (:copier nil))
+  (children #() :type (vector node *) :read-only t))
+
+(defstruct (edge-node (:include node)
+                      (:constructor mk-edge-node)
+                      (:copier nil))
   (children #() :type vector :read-only t))
 
-(defun make-array-node (&key size leaf)
-  "Return a new array node to hold SIZE elements, as an edge node if LEAF is true."
-  (check-type size (integer 1))
-  (make-array size
-              :fill-pointer 0
-              :element-type (if leaf t `(vector * ,size))))
+(defmacro node-constructor (name class child-type node-constructor)
+  `(defmethod ,name ((coll ,class) &rest items)
+       (let* ((size (array-node-size coll))
+              (array (make-array size
+                                 :fill-pointer 0
+                                 :element-type (quote ,child-type))))
+         (loop for i in items
+            for j from 1
+            if (> j size)
+            do (error "Too many items for node to hold, need <=~S" size)
+            do (check-type i ,child-type)
+              (vector-push i array))
+         (,node-constructor :children array))))
+
+(node-constructor make-internal-node persistent-array node mk-internal-node)
+(node-constructor make-edge-node persistent-array t mk-edge-node)
+
+(defmethod node-builder ((coll persistent-array) &key edge &allow-other-keys)
+  (macrolet ((node-builder-body (ctor child-type)
+               ;; SIZE and ITEMS are captured from the environment
+               `(let ((array (make-array size
+                                         :fill-pointer 0
+                                         :element-type (quote ,child-type))))
+                  (loop for i in items
+                     for j from 1
+                     if (> j size)
+                     do (error "Too many items for node to hold, need <=~S~%" size)
+                     do (check-type i ,child-type)
+                       (vector-push i array))
+                  (,ctor :children array))))
+    (let ((size (array-node-size coll)))
+      (if edge
+          (lambda (&rest items)
+            (node-builder-body mk-edge-node t))
+          (lambda (&rest items)
+            (node-builder-body mk-internal-node node))))))
+
+;; Best time 0.033 seconds, average ~0.041
+(defun benchmark-gf-builders ()
+  (let ((arr (make-instance 'persistent-array :node-bits 5))
+        (ibuilder #'make-internal-node)
+        (ebuilder #'make-edge-node)
+        (internal-child (mk-edge-node))
+        (edge-child 4))
+    (time (progn
+            (dotimes (i 10000)
+              (funcall ibuilder arr internal-child internal-child internal-child))
+            (dotimes (i 10000)
+              (funcall ebuilder arr edge-child edge-child edge-child))))))
+
+;; Best time 0.031 seconds, average ~0.42
+(defun benchmark-gf-closure ()
+  (let* ((arr (make-instance 'persistent-array :node-bits 5))
+        (ibuilder (node-builder arr))
+        (ebuilder (node-builder arr :edge t))
+        (internal-child (mk-edge-node))
+        (edge-child 4))
+    (time (progn
+            (dotimes (i 10000)
+              (funcall ibuilder internal-child internal-child internal-child))
+            (dotimes (i 10000)
+              (funcall ebuilder edge-child edge-child edge-child))))))
+
 
 (defun copy-array-node (node)
-  (check-type node vector)
-  (alexandria:copy-array node))
+  (check-type node node)
+  (alexandria:copy-array (slot-value node 'children)))
 
+;; If and when nodes don't allocate all children on creation,
+;; node-push needs to resize using f(0) = 1, f(x) = 2x.
 ;; This ensures the doubling behavior (not in the standard), and works
-;; well with +NODE-SIZE+ = 32
-(defun node-push (item vector)
+;; well with power-of-two sizes (a common default is 2x+1, which
+;; wastes space for power-of-two sizes).
+(defun node-push (item node)
   (check-type vector vector)
-  (when (not (vector-push item vector))
+  (when (not (vector-push item (slot-value node 'children)))
     (error "Node vector is full, cannot push ~S." item)))
 
-;; Like update, but without having to create a copy of the initial
-;; empty node
-(defun %build-array-node (size leaf-p &rest items)
-  (check-type size (integer 1))
-  (let ((node (make-array-node :size size :leaf leaf-p)))
-    (loop for i in items
-       do (node-push i node))
-    node))
-
-(defun %build-node-path (size max-height &rest values)
+(defun build-node-path (size max-height &rest values)
   "Construct a node from VALUES and a string of parent nodes up to MAX-HEIGHT."
+  (check-type size (integer 1))
   (let ((node (apply #'%build-array-node size t values)))
     (loop for i from 2 to max-height
        do (setf node (%build-node node)))
     node))
 
+;; FIXME: Name conflicts with reader from persistent-array class
+;; (defun array-node-size (node)
+;;   (check-type node vector)
+;;   (array-dimension node 0))
+
 (defun array-node-item (node index)
   (check-type index fixnum)
-  (when (> index (length (array-node-children node)))
-    (error "Index ~S out of bounds for array node, should be <~S"
-           index
-           (length (array-node-children node))))
-  (elt (array-node-children node) index))
+  (elt node index))
 
-(defun array-node-index (node index)
-  (check-type node array-node)
+(defun array-node-index (node index height)
+  "Return the index into NODE for a key INDEX, assuming NODE is of height HEIGHT."
+  (check-type node vector)
   (check-type index integer)
-  (let ((height (array-node-height node)))
-    (logand (the fixnum (ash index (* +node-bits+ (1- height))))
-            (the fixnum #x1F))))
+  (let ((size (array-node-size node)))
+    (multiple-value-bind (bits extra) (floor (log size 2))
+      (when (not (= 0 extra))
+        (error "Size of node (~S) is not a power of two" size))
+      (logand (ash index (* bits (1- height))))
+      ))
+  (logand (ash index (* (log (length)) (1- height)))))
 
 (defun add-to-tree (root x)
   (check-type root array-node)
