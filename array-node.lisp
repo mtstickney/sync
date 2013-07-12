@@ -15,6 +15,10 @@
 
 (defstruct (node (:conc-name nil)))
 
+(defstruct (r-node (:include node)
+                   (:copier nil))
+  (children #() :type (vector t *) :read-only t))
+
 (defstruct (internal-node (:include node)
                           (:constructor mk-internal-node)
                           (:copier nil))
@@ -25,6 +29,10 @@
                       (:copier nil))
   (children #() :type vector :read-only t))
 
+(defstruct (leaf (:copier nil))
+  (value nil :read-only t))
+
+;; Option 1: two specialized methods to make different node types
 (defmacro node-constructor (name class child-type node-constructor)
   `(defmethod ,name ((coll ,class) &rest items)
        (let* ((size (array-node-size coll))
@@ -62,32 +70,60 @@
           (lambda (&rest items)
             (node-builder-body mk-internal-node node))))))
 
+(defmethod make-me-a-node ((coll persistent-array) &rest items)
+  (let* ((size (array-node-size coll))
+         (array (make-array size
+                               :fill-pointer 0
+                               :element-type 'r-node)))
+    (loop for i in items
+       for j from 1
+       if (> j size)
+       do (error "Too many items for node to hold, need <=~S~%" size)
+       do (vector-push i array))
+    (make-r-node :children array)))
+
 ;; Best time 0.033 seconds, average ~0.041
+;; Best time 0.081 seconds, average ~0.093
 (defun benchmark-gf-builders ()
   (let ((arr (make-instance 'persistent-array :node-bits 5))
         (ibuilder #'make-internal-node)
         (ebuilder #'make-edge-node)
         (internal-child (mk-edge-node))
-        (edge-child 4))
+        (edge-child 4)
+        (node))
     (time (progn
             (dotimes (i 10000)
-              (funcall ibuilder arr internal-child internal-child internal-child))
+              (setf node (funcall ibuilder arr internal-child internal-child internal-child)))
             (dotimes (i 10000)
-              (funcall ebuilder arr edge-child edge-child edge-child))))))
+              (setf node (funcall ebuilder arr edge-child edge-child edge-child)))))))
 
 ;; Best time 0.031 seconds, average ~0.42
+;; Best time 0.080 seconds, average ~0.90
 (defun benchmark-gf-closure ()
   (let* ((arr (make-instance 'persistent-array :node-bits 5))
-        (ibuilder (node-builder arr))
-        (ebuilder (node-builder arr :edge t))
-        (internal-child (mk-edge-node))
-        (edge-child 4))
+         (ibuilder (node-builder arr))
+         (ebuilder (node-builder arr :edge t))
+         (internal-child (mk-edge-node))
+         (edge-child 4)
+         (node))
     (time (progn
             (dotimes (i 10000)
-              (funcall ibuilder internal-child internal-child internal-child))
+              (setf node (funcall ibuilder internal-child internal-child internal-child)))
             (dotimes (i 10000)
-              (funcall ebuilder edge-child edge-child edge-child))))))
+              (setf node (funcall ebuilder edge-child edge-child edge-child)))))))
 
+(defun benchmark-gf-rnode ()
+  (let* ((arr (make-instance 'persistent-array :node-bits 5))
+         (ibuilder #'make-internal-node)
+         (ebuilder #'make-edge-node)
+         (internal-child (make-r-node))
+         (edge-child (make-leaf :value 4))
+         (node))
+    (time (progn
+            (dotimes (i 10000)
+              (setf node (funcall ibuilder arr internal-child internal-child internal-child)))
+            (dotimes (i 10000)
+              (setf node (funcall ebuilder arr edge-child edge-child edge-child)))))))
 
 (defun copy-array-node (node)
   (check-type node node)
