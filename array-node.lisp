@@ -76,6 +76,20 @@
        do (%array-node-push i node))
     node))
 
+(defun array-node-update (node index item)
+  (check-type node array-node)
+  (check-type index integer)
+  (let ((new-node (copy-array-node node)))
+    (%array-node-set new-node index item)
+    new-node))
+
+(defun array-node-add (node &rest items)
+  (check-type node array-node)
+  (let ((new-node (copy-array-node node)))
+    (loop for i in items
+       do (%array-node-push i new-node)
+       finally (return new-node))))
+
 (defun insert-height (n fanout)
   (check-type n (integer 1))
   (check-type fanout (integer 2))
@@ -104,47 +118,133 @@
        do (setf node (make-node size node)))
     node))
 
-(defun array-node-index (node index height)
-  "Return the index into NODE for a key INDEX, assuming NODE is of height HEIGHT."
-  (check-type node vector)
-  (check-type index integer)
-  (let ((size (array-node-size node)))
-    (multiple-value-bind (bits extra) (floor (log size 2))
-      (when (not (= 0 extra))
-        (error "Size of node (~S) is not a power of two" size))
-      (logand (ash index (* bits (1- height))))
-      ))
-  (logand (ash index (* (log (length)) (1- height)))))
+;; To get the child of a node in the tree corresponding to a
+;; particular key, we must first extract an index for this particular
+;; level of the tree.
+(defun array-node-index (node-bits height key)
+  (check-type node-bits (integer 1))
+  (check-type height (integer 1))
+  (check-type key integer)
+  ;; If NODE-BITS is the number of bits for a node index, the portion
+  ;; of the key we want is the (1- height)th group of NODE-BITS bits,
+  ;; from least significant to most. First we construct a mask of
+  ;; NODE-BITS bits:
+  (logand (1- (ash 1 num-bits))
+          ;; Right-shifting the key by (1- height) groups of NODE-BITS
+          ;; bits and ANDing with the mask yields our index:
+          (ash key (- (* num-bits (1- height))))))
 
-(defun add-to-tree (root x)
-  (check-type root array-node)
-  (let* ((height (array-node-height root))
-         (num-children (length (array-node-children root)))
-         (last-child (elt root (1- num-children))))
+(defun %array-add (coll x)
+  "Append X to the persistent-array COLL in-place."
+  (check-type coll persistent-array)
+  (let* ((node-size (array-node-size coll))
+         (insert-height (insert-height (1+ (array-size coll))
+                                       node-size)))
     (cond
-      ((= height 1)
-       (add root x))
-      ((= (length (array-node-children last-child)) +node-size+)
-       ;; Last child is full, need a new one
-       (add root (%build-array-path (1- height) x)))
-      (t (update root
-                 (1- num-children) (add-to-tree last-child x))))))
+      ;; If we need a new root node
+      ((> insert-height (array-height coll))
+       (setf (slot-value coll 'root)
+             (make-array-node node-size
+                              (array-root coll)
+                              (make-parents node-size (array-height coll) x)))
+       (incf (slot-value coll 'size))
+       (incf (slot-value coll 'height)))
+      ;; Otherwise find the rightmost node at insert-height and push a
+      ;; chain of parents for the child.
+      (t (let ((node (array-root coll))
+               (child (make-parents node-size (1- insert-height) x)))
+           (loop for i from (array-height coll)
+              downto (1+ insert-height)
+              do (setf node (array-node-item (1- (array-node-length node)))))
+           (%array-node-push child node)
+           (incf (slot-value coll 'size)))))
+    coll))
 
-(defmethod add ((node array-node) value &rest values)
-  (unless (endp values)
-    (error "Too many arguments supplied to ADD for object of type ARRAY-NODE (expects 1)"))
-  (let ((new-node (copy-array-node node)))
-    (node-vector-push value (array-node-children new-node))
-    new-node))
+(defun array-add (coll x)
+  "Append X to the persistent-array COLL."
+  (check-type coll persistent-array)
+  (let* ((node-size (array-node-size))
+         (insert-height (insert-height (1+ (array-size coll))
+                                       node-size)))
+    (cond
+      ((> insert-height (array-height coll))
+       (let ((new-root (make-array-node node-size
+                                        (array-root coll)
+                                        (make-parents node-size (array-height coll) x))))
+         (make-instance 'persistent-array
+                        :root new-root
+                        :node-bits (array-node-bits coll)
+                        :size (1+ (array-size coll))
+                        :height (1+ (array-height coll))
+                        :tail (array-tail coll))))
+      (t (let* ((node (copy-array-node (array-root coll)))
+                (new-root node)
+                (child (make-parents node-size (1- insert-height) x)))
+           ;; Traverse the last children to the insertion level,
+           ;; copying as we go.
+           (loop for i from (array-height coll)
+              downto (1+ insert-height)
+              do (let ((last-idx (1- (array-node-length node))))
+                   ;; Set node's last child to a copy of node's last child
+                   (%array-node-set node last-idx
+                                    (copy-array-node (array-node-item node last-idx)))
+                   ;; Then move to the copied child
+                   (setf node (array-node-item node last-idx))))
+           (%array-node-push child node)
+           (make-instance 'persistent-array
+                          :root new-root
+                          :node-bits (array-node-bits coll)
+                          :size (1+ (array-size coll))
+                          :height (array-height coll)
+                          :tail (array-tail coll)))))))
 
-(defmethod update ((coll array-node) index &rest indexes)
-  (let ((children (array-node-children coll))
-        (new-node (copy-array-node)))
-    (loop for (index . (val . rest))
-       on (cons index indexes)
-       by #'cddr
-       do (when (> index (fill-pointer children))
-            (error "Index ~S is out of bounds for array node, should be <=~S"
-                   index
-                   (fill-pointer children)))
-         (setf (elt children index) val))))
+(defmethod add ((coll persistent-array) x &rest xs)
+  ;; Add the first element non-destructively
+  (let ((new-coll (array-add coll x)))
+    ;; The rest can be added in-place, since only the edge copied by
+    ;; the add above will be mutated.
+    (loop for x in xs
+       do (%array-add coll x))
+    new-coll))
+
+(defun array-update (coll key val)
+  (check-type coll persistent-array)
+  (check-type key integer)
+  (assert (< key (array-size coll)) (key)
+          "Index ~S is too large" key)
+  (let ((node (copy-array-node (array-root coll)))
+        (new-root node)
+        (bits (array-node-bits coll)))
+    (loop for h from (array-height coll) downto 2
+       do (let ((idx (array-node-index bits key h)))
+            ;; Set node's child to a copy of node's child
+            (%array-node-set node idx
+                             (copy-array-node (array-node-item node idx)))
+            ;; Then move to the copied child
+            (setf node (array-node-item node idx))))
+    (%array-node-set node (array-node-index bits key 1)
+                     val)
+    (make-instance 'persistent-array
+                   :root new-root
+                   :node-bits (array-node-bits coll)
+                   :size (array-size coll)
+                   :height (array-height coll)
+                   :tail (array-tail coll))))
+
+(defmethod update ((coll persistent-array) key val &rest others)
+  (let ((new-coll (array-update coll key val)))
+    (loop for (key . rest) on other by #'cddr
+       if (endp rest)
+       do (error "UPDATE requires an even number of arguments.")
+       do (setf new-coll (array-update coll key (car rest))))
+    new-coll))
+
+;; TODO: look for places we used 'INTEGER instead of 'UNSIGNED-BYTE
+(defmethod lookup ((coll persistent-array) x &rest xs)
+  (check-type x unsigned-byte)
+  (check-type xs null)
+  (let ((node (array-root coll))
+        (bits (array-node-bits coll)))
+    (loop for h from (array-height coll) downto 1
+       do (setf node (array-node-item node (array-node-index bits h x))))
+    node))

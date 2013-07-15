@@ -7,7 +7,6 @@
   :license "Specify license here"
   :depends-on (#:alexandria)
   :components ((:file "package")
-
                (:file "cl-persist")
                (:file "array-node")
                ))
