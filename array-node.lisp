@@ -19,6 +19,11 @@
   ;; Max size, if nodes aren't fully allocated
   (size 0 :type unsigned-byte :read-only t))
 
+(defun copy-array-node (node)
+  (check-type node node)
+  (let ((new-children (alexandria:copy-array (slot-value node 'children))))
+    (mk-node :children new-children :size (slot-value node 'size))))
+
 (defmethod make-me-a-node ((coll persistent-array) &rest items)
   (let* ((size (array-node-size coll))
          (array (make-array size
@@ -51,10 +56,6 @@
       ;; entries for every node).
       ((or (= n 1) (= n 2)) 1)
       (t (highest-empty-level (1- n) fanout)))))
-
-(defun copy-array-node (node)
-  (check-type node node)
-  (alexandria:copy-array (slot-value node 'children)))
 
 ;; If and when nodes don't allocate all children on creation,
 ;; node-push needs to resize using f(0) = 1, f(x) = 2x.
