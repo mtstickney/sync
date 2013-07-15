@@ -15,7 +15,9 @@
 
 (defstruct (node (:constructor mk-node)
                  (:copier nil))
-  (children #() :type vector :read-only t))
+  (children #() :type vector :read-only t)
+  ;; Max size, if nodes aren't fully allocated
+  (size 0 :type unsigned-byte :read-only t))
 
 (defmethod make-me-a-node ((coll persistent-array) &rest items)
   (let* ((size (array-node-size coll))
