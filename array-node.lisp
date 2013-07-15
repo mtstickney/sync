@@ -29,17 +29,51 @@
   (check-type node array-node)
   (length (array-node-children node)))
 
-(defmethod make-me-a-node ((coll persistent-array) &rest items)
-  (let* ((size (array-node-size coll))
-         (array (make-array size
-                               :fill-pointer 0
-                               :element-type 'r-node)))
+;; All indexes for a node are valid, and since the indexes for nodes
+;; are specified as a number of bits, the number of children a node
+;; can have must be a power of two. When appending to a node, the
+;; vector of children may need to be extended. A common method is to
+;; resize a node from size n to 2n+1.
+(defun %array-node-push (item node)
+  (check-type node array-node)
+  (flet ((next-size (n)
+           (if (= n 0)
+               1
+               (* 2 n))))
+    ;; If the node is already full, we signal an error:
+    (when (>= (array-node-length node)
+              (array-node-size node))
+      (error "Node is full, cannot push item"))
+    (let* ((children (array-node-children node))
+           (allocated (array-total-size children)))
+      ;; We only need a resize if the children vector is already full,
+      (when (>= (length children) allocated)
+        (setf (array-node-children node)
+              (adjust-array children
+                            ;; and we don't want to allocate any more
+                            ;; than we need to.
+                            (min (array-node-size node)
+                                 (next-size allocated)))))
+      ;; Once the node's been resized (if needed), we can push the
+      ;; element onto the vector.
+      (vector-push item (array-node-children node)))))
+
+(defun %array-node-set (node index value)
+  (check-type node array-node)
+  (setf (elt (array-node-children node) index) value))
+
+(defun make-node (size &rest items)
+  (let* ((array (make-array size
+                            :fill-pointer 0
+                            :adjustable t))
+         (node (mk-array-node :children array :size size)))
     (loop for i in items
        for j from 1
        if (> j size)
+       ;; ELT will throw an error, but including the max size is nice
        do (error "Too many items for node to hold, need <=~S~%" size)
-       do (vector-push i array))
-    (make-r-node :children array)))
+       do (%array-node-push i node))
+    node))
 
 (defun insert-height (n fanout)
   (check-type n (integer 1))
