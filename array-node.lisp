@@ -97,22 +97,11 @@
       ((or (= n 1) (= n 2)) 1)
       (t (highest-empty-level (1- n) fanout)))))
 
-;; If and when nodes don't allocate all children on creation,
-;; node-push needs to resize using f(0) = 1, f(x) = 2x.
-;; This ensures the doubling behavior (not in the standard), and works
-;; well with power-of-two sizes (a common default is 2x+1, which
-;; wastes space for power-of-two sizes).
-(defun node-push (item node)
-  (check-type vector vector)
-  (when (not (vector-push item (slot-value node 'children)))
-    (error "Node vector is full, cannot push ~S." item)))
-
-(defun build-node-path (size max-height &rest values)
-  "Construct a node from VALUES and a string of parent nodes up to MAX-HEIGHT."
-  (check-type size (integer 1))
-  (let ((node (apply #'%build-array-node size t values)))
-    (loop for i from 2 to max-height
-       do (setf node (%build-node node)))
+(defun make-parents (size max-parents item)
+  "Return a chain of up to MAX-PARENTS parents for ITEM."
+  (let ((node item))
+    (loop for i from 1 to max-parents
+       do (setf node (make-node size node)))
     node))
 
 (defun array-node-index (node index height)
