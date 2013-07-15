@@ -37,6 +37,7 @@
     :height 0
     :node-bits 5))
 
+;; TODO: trim the extra junk out of here (and the class def)
 (defmethod initialize-instance :after
     ((arr persistent-array) &key node-bits &allow-other-keys)
   (check-type node-bits (integer 1))
