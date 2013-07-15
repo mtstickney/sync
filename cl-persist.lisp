@@ -15,13 +15,6 @@
 (defgeneric lookup (collection x &rest xs)
   (:documentation "Return the element of COLLECTION described by X and XS."))
 
-;; Internal-use methods of persistent collections
-(defgeneric node-constructor (collection)
-  (:documentation "Return a function that can be used to construct a new node for COLLECTION, optionally containing some items. Lambda-list for the returned function is (&rest items). Specific collections may use keywords to specify constructors for different types of nodes."))
-
-(defgeneric copy-node (node)
-  (:documentation "Return a copy of NODE."))
-
 ;;; Persistent Array container
 
 (defclass persistent-array ()
