@@ -24,6 +24,8 @@
          :reader array-tail)
    (size :initarg :size
          :reader array-size)
+   (height :initarg :height
+           :reader array-height)
    (node-bits :initarg :node-bits
               :reader array-node-bits)
    (node-size :reader array-node-size)
@@ -32,6 +34,7 @@
    :root nil ;;(make-array-node)
     :tail nil
     :size 0
+    :height 0
     :node-bits 5))
 
 (defmethod initialize-instance :after
