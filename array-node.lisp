@@ -125,6 +125,27 @@
             (dotimes (i 10000)
               (setf node (funcall ebuilder arr edge-child edge-child edge-child)))))))
 
+(defun insert-height (n fanout)
+  (check-type n (integer 1))
+  (check-type fanout (integer 2))
+  (assert (= (logcount fanout) 1) (fanout)
+          "Fanout ~A is not a power of 2" fanout)
+  (flet ((highest-empty-level (n fanout)
+           ;; Note: assumes n > 1, other cases handled in COND
+           ;; below. Note also that (1+ height) is safe, since we're
+           ;; computing height from N and an insertion will never
+           ;; increase the height of the tree by more than 1.
+           (let ((max-height (1+ (ceiling (log n fanout)))))
+             (loop for i from max-height downto 1
+                if (= (mod n (expt fanout (1- i))) 0)
+                return i))))
+    (cond
+      ;; Note: fanout must be (expt 2 bits) where (>= bits 1), so (= n
+      ;; 2) will always be in the first node (there will be at least 2
+      ;; entries for every node).
+      ((or (= n 1) (= n 2)) 1)
+      (t (highest-empty-level (1- n) fanout)))))
+
 (defun copy-array-node (node)
   (check-type node node)
   (alexandria:copy-array (slot-value node 'children)))
