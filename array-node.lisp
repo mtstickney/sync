@@ -8,10 +8,7 @@
 ;; more benefit out of avoiding gf type dispatch or array element
 ;; optimization.
 
-
-;; TODO: benchmark a gf MAKE-INTERNAL-NODE/MAKE-EDGE-NODE (with a call
-;; to ARRAY-NODE-SIZE vs. a closure returned from a gf
-;; NODE-CONSTRUCTOR.
+;; FIXME: ARRAY-NODE-SIZE name conflicts with reader from persistent-array class
 
 (defstruct (array-node (:constructor mk-array-node)
                        (:copier nil))
