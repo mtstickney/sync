@@ -59,7 +59,11 @@
   (check-type node array-node)
   (setf (elt (array-node-children node) index) value))
 
-(defun make-node (size &rest items)
+(defun array-node-item (node index)
+  (check-type index fixnum)
+  (elt node index))
+
+(defun make-array-node (size &rest items)
   (let* ((array (make-array size
                             :fill-pointer 0
                             :adjustable t))
@@ -110,15 +114,6 @@
     (loop for i from 2 to max-height
        do (setf node (%build-node node)))
     node))
-
-;; FIXME: Name conflicts with reader from persistent-array class
-;; (defun array-node-size (node)
-;;   (check-type node vector)
-;;   (array-dimension node 0))
-
-(defun array-node-item (node index)
-  (check-type index fixnum)
-  (elt node index))
 
 (defun array-node-index (node index height)
   "Return the index into NODE for a key INDEX, assuming NODE is of height HEIGHT."
