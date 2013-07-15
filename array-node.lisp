@@ -25,6 +25,10 @@
   (let ((new-children (alexandria:copy-array (array-node-children 'children))))
     (mk-array-node :children new-children :size (array-node-size node))))
 
+(defun array-node-length (node)
+  (check-type node array-node)
+  (length (array-node-children node)))
+
 (defmethod make-me-a-node ((coll persistent-array) &rest items)
   (let* ((size (array-node-size coll))
          (array (make-array size
