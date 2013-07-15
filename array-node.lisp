@@ -13,16 +13,17 @@
 ;; to ARRAY-NODE-SIZE vs. a closure returned from a gf
 ;; NODE-CONSTRUCTOR.
 
-(defstruct (node (:constructor mk-node)
-                 (:copier nil))
-  (children #() :type vector :read-only t)
+(defstruct (array-node (:constructor mk-array-node)
+                       (:copier nil))
+  ;; Only writable because of %array-node-push
+  (children #() :type vector)
   ;; Max size, if nodes aren't fully allocated
   (size 0 :type unsigned-byte :read-only t))
 
 (defun copy-array-node (node)
-  (check-type node node)
-  (let ((new-children (alexandria:copy-array (slot-value node 'children))))
-    (mk-node :children new-children :size (slot-value node 'size))))
+  (check-type node array-node)
+  (let ((new-children (alexandria:copy-array (array-node-children 'children))))
+    (mk-array-node :children new-children :size (array-node-size node))))
 
 (defmethod make-me-a-node ((coll persistent-array) &rest items)
   (let* ((size (array-node-size coll))
