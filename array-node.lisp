@@ -166,9 +166,12 @@
                                        node-size)))
     (cond
       ((> insert-height (array-height coll))
-       (let ((new-root (make-array-node node-size
-                                        (array-root coll)
-                                        (make-parents node-size (array-height coll) x))))
+       (let ((new-root (if (null (array-root coll))
+                           (make-array-node node-size
+                                            (make-parents node-size (array-height coll) x))
+                           (make-array-node node-size
+                                            (array-root coll)
+                                            (make-parents node-size (array-height coll) x)))))
          (make-instance 'persistent-array
                         :root new-root
                         :node-bits (array-node-bits coll)
