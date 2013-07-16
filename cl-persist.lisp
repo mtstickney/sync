@@ -49,3 +49,16 @@
 
 (defun print-array-node (node stream)
   (print-object (array-node-children node) stream))
+
+(defmethod print-object ((object persistent-array) stream)
+  ;; TODO: replace with something that doesn't depend on TCO (or use
+  ;; recursion without it)
+  (labels ((print-items (node height)
+             (if (= height 0)
+                 (format stream "~S, " node)
+                 (loop for i across (array-node-children node)
+                    do (print-items i (1- height))))))
+    (format stream "[")
+    (when (>  (array-size object) 0)
+      (print-items (array-root object) (array-height object)))
+    (format stream "]")))
