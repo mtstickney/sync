@@ -127,10 +127,10 @@
   ;; of the key we want is the (1- height)th group of NODE-BITS bits,
   ;; from least significant to most. First we construct a mask of
   ;; NODE-BITS bits:
-  (logand (1- (ash 1 num-bits))
+  (logand (1- (ash 1 node-bits))
           ;; Right-shifting the key by (1- height) groups of NODE-BITS
           ;; bits and ANDing with the mask yields our index:
-          (ash key (- (* num-bits (1- height))))))
+          (ash key (- (* node-bits (1- height))))))
 
 (defun %array-add (coll x)
   "Append X to the persistent-array COLL in-place."
