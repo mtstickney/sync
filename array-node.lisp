@@ -59,7 +59,7 @@
 
 (defun array-node-item (node index)
   (check-type index fixnum)
-  (elt node index))
+  (elt (array-node-children node) index))
 
 (defun make-array-node (size &rest items)
   (let* ((array (make-array size
