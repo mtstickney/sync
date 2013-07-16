@@ -113,7 +113,7 @@
   "Return a chain of up to MAX-PARENTS parents for ITEM."
   (let ((node item))
     (loop for i from 1 to max-parents
-       do (setf node (make-node size node)))
+       do (setf node (make-array-node size node)))
     node))
 
 ;; To get the child of a node in the tree corresponding to a
