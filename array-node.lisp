@@ -161,7 +161,7 @@
 (defun array-add (coll x)
   "Append X to the persistent-array COLL."
   (check-type coll persistent-array)
-  (let* ((node-size (array-node-size))
+  (let* ((node-size (array-node-size coll))
          (insert-height (insert-height (1+ (array-size coll))
                                        node-size)))
     (cond
