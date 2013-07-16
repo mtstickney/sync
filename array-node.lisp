@@ -81,12 +81,12 @@
     (%array-node-set new-node index item)
     new-node))
 
-(defun array-node-add (node &rest items)
-  (check-type node array-node)
-  (let ((new-node (copy-array-node node)))
-    (loop for i in items
-       do (%array-node-push i new-node)
-       finally (return new-node))))
+;; (defun array-node-add (node max-size &rest items)
+;;   (check-type node array-node)
+;;   (let ((new-node (copy-array-node node)))
+;;     (loop for i in items
+;;        do (%array-node-push i new-node max-size)
+;;        finally (return new-node))))
 
 (defun insert-height (n fanout)
   (check-type n (integer 1))
