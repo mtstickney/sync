@@ -6,7 +6,7 @@
 (defgeneric size (structure)
   (:documentation "Return the number of entries in STRUCTURE."))
 
-(defgeneric update (collection x &rest xs)
+(defgeneric update (collection key val &rest xs)
   (:documentation "Return a new collection updated with items X and XS. The meaning of X and XS may vary from collection to collection."))
 
 (defgeneric add (collection x &rest xs)
