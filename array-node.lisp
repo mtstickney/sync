@@ -13,14 +13,12 @@
 (defstruct (array-node (:constructor mk-array-node)
                        (:copier nil))
   ;; Only writable because of %array-node-push
-  (children #() :type vector)
-  ;; Max size, if nodes aren't fully allocated
-  (size 0 :type unsigned-byte :read-only t))
+  (children #() :type vector))
 
 (defun copy-array-node (node)
   (check-type node array-node)
-  (let ((new-children (alexandria:copy-array (array-node-children 'children))))
-    (mk-array-node :children new-children :size (array-node-size node))))
+  (let ((new-children (alexandria:copy-array (array-node-children node))))
+    (mk-array-node :children new-children)))
 
 (defun array-node-length (node)
   (check-type node array-node)
@@ -31,7 +29,7 @@
 ;; can have must be a power of two. When appending to a node, the
 ;; vector of children may need to be extended. A common method is to
 ;; resize a node from size n to 2n+1.
-(defun %array-node-push (item node)
+(defun %array-node-push (item node max-size)
   (check-type node array-node)
   (flet ((next-size (n)
            (if (= n 0)
@@ -39,7 +37,7 @@
                (* 2 n))))
     ;; If the node is already full, we signal an error:
     (when (>= (array-node-length node)
-              (array-node-size node))
+              max-size)
       (error "Node is full, cannot push item"))
     (let* ((children (array-node-children node))
            (allocated (array-total-size children)))
@@ -49,7 +47,7 @@
               (adjust-array children
                             ;; and we don't want to allocate any more
                             ;; than we need to.
-                            (min (array-node-size node)
+                            (min max-size
                                  (next-size allocated)))))
       ;; Once the node's been resized (if needed), we can push the
       ;; element onto the vector.
@@ -67,13 +65,13 @@
   (let* ((array (make-array size
                             :fill-pointer 0
                             :adjustable t))
-         (node (mk-array-node :children array :size size)))
+         (node (mk-array-node :children array)))
     (loop for i in items
        for j from 1
        if (> j size)
        ;; ELT will throw an error, but including the max size is nice
        do (error "Too many items for node to hold, need <=~S~%" size)
-       do (%array-node-push i node))
+       do (%array-node-push i node size))
     node))
 
 (defun array-node-update (node index item)
@@ -156,7 +154,7 @@
            (loop for i from (array-height coll)
               downto (1+ insert-height)
               do (setf node (array-node-item (1- (array-node-length node)))))
-           (%array-node-push child node)
+           (%array-node-push child node node-size)
            (incf (slot-value coll 'size)))))
     coll))
 
@@ -190,7 +188,7 @@
                                     (copy-array-node (array-node-item node last-idx)))
                    ;; Then move to the copied child
                    (setf node (array-node-item node last-idx))))
-           (%array-node-push child node)
+           (%array-node-push child node node-size)
            (make-instance 'persistent-array
                           :root new-root
                           :node-bits (array-node-bits coll)
