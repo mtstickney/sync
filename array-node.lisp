@@ -143,6 +143,10 @@ existing node."
        do (array-add new-coll x #'identity #'identity))
     new-coll))
 
+;; TODO: Could the traverse-while-copying thing be extracted into a
+;; (multiple-value-bind (last-child new-root) (copy-traverse node
+;; key)) thing, maybe with a :start-height and :end-height?
+
 (defun array-update (coll key val)
   (check-type coll persistent-array)
   (check-type key integer)
