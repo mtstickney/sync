@@ -48,7 +48,7 @@
   (array-size array))
 
 (defun print-array-node (node stream)
-  (print-object (array-node-children node) stream))
+  (print-object node stream))
 
 (defmethod print-object ((object persistent-array) stream)
   ;; TODO: replace with something that doesn't depend on TCO (or use
@@ -56,7 +56,7 @@
   (labels ((print-items (node height)
              (if (= height 0)
                  (format stream "~S, " node)
-                 (loop for i across (array-node-children node)
+                 (loop for i across node
                     do (print-items i (1- height))))))
     (format stream "[")
     (when (>  (array-size object) 0)
