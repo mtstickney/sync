@@ -132,38 +132,22 @@
           ;; bits and ANDing with the mask yields our index:
           (ash key (- (* node-bits (1- height))))))
 
-(defun %array-add (coll x)
-  "Append X to the persistent-array COLL in-place."
-  (check-type coll persistent-array)
-  (let* ((node-size (array-node-size coll))
-         (insert-height (insert-height (1+ (array-size coll))
-                                       node-size)))
-    (cond
-      ;; If we need a new root node
-      ((> insert-height (array-height coll))
-       (setf (slot-value coll 'root)
-             (make-array-node node-size
-                              (array-root coll)
-                              (make-parents node-size (array-height coll) x)))
-       (incf (slot-value coll 'size))
-       (incf (slot-value coll 'height)))
-      ;; Otherwise find the rightmost node at insert-height and push a
-      ;; chain of parents for the child.
-      (t (let ((node (array-root coll))
-               (child (make-parents node-size (1- insert-height) x)))
-           (loop for i from (array-height coll)
-              downto (1+ insert-height)
-              do (setf node (array-node-item (1- (array-node-length node)))))
-           (%array-node-push child node node-size)
-           (incf (slot-value coll 'size)))))
-    coll))
+(defun copy-persistent-array (arr)
+  ;; Shallow copy (intentional, nodes will be copied as part of traversal
+  (make-instance 'persistent-array
+                 :root (array-root arr)
+                 :tail (array-tail arr)
+                 :size (array-size arr)
+                 :height (array-height arr)
+                 :node-bits (array-node-bits arr)))
 
-(defun array-add (coll x)
-  "Append X to the persistent-array COLL."
+(defun array-add (coll x node-copier parray-copier)
+  "Append X to the persistent-array COLL, copying nodes with NODE-COPIER and COLL with PARRAY-COPIER."
   (check-type coll persistent-array)
   (let* ((node-size (array-node-size coll))
          (insert-height (insert-height (1+ (array-size coll))
-                                       node-size)))
+                                       node-size))
+         (new-array (funcall parray-copier coll)))
     (cond
       ((> insert-height (array-height coll))
        (let ((new-root (if (null (array-root coll))
@@ -172,40 +156,35 @@
                            (make-array-node node-size
                                             (array-root coll)
                                             (make-parents node-size (array-height coll) x)))))
-         (make-instance 'persistent-array
-                        :root new-root
-                        :node-bits (array-node-bits coll)
-                        :size (1+ (array-size coll))
-                        :height (1+ (array-height coll))
-                        :tail (array-tail coll))))
-      (t (let* ((node (copy-array-node (array-root coll)))
+         (setf (slot-value new-array 'height) (1+ (array-height coll))
+               (slot-value new-array 'root) new-root)
+         new-array))
+      (t (let* ((node (funcall node-copier (array-root coll)))
                 (new-root node)
                 (child (make-parents node-size (1- insert-height) x)))
            ;; Traverse the last children to the insertion level,
            ;; copying as we go.
            (loop for i from (array-height coll)
               downto (1+ insert-height)
-              do (let ((last-idx (1- (array-node-length node))))
+              do (let* ((last-idx (1- (array-node-length node)))
+                        (last-child-copy (funcall node-copier
+                                                  (array-node-item node last-idx))))
                    ;; Set node's last child to a copy of node's last child
-                   (%array-node-set node last-idx
-                                    (copy-array-node (array-node-item node last-idx)))
+                   (%array-node-set node last-idx last-child-copy)
                    ;; Then move to the copied child
-                   (setf node (array-node-item node last-idx))))
+                   (setf node last-child-copy)))
            (%array-node-push child node node-size)
-           (make-instance 'persistent-array
-                          :root new-root
-                          :node-bits (array-node-bits coll)
-                          :size (1+ (array-size coll))
-                          :height (array-height coll)
-                          :tail (array-tail coll)))))))
+           (setf (slot-value new-array 'root) new-root))))
+    (setf (slot-value new-array 'size) (1+ (array-size coll)))
+    new-array))
 
 (defmethod add ((coll persistent-array) x &rest xs)
   ;; Add the first element non-destructively
-  (let ((new-coll (array-add coll x)))
+  (let ((new-coll (array-add coll x #'copy-array-node #'copy-persistent-array)))
     ;; The rest can be added in-place, since only the edge copied by
     ;; the add above will be mutated.
     (loop for x in xs
-       do (%array-add coll x))
+       do (dual-array-add new-coll x #'identity #'identity))
     new-coll))
 
 (defun array-update (coll key val)
