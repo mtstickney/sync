@@ -168,7 +168,7 @@ existing node."
 
 (defmethod update ((coll persistent-array) key val &rest others)
   (let ((new-coll (array-update coll key val)))
-    (loop for (key . rest) on other by #'cddr
+    (loop for (key . rest) on others by #'cddr
        if (endp rest)
        do (error "UPDATE requires an even number of arguments.")
        do (setf new-coll (array-update coll key (car rest))))
