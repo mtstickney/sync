@@ -1,107 +1,62 @@
 (in-package #:cl-persist)
 
-;; TODO: There will be less type dispatching to do if we use a leaf
-;; structs instead of node + edge node. If we do that it costs some
-;; memory (there are more leafs than leaf-parents), and we have to
-;; relax the type decl for node children (it becomes '(or node leaf))
-;; rather than a static 'node or t. It boils down to whether you get
-;; more benefit out of avoiding gf type dispatch or array element
-;; optimization.
-
-;; FIXME: ARRAY-NODE-SIZE name conflicts with reader from persistent-array class
-
-(defstruct (array-node (:constructor mk-array-node)
-                       (:copier nil))
-  ;; Only writable because of %array-node-push
-  (children #() :type vector))
-
-(defun copy-array-node (node)
-  (check-type node array-node)
-  (let ((new-children (alexandria:copy-array (array-node-children node))))
-    (mk-array-node :children new-children)))
-
-(defun array-node-length (node)
-  (check-type node array-node)
-  (length (array-node-children node)))
-
-;; All indexes for a node are valid, and since the indexes for nodes
-;; are specified as a number of bits, the number of children a node
-;; can have must be a power of two. When appending to a node, the
-;; vector of children may need to be extended. A common method is to
-;; resize a node from size n to 2n+1.
-(defun %array-node-push (item node max-size)
-  (check-type node array-node)
+(defun array-node-push (item node max-size)
+  (check-type node vector)
+  ;; Double the size with a special case for 0 instead of using 2n+1
+  ;; (yields power-of-two sized arrays, which we want).
   (flet ((next-size (n)
            (if (= n 0)
                1
                (* 2 n))))
     ;; If the node is already full, we signal an error:
-    (when (>= (array-node-length node)
+    (when (>= (length node)
               max-size)
       (error "Node is full, cannot push item"))
-    (let* ((children (array-node-children node))
-           (allocated (array-total-size children)))
-      ;; We only need a resize if the children vector is already full,
-      (when (>= (length children) allocated)
-        (setf (array-node-children node)
-              (adjust-array children
-                            ;; and we don't want to allocate any more
-                            ;; than we need to.
-                            (min max-size
-                                 (next-size allocated)))))
-      ;; Once the node's been resized (if needed), we can push the
-      ;; element onto the vector.
-      (vector-push item (array-node-children node)))))
-
-(defun %array-node-set (node index value)
-  (check-type node array-node)
-  (setf (elt (array-node-children node) index) value))
-
-(defun array-node-item (node index)
-  (check-type index fixnum)
-  (elt (array-node-children node) index))
+    (let* ((allocated (array-total-size node))
+           ;; Re-allocate if necessary
+           (new-node (if (>= (length node) allocated)
+                         (adjust-array node (min max-size
+                                                 (next-size allocated)))
+                         node)))
+      (vector-push item new-node)
+      ;; Return the new array so it can be stored somewhere
+      ;; (adjust-array may not happen in-place)
+      new-node)))
 
 (defun make-array-node (size &rest items)
   (let* ((array (make-array size
                             :fill-pointer 0
-                            :adjustable t))
-         (node (mk-array-node :children array)))
+                            :adjustable t)))
     (loop for i in items
        for j from 1
        if (> j size)
        ;; ELT will throw an error, but including the max size is nice
        do (error "Too many items for node to hold, need <=~S~%" size)
-       do (%array-node-push i node size))
-    node))
+       do (setf array (array-node-push i array size)))
+    array))
 
-(defun array-node-update (node index item)
-  (check-type node array-node)
-  (check-type index integer)
-  (let ((new-node (copy-array-node node)))
-    (%array-node-set new-node index item)
-    new-node))
-
-;; (defun array-node-add (node max-size &rest items)
-;;   (check-type node array-node)
-;;   (let ((new-node (copy-array-node node)))
-;;     (loop for i in items
-;;        do (%array-node-push i new-node max-size)
-;;        finally (return new-node))))
-
+;; Inserting nodes can be thought of as counting in base K for a K-way
+;; tree. The ith digit ticks over every K^i numbers (so if we're
+;; just counting the number N, the digits that have changed are all i
+;; where N MOD K^i = 0). In our case, the largest changed digit shares
+;; a parent and needs to be pushed onto a node, while the rest will be
+;; freshly-allocated. We're interested in
 (defun insert-height (n fanout)
+  "Return the largest height in a FANOUT-way tree where a new node will
+be inserted when inserting the Nth item. This is the height at which a
+chain of newly-allocated parent nodes needs to be pushed onto an
+existing node."
   (check-type n (integer 1))
   (check-type fanout (integer 2))
   (assert (= (logcount fanout) 1) (fanout)
           "Fanout ~A is not a power of 2" fanout)
   (flet ((highest-empty-level (n fanout)
-           ;; Note: assumes n > 1, other cases handled in COND
-           ;; below. Note also that (1+ height) is safe, since we're
-           ;; computing height from N and an insertion will never
-           ;; increase the height of the tree by more than 1.
-           (let ((max-height (1+ (ceiling (log n fanout)))))
-             (loop for i from max-height downto 1
-                if (= (mod n (expt fanout (1- i))) 0)
-                return i))))
+           ;; An insertion will never increase the height of the tree
+           ;; to more than the number of digits (base FANOUT) of N
+           (let ((max-height (ceiling (log n fanout)))) ; = (1- (digits n fanout))
+             (loop for i from max-height downto 0
+                if (= (mod n (expt fanout i)) 0)
+                return (1+ i)))))
     (cond
       ;; Note: fanout must be (expt 2 bits) where (>= bits 1), so (= n
       ;; 2) will always be in the first node (there will be at least 2
@@ -166,21 +121,22 @@
            ;; copying as we go.
            (loop for i from (array-height coll)
               downto (1+ insert-height)
-              do (let* ((last-idx (1- (array-node-length node)))
+              do (let* ((last-idx (1- (length node)))
                         (last-child-copy (funcall node-copier
-                                                  (array-node-item node last-idx))))
-                   ;; Set node's last child to a copy of node's last child
-                   (%array-node-set node last-idx last-child-copy)
+                                                  (elt node last-idx))))
+                   ;; Set node's last child to a copy of node's last
+                   ;; child
+                   (setf (elt node last-idx) last-child-copy)
                    ;; Then move to the copied child
                    (setf node last-child-copy)))
-           (%array-node-push child node node-size)
+           (array-node-push child node node-size)
            (setf (slot-value new-array 'root) new-root))))
     (setf (slot-value new-array 'size) (1+ (array-size coll)))
     new-array))
 
 (defmethod add ((coll persistent-array) x &rest xs)
   ;; Add the first element non-destructively
-  (let ((new-coll (array-add coll x #'copy-array-node #'copy-persistent-array)))
+  (let ((new-coll (array-add coll x #'alexandria:copy-array #'copy-persistent-array)))
     ;; The rest can be added in-place, since only the edge copied by
     ;; the add above will be mutated.
     (loop for x in xs
@@ -192,18 +148,17 @@
   (check-type key integer)
   (assert (< key (array-size coll)) (key)
           "Index ~S is too large" key)
-  (let ((node (copy-array-node (array-root coll)))
-        (new-root node)
-        (bits (array-node-bits coll)))
+  (let* ((node (alexandria:copy-array (array-root coll)))
+         (new-root node)
+         (bits (array-node-bits coll)))
     (loop for h from (array-height coll) downto 2
        do (let ((idx (array-node-index bits key h)))
             ;; Set node's child to a copy of node's child
-            (%array-node-set node idx
-                             (copy-array-node (array-node-item node idx)))
+            (setf (elt node idx) (alexandria:copy-array (elt node idx)))
             ;; Then move to the copied child
-            (setf node (array-node-item node idx))))
-    (%array-node-set node (array-node-index bits key 1)
-                     val)
+            (setf node (elt node idx))))
+    (setf (elt node (array-node-index bits key 1))
+          val)
     (make-instance 'persistent-array
                    :root new-root
                    :node-bits (array-node-bits coll)
@@ -226,5 +181,5 @@
   (let ((node (array-root coll))
         (bits (array-node-bits coll)))
     (loop for h from (array-height coll) downto 1
-       do (setf node (array-node-item node (array-node-index bits h x))))
+       do (setf node (elt node (array-node-index bits h x))))
     node))
