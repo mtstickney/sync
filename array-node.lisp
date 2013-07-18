@@ -140,7 +140,7 @@ existing node."
     ;; The rest can be added in-place, since only the edge copied by
     ;; the add above will be mutated.
     (loop for x in xs
-       do (dual-array-add new-coll x #'identity #'identity))
+       do (array-add new-coll x #'identity #'identity))
     new-coll))
 
 (defun array-update (coll key val)
