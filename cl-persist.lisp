@@ -2,6 +2,47 @@
 
 (in-package #:cl-persist)
 
+;; Operation classes
+;; presence
+;; key lookup
+;; (reverse) iteration
+;; (reverse) linearization
+;; ordered-selection (nth item in linearization)
+;; subset/subsequence
+;; size check
+;; at-end insertion/deletion
+;; key association and dissociation (key addition and key removal)
+
+
+;; Clojure funcs:
+;; count -- size
+;; seq -- seq
+;; conj -- add
+;; peek -- peek
+;; pop -- un-add
+;; get
+;; nth
+;; rseq
+;; assoc -- link
+;; subvec
+;; replace(?)
+;; hash-map
+;; sorted-map
+;; sorted-map-by
+;; dissoc -- unlink
+;; select-keys
+;; merge
+;; merge-with
+;; zipmap
+;; contains? -- has-p
+;; find
+;; keys
+;; vals
+;; hash-set
+;; sorted-set
+;; set
+;; disj -- without
+
 ;;; Public API for generic collections
 (defgeneric size (structure)
   (:documentation "Return the number of entries in STRUCTURE."))
