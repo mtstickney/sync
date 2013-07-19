@@ -147,36 +147,42 @@ existing node."
 ;; (multiple-value-bind (last-child new-root) (copy-traverse node
 ;; key)) thing, maybe with a :start-height and :end-height?
 
-(defun array-update (coll key val)
-  (check-type coll persistent-array)
-  (check-type key integer)
-  (assert (< key (array-size coll)) (key)
-          "Index ~S is too large" key)
-  (let* ((node (alexandria:copy-array (array-root coll)))
-         (new-root node)
-         (bits (array-node-bits coll)))
-    (loop for h from (array-height coll) downto 2
-       do (let ((idx (array-node-index bits key h)))
+(defun array-update (bits root height key val)
+  (check-type bits fixnum)
+  (check-type root vector)
+  (check-type height (integer 1))
+  (check-type key unsigned-byte)
+
+  ;; Note that we assume key is within bounds for the array (check is
+  ;; done in UPDATE
+  (let* ((node (alexandria:copy-array root))
+         (new-root node))
+    (loop for h from height downto 2
+       do (let ((idx (array-node-index bits h key)))
             ;; Set node's child to a copy of node's child
             (setf (elt node idx) (alexandria:copy-array (elt node idx)))
             ;; Then move to the copied child
             (setf node (elt node idx))))
-    (setf (elt node (array-node-index bits key 1))
-          val)
-    (make-instance 'persistent-array
-                   :root new-root
-                   :node-bits (array-node-bits coll)
-                   :size (array-size coll)
-                   :height (array-height coll)
-                   :tail (array-tail coll))))
+    (setf (elt node (array-node-index bits 1 key)) val)
+    new-root))
 
 (defmethod update ((coll persistent-array) key val &rest others)
-  (let ((new-coll (array-update coll key val)))
-    (loop for (key . rest) on others by #'cddr
-       if (endp rest)
-       do (error "UPDATE requires an even number of arguments.")
-       do (setf new-coll (array-update coll key (car rest))))
-    new-coll))
+  (flet ((update-root (root key val)
+           (array-update (array-node-bits coll)
+                         root
+                         (array-height coll)
+                         key
+                         val)))
+    (let ((new-root (update-root (array-root coll)  key val))
+          (new-coll (copy-persistent-array coll)))
+      (loop for (key . rest) on others by #'cddr
+         if (endp rest)
+         do (error "UPDATE requires an even number of arguments.")
+         if (>= key (array-size coll))
+         do (error "Index ~S too large" key)
+         do (setf new-root (update-root new-root key (car rest))))
+      (setf (slot-value new-coll 'root) new-root)
+      new-coll)))
 
 ;; TODO: look for places we used 'INTEGER instead of 'UNSIGNED-BYTE
 (defmethod lookup ((coll persistent-array) x &rest xs)
