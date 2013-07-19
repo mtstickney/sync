@@ -96,6 +96,20 @@ existing node."
                  :height (array-height arr)
                  :node-bits (array-node-bits arr)))
 
+(defun copy-path (node key node-height node-bits &key (end-height 1) (copier #'alexandria:copy-array))
+  (check-type node vector)
+  (check-type key unsigned-byte)
+  (check-type node-height (integer 1))
+  (check-type node-bits fixnum)
+  (check-type end-height unsigned-byte)
+  (let* ((node (funcall copier node))
+         (new-root node))
+    (loop for h from node-height downto (1+ end-height)
+       do (let ((idx (array-node-index node-bits h key)))
+            (setf (elt node idx) (funcall copier (elt node idx)))
+            (setf node (elt node idx))))
+    (values new-root node)))
+
 (defun array-add (coll x node-copier parray-copier)
   "Append X to the persistent-array COLL, copying nodes with NODE-COPIER and COLL with PARRAY-COPIER."
   (check-type coll persistent-array)
@@ -114,22 +128,15 @@ existing node."
          (setf (slot-value new-array 'height) (1+ (array-height coll))
                (slot-value new-array 'root) new-root)
          new-array))
-      (t (let* ((node (funcall node-copier (array-root coll)))
-                (new-root node)
-                (child (make-parents node-size (1- insert-height) x)))
-           ;; Traverse the last children to the insertion level,
-           ;; copying as we go.
-           (loop for i from (array-height coll)
-              downto (1+ insert-height)
-              do (let* ((last-idx (1- (length node)))
-                        (last-child-copy (funcall node-copier
-                                                  (elt node last-idx))))
-                   ;; Set node's last child to a copy of node's last
-                   ;; child
-                   (setf (elt node last-idx) last-child-copy)
-                   ;; Then move to the copied child
-                   (setf node last-child-copy)))
-           (array-node-push child node node-size)
+      (t (multiple-value-bind (new-root last-child) (copy-path (array-root coll)
+                                                               (array-size coll)
+                                                               (array-height coll)
+                                                               (array-node-bits coll)
+                                                               :end-height insert-height
+                                                               :copier node-copier)
+           (array-node-push (make-parents node-size (1- insert-height) x)
+                            last-child
+                            node-size)
            (setf (slot-value new-array 'root) new-root))))
     (setf (slot-value new-array 'size) (1+ (array-size coll)))
     new-array))
@@ -155,15 +162,8 @@ existing node."
 
   ;; Note that we assume key is within bounds for the array (check is
   ;; done in UPDATE
-  (let* ((node (alexandria:copy-array root))
-         (new-root node))
-    (loop for h from height downto 2
-       do (let ((idx (array-node-index bits h key)))
-            ;; Set node's child to a copy of node's child
-            (setf (elt node idx) (alexandria:copy-array (elt node idx)))
-            ;; Then move to the copied child
-            (setf node (elt node idx))))
-    (setf (elt node (array-node-index bits 1 key)) val)
+  (multiple-value-bind (new-root last-child) (copy-path root key height bits)
+    (setf (elt last-child (array-node-index bits 1 key)) val)
     new-root))
 
 (defmethod update ((coll persistent-array) key val &rest others)
