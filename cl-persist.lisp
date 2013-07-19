@@ -2,15 +2,30 @@
 
 (in-package #:cl-persist)
 
-;;; Public API for the collections
+;;; Public API for generic collections
 (defgeneric size (structure)
   (:documentation "Return the number of entries in STRUCTURE."))
 
-(defgeneric update (collection key val &rest xs)
-  (:documentation "Return a new collection updated with items X and XS. The meaning of X and XS may vary from collection to collection."))
-
-(defgeneric add (collection x &rest xs)
+;; adjoin/disjoin, maybe?
+(defgeneric add (collection x &rest xs) ; conj
   (:documentation "Return a collection with an item described by X and XS added."))
+
+(defgeneric un-add (collection) ; pop
+  (:documentation "Return a new collection that is COLLECTION without the last ADDed element. Signals an error for an empty collection."))
+
+(defgeneric peek (collection) ; peek
+  (:documentation "Return the last ADDed element of COLLECTION. Returns (values nil nil) for an empty collection, (values x t) otherwise."))
+
+(defgeneric seq (collection) ; seq
+  (:documentation "Return a sequence for the elements in COLLECTION."))
+
+;; Note: applies to map-like things, e.g. map & vector
+(defgeneric link (collection key val &rest xs) ; assoc
+  (:documentation "Return a new collection with KEY associated with VAL (as well as alternating key/val pairs in XS)."))
+
+;; Note: only for maps
+(defgeneric unlink (collection key &rest keys) ; dissoc
+  (:documentation "Return a new collection without the association for KEY(s)."))
 
 (defgeneric lookup (collection x &rest xs)
   (:documentation "Return the element of COLLECTION described by X and XS."))
