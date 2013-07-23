@@ -196,7 +196,11 @@ existing node."
          do (error "UPDATE requires an even number of arguments.")
          if (>= key size)
          do (error "Index ~S too large" key)
-         do (setf new-root (update-root new-root key (car rest))))
+         do (if (in-tail-p key size node-size)
+                (setf (elt (array-tail coll)
+                           (mod key node-size))
+                      (car rest))
+                (setf new-root (update-root new-root key (car rest)))))
       (setf (slot-value new-coll 'root) new-root)
       new-coll)))
 
