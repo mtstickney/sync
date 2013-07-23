@@ -208,7 +208,7 @@ existing node."
            :datum x))
   (let ((node-size (array-node-size coll))
         (size (array-size coll)))
-    (if (in-tail x size node-size)
+    (if (in-tail-p x size node-size)
         ;; Return the tail entry if it's in the tail
         (elt (array-tail coll) (rem x node-size))
         ;; Otherwise traverse the tree
