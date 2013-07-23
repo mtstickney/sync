@@ -206,12 +206,14 @@ existing node."
     (error 'type-error
            :expected-type `(integer 0 ,(1- (array-size coll)))
            :datum x))
-  (if (>= x (- (array-size coll) (array-node-size coll)))
-      ;; Return the tail entry if it's in the tail
-      (elt (array-tail coll) (rem x (array-node-size coll)))
-      ;; Otherwise traverse the tree
-      (let ((node (array-root coll))
-            (bits (array-node-bits coll)))
-        (loop for h from (array-height coll) downto 1
-           do (setf node (elt node (array-node-index bits h x))))
-        node)))
+  (let ((node-size (array-node-size coll))
+        (size (array-size coll)))
+    (if (in-tail x size node-size)
+        ;; Return the tail entry if it's in the tail
+        (elt (array-tail coll) (rem x node-size))
+        ;; Otherwise traverse the tree
+        (let ((node (array-root coll))
+              (bits (array-node-bits coll)))
+          (loop for h from (array-height coll) downto 1
+             do (setf node (elt node (array-node-index bits h x))))
+          node))))
