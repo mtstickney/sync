@@ -110,6 +110,20 @@ existing node."
             (setf node (elt node idx))))
     (values new-root node)))
 
+(defun tail-items (items node-size)
+  (check-type items unsigned-byte)
+  (check-type node-size unsigned-byte)
+  (if (= items 0)
+      0
+      (1+ (mod (1- items) node-size))))
+
+(defun in-tail-p (x items node-size)
+  (check-type x unsigned-byte)
+  (check-type items unsigned-byte)
+  (check-type node-size unsigned-byte)
+  (and (< x items)
+       (>= x (- items (tail-items items node-size)))))
+
 (defun array-add (coll x node-copier parray-copier)
   "Append X to the persistent-array COLL, copying nodes with NODE-COPIER and COLL with PARRAY-COPIER."
   (check-type coll persistent-array)
@@ -161,20 +175,6 @@ existing node."
   (multiple-value-bind (new-root last-child) (copy-path root key height bits)
     (setf (elt last-child (array-node-index bits 1 key)) val)
     new-root))
-
-(defun tail-items (items node-size)
-  (check-type items unsigned-byte)
-  (check-type node-size unsigned-byte)
-  (if (= items 0)
-      0
-      (1+ (mod (1- items) node-size))))
-
-(defun in-tail-p (x items node-size)
-  (check-type x unsigned-byte)
-  (check-type items unsigned-byte)
-  (check-type node-size unsigned-byte)
-  (and (< x items)
-       (>= x (- items (tail-items items node-size)))))
 
 (defmethod update ((coll persistent-array) key val &rest others)
   (flet ((update-root (root key val)
