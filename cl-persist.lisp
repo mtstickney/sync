@@ -118,10 +118,11 @@
     ;; Only print the node structure if there's more than just the tail
     (when (>  (array-size object) (array-node-size object))
       (print-items (array-root object) (array-height object)))
-    (loop for item across (array-tail object)
-       for i from 1
-       with len = (length (array-tail object))
-       do (format stream "~S" item)
-       if (< i len)
-       do (format stream ", "))
+    (when (array-tail object)
+      (loop for item across (array-tail object)
+         for i from 1
+         with len = (length (array-tail object))
+         do (format stream "~S" item)
+         if (< i len)
+         do (format stream ", ")))
     (format stream "]")))
