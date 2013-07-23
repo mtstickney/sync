@@ -115,6 +115,13 @@
                  (loop for i across node
                     do (print-items i (1- height))))))
     (format stream "[")
-    (when (>  (array-size object) 0)
+    ;; Only print the node structure if there's more than just the tail
+    (when (>  (array-size object) (array-node-size object))
       (print-items (array-root object) (array-height object)))
+    (loop for item across (array-tail object)
+       for i from 1
+       with len = (length (array-tail object))
+       do (format stream "~S" item)
+       if (< i len)
+       do (format stream ", "))
     (format stream "]")))
