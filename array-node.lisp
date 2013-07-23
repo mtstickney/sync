@@ -187,12 +187,14 @@ existing node."
                          (array-height coll)
                          key
                          val)))
-    (let ((new-root (update-root (array-root coll)  key val))
+    (let ((size (array-size coll))
+          (node-size (array-node-size coll))
+          (new-root (array-root coll))
           (new-coll (copy-persistent-array coll)))
-      (loop for (key . rest) on others by #'cddr
+      (loop for (key . rest) on (cons key (cons val others)) by #'cddr
          if (endp rest)
          do (error "UPDATE requires an even number of arguments.")
-         if (>= key (array-size coll))
+         if (>= key size)
          do (error "Index ~S too large" key)
          do (setf new-root (update-root new-root key (car rest))))
       (setf (slot-value new-coll 'root) new-root)
