@@ -77,7 +77,7 @@ existing node."
 (defun array-node-index (node-bits height key)
   (check-type node-bits (integer 1))
   (check-type height (integer 1))
-  (check-type key integer)
+  (check-type key unsigned-byte)
   ;; If NODE-BITS is the number of bits for a node index, the portion
   ;; of the key we want is the (1- height)th group of NODE-BITS bits,
   ;; from least significant to most. First we construct a mask of
@@ -184,7 +184,6 @@ existing node."
       (setf (slot-value new-coll 'root) new-root)
       new-coll)))
 
-;; TODO: look for places we used 'INTEGER instead of 'UNSIGNED-BYTE
 (defmethod lookup ((coll persistent-array) x &rest xs)
   (check-type x unsigned-byte)
   (check-type xs null)
