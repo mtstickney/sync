@@ -166,6 +166,20 @@ existing node."
     (setf (elt last-child (array-node-index bits 1 key)) val)
     new-root))
 
+(defun tail-items (items node-size)
+  (check-type items unsigned-byte)
+  (check-type node-size unsigned-byte)
+  (if (= items 0)
+      0
+      (1+ (mod (1- items) node-size))))
+
+(defun in-tail-p (x items node-size)
+  (check-type x unsigned-byte)
+  (check-type items unsigned-byte)
+  (check-type node-size unsigned-byte)
+  (and (< x items)
+       (>= x (- items (tail-items items node-size)))))
+
 (defmethod update ((coll persistent-array) key val &rest others)
   (flet ((update-root (root key val)
            (array-update (array-node-bits coll)
