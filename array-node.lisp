@@ -36,11 +36,11 @@
     array))
 
 ;; Inserting nodes can be thought of as counting in base K for a K-way
-;; tree. The ith digit ticks over every K^i numbers (so if we're
-;; just counting the number N, the digits that have changed are all i
+;; tree. The ith digit ticks over every K^i numbers (so if we've
+;; just counted the number N, the digits that have changed are all i
 ;; where N MOD K^i = 0). In our case, the largest changed digit shares
 ;; a parent and needs to be pushed onto a node, while the rest will be
-;; freshly-allocated. We're interested in
+;; freshly-allocated.
 (defun insert-height (n fanout)
   "Return the largest height in a FANOUT-way tree where a new node will
 be inserted when inserting the Nth item. This is the height at which a
