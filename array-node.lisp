@@ -210,7 +210,7 @@ existing node."
         (size (array-size coll)))
     (if (in-tail-p x size node-size)
         ;; Return the tail entry if it's in the tail
-        (elt (array-tail coll) (rem x node-size))
+        (elt (array-tail coll) (mod x node-size))
         ;; Otherwise traverse the tree
         (let ((node (array-root coll))
               (bits (array-node-bits coll)))
