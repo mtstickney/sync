@@ -191,4 +191,5 @@
                                         ; extension again?
                  ;; Maybe don't want this
                  (:set-reg-key "HCOM\\Foo\\MS\\Blurb\\MTG\\Compass\\Version" "5.0.1.1")
+                 ;; Tree copy with a special destination. Hmmm...
                  (:add-or-update-shortcut (merge-pathnames "CompassMax 4.3.2.6.lnk" (desktop-dir)))))
