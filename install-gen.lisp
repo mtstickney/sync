@@ -7,6 +7,14 @@
 (defvar *defs* (make-hash-table :test 'equal))
 (defvar *effects* (make-hash-table))
 
+(defun require-file (path type &optional use)
+  (check-type path (or string path))
+  (unless (probe-file path)
+    (error 'missing-file-error
+           :path path
+           :type type
+           :use use)))
+
 (defun path-getter (path type)
   (check-type path (or string pathname))
   (assert (cl-fad:pathname-relative-p path) (path)
@@ -61,12 +69,9 @@
              (db-path (merge-pathnames (cl-fad:pathname-as-file "dbase/compass")
                                        *dest-dir*))
              (db-file-path (merge-pathnames db-path (make-pathname :type "db"))))
-        (unless (probe-file prostrct-path)
-          (error "~S does not exist, can't run PROSTRCT" prostrct-path))
-        (unless (probe-file st-path)
-          (error "Structure file ~S does not exist" st-path))
-        (unless (probe-file db-file-path)
-          (error "Database file ~S does not exist" db-file-path))
+        (require-file prostrct-path "Progress binary" "can't run PROSTRCT")
+        (require-file st-path "Structure file")
+        (require-file db-file-path "Database file")
         ;; Just have to assume this succeeds, because Progress doesn't
         ;; understand return codes.
         (external-program:run prostrct-path (list "prostrct" "add"
@@ -83,20 +88,15 @@
       (let ((df-path (funcall pather))
             (db-file (funcall db-pather))
             (load-proc (funcall load-pather)))
-        (unless (probe-file df-path)
-          (error "Definitions file ~S does not exist" df-path))
-        (unless (probe-file load-proc)
-          (error "System procedure ~S does not exist" load-proc))
-        (unless (probe-file db-file)
-          (error "Database file ~S does not exist" db-file))
+        (require-file df-path "Definition file")
+        (require-file load-proc "System procedure")
+        (require-file db-file "Database file")
         (run-abl load-proc db-file df-path)))))
 
 ;; TODO: Stop embedding database names in these funcs (take them as
 ;; args to the DEFEFFECT, maybe)
 ;; TODO: Create/use missing-file condition, rather than just ERROR
 ;; (for restarts etc.)
-;; TODO: Use a CHECK-FILE func instead of re-writing the UNLESS form
-;; over and over
 ;; TODO: Should the sys/ dir have its own :sys type?
 (defun data-file-loader (file)
   (check-type file (or pathname string))
@@ -108,12 +108,9 @@
       (let ((d-path (funcall pather))
             (db-file (funcall db-pather))
             (load-proc (funcall load-pather)))
-        (unless (probe-file load-proc)
-          (error "System procedure ~S does not exist" load-proc))
-        (unless (probe-file db-file)
-          (error "Database file ~S does not exist" db-file))
-        (unless (probe-file d-path)
-          (error "Data file ~S does not exist" d-path))
+        (require-file load-proc "System-procedure")
+        (require-file db-file "Database file")
+        (require-file d-path "Data file")
         (run-abl load-proc db-file d-path)))))
 
 ;; TODO: make sure to handle EOF errors
@@ -127,8 +124,7 @@
                           system-args)))
     (let* ((prowin-path (let ((path (merge-pathnames "bin/prowin32.exe"
                                                      *progress-dir*)))
-                          (unless (probe-file path)
-                            (error "Progress binary ~S does not exist, unable to run ABL procedure" prowin-path))
+                          (require-file path "Progress binary" "unable to run ABL procedure")
                           path))
            (result-str (with-output-to-string (fh)
                          (external-program:run
