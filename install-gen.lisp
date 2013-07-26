@@ -177,6 +177,8 @@
     (:version "5.0.1.1")
   (:product "CompassMax")
   (:src-dir "res/")
+  ;(:check-sources t) ; defaults to t, used to check resource paths
+  ;when building
   (:tree (:+ "client/include/blargl.r")
          (:- "client/procedure/NotAThing.r"))
   (:pre-effects :backup-if-space)
