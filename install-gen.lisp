@@ -171,7 +171,8 @@
 
 (defmacro defeffect (name args &body body)
   (check-type args list)
-  `(setf (gethash ,name *effects*)
+  (check-type name symbol)
+  `(setf (gethash (symbol-name ,name) *effects*)
          (lambda ,args ,@body)))
 
 (defeffect :db-structure (db-file &rest st-files)
@@ -207,7 +208,7 @@
 
 (defun effects-applicator (effects)
   (let ((applicators (loop for e in effects
-                        collect (apply (gethash (car e) *effects*)
+                        collect (apply (find-effect (car e))
                                        (cdr e)))))
     ;; TODO: Add some facility to outputting status messages while
     ;; these things are happening
