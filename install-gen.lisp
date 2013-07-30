@@ -8,7 +8,7 @@
 (defvar *effects* (make-hash-table))
 
 (defun require-file (path type &optional use)
-  (check-type path (or string path))
+  (check-type path (or string pathname))
   (unless (probe-file path)
     (error 'missing-file-error
            :path path
