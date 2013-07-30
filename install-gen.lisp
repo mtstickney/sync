@@ -233,6 +233,13 @@
       (when post-applicator
         (funcall post-applicator)))))
 
+(defun find-installer (installer-designator)
+  (check-type installer-designator (or symbol string installer))
+  (etypecase installer-designator
+    (installer installer-designator)
+    (symbol (gethash (symbol-name installer-designator) *defs*))
+    (string (gethash installer-designator *defs*))))
+
 (definstaller cmax-5
     (:version "5.0.1.1")
   (:product "CompassMax")
