@@ -19,11 +19,11 @@
   (check-type path (or string pathname))
   (assert (cl-fad:pathname-relative-p path) (path)
           "Path ~S is not relative" path)
-  (macro-let ((fetcher (base-symb)
-                       `(lambda ()
-                          (declare (special ,base-symb))
-                          (check-type ,base-symb (or string pathname))
-                          (merge-pathnames path ,base-symb))))
+  (macrolet ((fetcher (base-symb)
+                      `(lambda ()
+                         (declare (special ,base-symb))
+                         (check-type ,base-symb (or string pathname))
+                         (merge-pathnames path ,base-symb))))
              ;; TODO: PROBE-FILE :src and :aux (but then we can't
              ;; build the code without having all the resources...)
              (ecase type
@@ -32,11 +32,16 @@
                (:aux (fetcher *res-dir*))
                (:gen (fetcher *res-dir*)))))
 
-;; TODO: add restarts to handle missing files in here
+;; TODO: Maybe want a higher-level "ignore-missing" restart for
+;; multiple files
 (defun remove-file (path)
   (declare (special *ignore-missing-deletes*))
   (check-type path (or string pathname))
-  (delete-file path))
+  (restart-case (delete-file path)
+    (skip-file ()
+      :report "Ignore the error and skip the file."
+      (return-from remove-file (values))))
+  (values))
 
 (defun tree-diff-applicator (cmd path)
   (check-type cmd keyword)
