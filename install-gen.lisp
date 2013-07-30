@@ -209,6 +209,30 @@
       (loop for applicator in applicators
          do (funcall applicator)))))
 
+(defun make-installer (def)
+  (check-type def list)
+  (let ((pre-effects (assoc :pre-effects def))
+        (post-effects (assoc :post-effects def))
+        (tree-spec (assoc :tree def))
+        pre-applicator
+        post-applicator
+        tree-applicator)
+    (when pre-effects
+      (setf pre-applicator (effects-applicator (cdr pre-effects))))
+    (when post-effects
+      (setf post-applicator (effects-applicator (cdr post-effects))))
+    (when tree-spec
+      (setf tree-applicator (tree-application (cdr tree-spec))))
+    (lambda ()
+      ;; TODO: bind special vars (*dest-dir* *src-dir*
+      ;; *progress-dir*), probably with probes facility
+      (when pre-applicator
+        (funcall pre-applicator))
+      (when tree-applicator
+        (funcall tree-applicator))
+      (when post-applicator
+        (funcall post-applicator)))))
+
 (definstaller cmax-5
     (:version "5.0.1.1")
   (:product "CompassMax")
