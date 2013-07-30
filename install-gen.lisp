@@ -199,6 +199,16 @@
 ;; (defeffect :backup-if-space ()
 ;; )
 
+(defun effects-applicator (effects)
+  (let ((applicators (loop for e in effects
+                        collect (apply (gethash (car e) *effects*)
+                                       (cdr e)))))
+    ;; TODO: Add some facility to outputting status messages while
+    ;; these things are happening
+    (lambda ()
+      (loop for applicator in applicators
+         do (funcall applicator)))))
+
 (definstaller cmax-5
     (:version "5.0.1.1")
   (:product "CompassMax")
