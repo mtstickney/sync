@@ -254,6 +254,20 @@
     (symbol (gethash (symbol-name effect-designator) *effects*))
     (string (gethash effect-designator *effects*))))
 
+(defmacro definstaller (name &body body)
+  (check-type name symbol)
+  (let* ((probes (cdr (assoc :probes body)))
+         (probe-vars (mapcar #'first probes))
+         (def-var (gensym "DEF")))
+    `(setf (gethash ,(symbol-name name) *defs*)
+           (let ((,def-var (quote ,body)))
+             (lambda ()
+               (let ,(loop for probe-def in probes
+                        collect (list (first probe-def)
+                                      `(funcall ,(second probe-def) ,def-var)))
+                 (declare (special ,@probe-vars))
+                 (funcall (make-installer ,def-var))))))))
+
 (definstaller cmax-5
     (:version "5.0.1.1")
   (:product "CompassMax")
