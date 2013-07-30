@@ -272,6 +272,14 @@
     (:version "5.0.1.1")
   (:product "CompassMax")
   (:src-dir "res/")
+  (:probes (*src-dir* (lambda (def)
+                        (cdr (assoc :src-dir def))))
+           (*dest-dir* #'find-dest-dir)
+           (*progress-dir* #'find-progress-dir)
+           (*version* (lambda (def)
+                        (second (assoc :version def))))
+           (*product* (lambda (def)
+                        (second (assoc :product def)))))
   ;(:check-sources t) ; defaults to t, used to check resource paths
   ;when building
   (:tree (:+ "client/include/blargl.r")
