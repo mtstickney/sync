@@ -123,7 +123,7 @@
 (defun run-abl (proc system-args &rest args)
   (declare (special *progress-dir*))
   (check-type *progress-dir* (or string pathname))
-  (labels ((prowin-args (proc sys-args args)
+  (labels ((prowin-args (proc system-args args)
              (concatenate 'list
                           (list "-p" proc
                                 "-param" (format nil "~{~A~^,~}" args))
@@ -141,7 +141,7 @@
         ;; TODO: c'mon now, can't recover from this
         (check-type result list)
         ;; TODO: Neither is this.
-        (ecase result
+        (ecase (car result)
           (:data (apply #'values (cdr result)))
           (:error (error 'abl-error :errors (cdr result))))))))
 
