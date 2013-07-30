@@ -7,6 +7,32 @@
 (defvar *defs* (make-hash-table :test 'equal))
 (defvar *effects* (make-hash-table))
 
+(define-condition missing-file ()
+  ((path :initarg :path
+         :reader missing-file-path)
+   (type :initarg :type
+         :reader missing-file-type)
+   (use :initarg :use
+        :initform nil
+        :reader missing-file-use))
+  (:documentation "Condition signalled when a required file is missing.")
+  (:report (lambda (condition stream)
+             (format stream "Required ~A ~S is missing"
+                     (missing-file-type condition)
+                     (missing-file-path condition))
+             (if (missing-file-use condition)
+                 (format stream ", ~A." (missing-file-use condition))
+                 (format stream "."))
+             (values))))
+
+(define-condition abl-error ()
+  ((errors :initarg :errors
+           :reader abl-error-errors))
+  (:documentation "Condition signalled to report errors from a callout to ABL.")
+  (:report (lambda (condition stream)
+             (format stream "~@<ABL returned with errors:~@:_~I~{~<~A: ~:_~I~W~@:_~:>~}~:>"
+                     (abl-error-errors condition)))))
+
 (defun require-file (path type &optional use)
   (check-type path (or string pathname))
   (unless (probe-file path)
@@ -100,8 +126,6 @@
         (require-file db-file "Database file")
         (run-abl load-proc db-file df-path)))))
 
-;; TODO: Create/use missing-file condition, rather than just ERROR
-;; (for restarts etc.)
 ;; TODO: Should the sys/ dir have its own :sys type?
 (defun data-file-loader (file db-file)
   (check-type file (or pathname string))
