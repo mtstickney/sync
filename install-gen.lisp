@@ -64,14 +64,15 @@
       (loop for app in applicators
          do (funcall app)))))
 
-(defun st-file-applicator (file)
+(defun st-file-applicator (file db-name)
+  (check-type file (or pathname string))
   (check-type file (or pathname string))
   (let ((st-pather (path-getter file :aux)))
     (lambda ()
       (declare (special *progress-dir* *dest-dir*))
       (let* ((prostrct-path (merge-pathnames "bin/_dbutil.exe" *progress-dir*))
              (st-path (funcall st-pather))
-             (db-path (merge-pathnames (cl-fad:pathname-as-file "dbase/compass")
+             (db-path (merge-pathnames (cl-fad:pathname-as-file db-name)
                                        *dest-dir*))
              (db-file-path (merge-pathnames db-path (make-pathname :type "db"))))
         (require-file prostrct-path "Progress binary" "can't run PROSTRCT")
@@ -83,11 +84,12 @@
                                                   db-path
                                                   st-path))))))
 
-(defun df-file-applicator (file)
+(defun df-file-applicator (file db-file)
   (check-type file (or pathname string))
+  (check-type db-file (or pathname string))
   (let ((pather (path-getter file :aux))
         (load-pather (path-getter "sys/load_df.r" :aux))
-        (db-pather (path-getter "dbase/compass.db" :dest)))
+        (db-pather (path-getter db-file :dest)))
     (lambda ()
       (declare (special *dest-dir*))
       (let ((df-path (funcall pather))
@@ -98,16 +100,15 @@
         (require-file db-file "Database file")
         (run-abl load-proc db-file df-path)))))
 
-;; TODO: Stop embedding database names in these funcs (take them as
-;; args to the DEFEFFECT, maybe)
 ;; TODO: Create/use missing-file condition, rather than just ERROR
 ;; (for restarts etc.)
 ;; TODO: Should the sys/ dir have its own :sys type?
-(defun data-file-loader (file)
+(defun data-file-loader (file db-file)
   (check-type file (or pathname string))
+  (check-type db-file (or pathname string))
   (let ((pather (path-getter file :aux))
         (load-pather (path-getter "sys/load_d.r" :aux))
-        (db-pather (path-getter "dbase/compass.db" :dest)))
+        (db-pather (path-getter db-file :dest)))
     (lambda ()
       (declare (special *dest-dir*))
       (let ((d-path (funcall pather))
