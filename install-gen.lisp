@@ -102,8 +102,8 @@
                                        *dest-dir*))
              (db-file-path (merge-pathnames db-path (make-pathname :type "db"))))
         (require-file prostrct-path "Progress binary" "can't run PROSTRCT")
-        (require-file st-path "Structure file")
-        (require-file db-file-path "Database file")
+        (require-file st-path "structure file")
+        (require-file db-file-path "database file")
         ;; Just have to assume this succeeds, because Progress doesn't
         ;; understand return codes.
         (external-program:run prostrct-path (list "prostrct" "add"
@@ -121,9 +121,9 @@
       (let ((df-path (funcall pather))
             (db-file (funcall db-pather))
             (load-proc (funcall load-pather)))
-        (require-file df-path "Definition file")
-        (require-file load-proc "System procedure")
-        (require-file db-file "Database file")
+        (require-file df-path "definition file")
+        (require-file load-proc "system procedure")
+        (require-file db-file "database file")
         (run-abl load-proc db-file df-path)))))
 
 ;; TODO: Should the sys/ dir have its own :sys type?
@@ -138,9 +138,9 @@
       (let ((d-path (funcall pather))
             (db-file (funcall db-pather))
             (load-proc (funcall load-pather)))
-        (require-file load-proc "System-procedure")
-        (require-file db-file "Database file")
-        (require-file d-path "Data file")
+        (require-file load-proc "system procedure")
+        (require-file db-file "database file")
+        (require-file d-path "data file")
         (run-abl load-proc db-file d-path)))))
 
 ;; TODO: make sure to handle EOF errors
