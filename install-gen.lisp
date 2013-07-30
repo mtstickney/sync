@@ -246,6 +246,13 @@
     (symbol (gethash (symbol-name installer-designator) *defs*))
     (string (gethash installer-designator *defs*))))
 
+(defun find-effect (effect-designator)
+  (check-type effect-designator (or symbol string function))
+  (etypecase effect-designator
+    (function effect-designator)
+    (symbol (gethash (symbol-name effect-designator) *effects*))
+    (string (gethash effect-designator *effects*))))
+
 (definstaller cmax-5
     (:version "5.0.1.1")
   (:product "CompassMax")
