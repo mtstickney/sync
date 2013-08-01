@@ -369,6 +369,23 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
       (declare (ignore c))
       (return-from reg-value-exists-p nil))))
 
+(defun product-subkey (product-code)
+  ;; Not sure whether to take the code with or without the surrounding
+  ;; {}s, so try to do both.
+  (let ((code (if (eql (elt product-code 0) #\{)
+                  code
+                  (format nil "{~A}" code))))
+    (format nil "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\~A" code)))
+
+(defun product-installed-p (product-code)
+  "Returns T if the product with the GUID PRODUCT-CODE is installed on the machine, NIL otherwise (this is true if the program appears in the 'Add/Remove Programs' listing."
+  (let (subkey (product-subkey product-code))
+    (reg-key-exists-p hkey-local-machine subkey)))
+
+(defun product-install-dir (product-code)
+  (let ((subkey (product-subkey product-code)))
+    (reg-value-exists-p hkey-local-machine subkey "InstallLocation")))
+
 ;; TODO: Later
 ;; (defeffect :set-reg-key (key val)
 ;;   (etypecase key
