@@ -452,9 +452,9 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
     `(setf (gethash ,(symbol-name name) *defs*)
            (let ((,def-var (quote ,body)))
              (lambda ()
-               (let ,(loop for probe-def in probes
-                        collect (list (first probe-def)
-                                      `(funcall ,(second probe-def) ,def-var)))
+               (let* ,(loop for probe-def in probes
+                         collect (list (first probe-def)
+                                       `(funcall ,(second probe-def) ,def-var)))
                  (declare (special ,@probe-vars))
                  (funcall (make-installer ,def-var))))))))
 
