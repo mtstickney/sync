@@ -196,6 +196,179 @@
     (lambda ()
       (map nil #'funcall applicators))))
 
+;;; FFI stuff for registry key business
+(cffi:define-foreign-library advapi32
+  (t (:default "advapi32")))
+
+(cffi:use-foreign-library advapi32)
+
+(cffi:defcenum (reg-key-access :ulong)
+  (:all-access #xf003f)
+  (:create-link #x0020)
+  (:create-sub-key #x0004)
+  (:enumerate-sub-keys #x0008)
+  (:execute #x20019)
+  (:notify #x0010)
+  (:query-value #x0001)
+  (:read #x20019)
+  (:set-value #x0002)
+  (:wow64-32key #x0200)
+  (:wow64-64key #x0100)
+  (:key-write #x20006))
+
+(cffi:defcfun (reg-open-key-ex "RegOpenKeyExA" :library advapi32) :long
+  (key :pointer)
+  (subkey :pointer)
+  (options :ulong)
+  (regsam :ulong)
+  (result :pointer))
+
+(cffi:defcfun (reg-query-value-ex "RegQueryValueExA" :library advapi32) :long
+  (key :pointer)
+  (subkey :pointer)
+  (reserved :pointer)
+  (type :pointer)
+  (data :pointer)
+  (data-size :pointer))
+
+(cffi:defcfun (reg-close-key "RegCloseKey") :long
+  (key :pointer))
+
+(defun & (addr)
+  (check-type addr unsigned-byte)
+  (cffi:make-pointer addr))
+
+(define-symbol-macro hkey-classes-root (& #x80000000))
+(define-symbol-macro hkey-current-user (& #x80000001))
+(define-symbol-macro hkey-local-machine (& #x80000002))
+(define-symbol-macro hkey-users (& #x80000003))
+(define-symbol-macro hkey-performance-data (& #x80000004))
+(define-symbol-macro hkey-performance-text (& #x80000050))
+(define-symbol-macro hkey-performance-nls-text (& #x80000060))
+(define-symbol-macro hkey-current-config (& #x80000005))
+(define-symbol-macro hkey-dyn-data (& #x80000006))
+
+(cffi:defcenum (registry-value-type :ulong)
+  :none
+  :sz
+  :expand-sz
+  :binary
+  :dword
+  :dword-big-endian
+  :link
+  :multi-sz
+  :resource-list
+  :full-resource-descriptor
+  :resource-requirements-list
+  :qword)
+
+(cffi:defcenum (return-code :long)
+  (:success 0)
+  (:more-data #xEA))
+
+(define-condition foreign-system-error ()
+  ((datum :initarg :datum
+          :reader sys-error-datum)
+   (args :initarg :args
+         :reader sys-error-args)
+   (code :initarg :code
+         :reader sys-error-code))
+  (:report (lambda (c s)
+             (format s "System error, code ~S: " (sys-error-code c))
+             (apply #'format s (sys-error-datum c)
+                    (sys-error-args c)))))
+
+(defun system-error (code datum &rest args)
+  (error 'foreign-system-error
+         :code code
+         :datum datum
+         :args args))
+
+(defgeneric reg-to-lisp (type data size)
+  (:documentation "Convert the data from querying a registry key's value to a ~
+lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
+  (:method ((type (eql (cffi:foreign-enum-value 'registry-value-type :sz))) data size)
+    (cffi:foreign-string-to-lisp data :max-chars size)))
+
+(defun reg-read-val (base-key subkey value-name)
+  (cffi:with-foreign-strings ((subkey-str subkey)
+                              (value-str value-name))
+    (cffi:with-foreign-objects ((key :pointer)
+                                (type 'registry-value-type)
+                                (data-size :ulong))
+      (let (ret)
+        (setf ret (reg-open-key-ex hkey-local-machine
+                                   subkey-str
+                                   0
+                                   (cffi:foreign-enum-value 'reg-key-access :query-value)
+                                   key))
+        (unless (zerop ret)
+          (system-error ret "Error opening registry key ~S~%"
+                        (format nil "~A\\~A" base-key subkey)))
+        (unwind-protect
+             (progn
+               ;; Get the size of the buffer
+               (setf (cffi:mem-aref data-size :ulong) 0)
+               (setf ret (reg-query-value-ex
+                          (cffi:mem-aref key :pointer)
+                          value-str
+                          (cffi:null-pointer)
+                          type
+                          (cffi:null-pointer)
+                          data-size))
+               (unless (or (zerop ret)
+                           (eq ret (cffi:foreign-enum-value 'return-code :more-data)))
+                 (system-error ret "Error querying value ~S for key ~S~%"
+                               value-name
+                               (format nil "~A\\~A" base-key subkey)))
+               (cffi:with-foreign-pointer (data (cffi:mem-aref data-size :ulong))
+                 (setf ret (reg-query-value-ex
+                            (cffi:mem-aref key :pointer)
+                            value-str
+                            (cffi:null-pointer)
+                            type
+                            data
+                            data-size))
+                 (unless (zerop ret)
+                   (system-error ret "Error retrieving value ~S for key ~S~%"
+                                 value-name
+                                 (format nil "~A\\~A" base-key subkey)))
+                 (return-from reg-read-val (values (reg-to-lisp (cffi:mem-aref type 'registry-value-type)
+                                                                data
+                                                                (cffi:mem-aref data-size :ulong))
+                                                   (cffi:mem-aref type 'registry-value-type)))))
+          (reg-close-key (cffi:mem-aref key :pointer)))))))
+
+(defun reg-key-exists-p (main-key subkey)
+  (check-type subkey string)
+  (assert (cffi:pointerp main-key) (main-key)
+          "Main key ~S is not a pointer."
+          main-key)
+  (cffi:with-foreign-string (subkey-str subkey)
+    (cffi:with-foreign-object (key :pointer)
+      (let ((ret (reg-open-key-ex main-key
+                                  subkey-str
+                                  0
+                                  (cffi:foreign-enum-value 'reg-key-access :query-value)
+                                  key)))
+        (if (zerop ret)
+            (progn
+              (reg-close-key (cffi:mem-aref key :pointer))
+              t)
+            nil)))))
+
+(defun reg-value-exists-p (main-key subkey value)
+  "Return T if SUBKEY is a subkey of MAIN-KEY and has a value named VALUE. Returns nil if there was an error querying the value."
+  (check-type subkey string)
+  (check-type value string)
+  (assert (cffi:pointerp main-key) (main-key)
+          "Main key ~S is not a pointer."
+          main-key)
+  (handler-case (reg-read-val main-key subkey value)
+    (foreign-system-error (c)
+      (declare (ignore c))
+      (return-from reg-value-exists-p nil))))
+
 ;; TODO: Later
 ;; (defeffect :set-reg-key (key val)
 ;;   (etypecase key
