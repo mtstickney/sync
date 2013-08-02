@@ -423,8 +423,6 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
     (when tree-spec
       (setf tree-applicator (tree-application (cdr tree-spec))))
     (lambda ()
-      ;; TODO: bind special vars (*dest-dir* *src-dir*
-      ;; *progress-dir*), probably with probes facility
       (when pre-applicator
         (funcall pre-applicator))
       (when tree-applicator
