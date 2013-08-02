@@ -5,7 +5,7 @@
 ;;; "install-gen" goes here. Hacks and glory await!
 
 (defvar *defs* (make-hash-table :test 'equal))
-(defvar *effects* (make-hash-table))
+(defvar *effects* (make-hash-table :test 'equal))
 
 (define-condition missing-file ()
   ((path :initarg :path
