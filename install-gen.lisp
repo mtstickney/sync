@@ -373,8 +373,8 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
   ;; Not sure whether to take the code with or without the surrounding
   ;; {}s, so try to do both.
   (let ((code (if (eql (elt product-code 0) #\{)
-                  code
-                  (format nil "{~A}" code))))
+                  product-code
+                  (format nil "{~A}" product-code))))
     (format nil "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\~A" code)))
 
 (defun product-installed-p (product-code)
