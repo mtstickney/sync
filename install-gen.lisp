@@ -476,7 +476,12 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
            (*version* (lambda (def)
                         (second (assoc :version def))))
            (*product* (lambda (def)
-                        (second (assoc :product def)))))
+                        (second (assoc :product def))))
+           (*db-file* (lambda (def)
+                        (probe-file (merge-pathnames #P"dbase/compass.db"
+                                                     *compass-install-dir*))))
+
+           )
   ;(:check-sources t) ; defaults to t, used to check resource paths
   ;when building
   (:tree (:+ "client/include/blargl.r")
