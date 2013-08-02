@@ -460,10 +460,11 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
                  (declare (special ,@probe-vars))
                  (funcall ,installer-var)))))))
 
+
 (definstaller cmax-5
-    (:version "5.0.1.1")
+  (:version "5.0.1.1")
   (:product "CompassMax")
-  (:src-dir "res/")
+  (:src-dir #P"res/")
   (:probes (*src-dir* (lambda (def)
                         (cdr (assoc :src-dir def))))
            (*dest-dir* #'find-dest-dir)
