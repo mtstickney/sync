@@ -492,8 +492,6 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
                            "df/area2.df"
                            "df/thingy.df")
                  (:db-binary-data "defaults.d")
-                 (:db-text-data "table-data.txt") ; What's the
-                                        ; extension again?
                  ;; Maybe don't want this
                  (:set-reg-key "HCOM\\Foo\\MS\\Blurb\\MTG\\Compass\\Version" "5.0.1.1")
                  ;; Tree copy with a special destination. Hmmm...
