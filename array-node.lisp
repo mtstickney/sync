@@ -127,31 +127,53 @@ existing node."
 (defun array-add (coll x node-copier parray-copier)
   "Append X to the persistent-array COLL, copying nodes with NODE-COPIER and COLL with PARRAY-COPIER."
   (check-type coll persistent-array)
-  (let* ((node-size (array-node-size coll))
-         (insert-height (insert-height (1+ (array-size coll))
-                                       node-size))
+  (let* ((size (array-size coll))
+         (node-size (array-node-size coll))
          (new-array (funcall parray-copier coll)))
     (cond
-      ((> insert-height (array-height coll))
-       (let ((new-root (if (null (array-root coll))
-                           (make-array-node node-size
-                                            (make-parents node-size (array-height coll) x))
-                           (make-array-node node-size
-                                            (array-root coll)
-                                            (make-parents node-size (array-height coll) x)))))
-         (setf (slot-value new-array 'height) (1+ (array-height coll))
-               (slot-value new-array 'root) new-root)
-         new-array))
-      (t (multiple-value-bind (new-root last-child) (copy-path (array-root coll)
-                                                               (array-size coll)
-                                                               (array-height coll)
-                                                               (array-node-bits coll)
-                                                               :end-height insert-height
-                                                               :copier node-copier)
-           (array-node-push (make-parents node-size (1- insert-height) x)
-                            last-child
-                            node-size)
-           (setf (slot-value new-array 'root) new-root))))
+      ((= size 0)
+       (setf (slot-value new-array 'tail) (make-array-node node-size x)))
+      ;; Tail is full
+      ((= (mod size node-size) 0)
+       ;; Insert height for the tail node is the insert height of its
+       ;; first child.
+       ;; FIXME: this is probably not true.
+       (let ((insert-height (insert-height (1+ (- size node-size))
+                                           node-size)))
+         (cond
+           ((null (array-root coll))
+            (setf (slot-value new-array 'root) (array-tail coll)
+                  (slot-value new-array 'height) 1))
+           ((> insert-height (array-height coll))
+            (let ((new-root (if (null (array-root coll))
+                                (make-array-node node-size
+                                                 (make-parents node-size (1- (array-height coll))
+                                                               (array-tail coll)))
+                                (make-array-node node-size
+                                                 (array-root coll)
+                                                 (make-parents node-size (1- (array-height coll))
+                                                               (array-tail coll))))))
+              (setf (slot-value new-array 'height) (1+ (array-height coll))
+                    (slot-value new-array 'root) new-root)))
+           (t (multiple-value-bind (new-root last-child) (copy-path (array-root coll)
+                                                                    (1+ (- size node-size))
+                                                                    (array-height coll)
+                                                                    (array-node-bits coll)
+                                                                    :end-height insert-height
+                                                                    :copier node-copier)
+              ;; TODO: big ol' bug here, not assigning the result of
+              ;; array-node-push to anything.
+              (array-node-push (make-parents node-size (1- insert-height)
+                                             (array-tail coll))
+                               last-child
+                               node-size)
+                (setf (slot-value new-array 'root) new-root))))
+         (setf (slot-value new-array 'tail) (make-array-node node-size x))))
+      ;; Just need to push onto the tail
+      (t
+       (let ((new-tail (funcall node-copier (array-tail new-array))))
+         (setf (slot-value new-array 'tail)
+               (array-node-push x new-tail node-size)))))
     (setf (slot-value new-array 'size) (1+ (array-size coll)))
     new-array))
 
