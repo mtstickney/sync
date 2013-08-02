@@ -398,8 +398,10 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
 
 (defun effects-applicator (effects)
   (let ((applicators (loop for e in effects
-                        collect (apply (find-effect (car e))
-                                       (cdr e)))))
+                        collect (if (not (listp e))
+                                    (funcall (find-effect e))
+                                    (apply (find-effect (car e))
+                                           (cdr e))))))
     ;; TODO: Add some facility to outputting status messages while
     ;; these things are happening
     (lambda ()
