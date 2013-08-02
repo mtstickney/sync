@@ -496,3 +496,58 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
                  (:set-reg-key "HCOM\\Foo\\MS\\Blurb\\MTG\\Compass\\Version" "5.0.1.1")
                  ;; Tree copy with a special destination. Hmmm...
                  (:add-or-update-shortcut (merge-pathnames "CompassMax 4.3.2.6.lnk" (desktop-dir)))))
+
+(defeffect :print-source-dir ()
+  (declare (special *src-dir*))
+  (lambda ()
+    (format t "Source dir is ~S~%" *src-dir*)))
+
+(defeffect :print-compass-install-dir ()
+  (declare (special *compass-install-dir*))
+  (lambda ()
+    (format t "CompassMax is installed at ~S~%" *compass-install-dir*)))
+
+(defeffect :print-dest-dir ()
+  (declare (special *dest-dir*))
+  (lambda ()
+    (format t "Destination dir for files is ~S~%" *dest-dir*)))
+
+(defeffect :print-db-file ()
+  (declare (special *db-file*))
+  (lambda ()
+    (format t "Database file is ~S~%" *db-file*)))
+
+(defeffect :print-db-lockfile ()
+  (declare (special *db-running*))
+  (lambda ()
+    (format t "Database lockfile is ~S~%" *db-running*)))
+
+(definstaller cmax-test
+  (:version "5.0.1.1")
+  (:product "CompassMax")
+  (:src-dir #P"res/")
+  (:probes (*src-dir* (lambda (def)
+                        (second (assoc :src-dir def))))
+           (*compass-install-dir* (lambda (def)
+                                    (declare (ignore def))
+                                    (product-install-dir +compass-product-code+)))
+           (*dest-dir* (lambda (def)
+                         (declare (ignore def))
+                         (merge-pathnames #P"code/" *compass-install-dir*)))
+           ;(*progress-dir* #'find-progress-dir)
+           (*version* (lambda (def)
+                        (second (assoc :version def))))
+           (*product* (lambda (def)
+                        (second (assoc :product def))))
+           (*db-file* (lambda (def)
+                        (declare (ignore def))
+                        (probe-file (merge-pathnames #P"dbase/compass.db"
+                                                     *compass-install-dir*))))
+           (*db-running* (lambda (def)
+                           (declare (ignore def))
+                           (probe-file (merge-pathnames (make-pathname :type "lk") *db-file*)))))
+  (:pre-effects :print-source-dir
+                :print-compass-install-dir
+                :print-dest-dir
+                :print-db-file
+                :print-db-lockfile))
