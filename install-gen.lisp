@@ -287,7 +287,7 @@
 (defgeneric reg-to-lisp (type data size)
   (:documentation "Convert the data from querying a registry key's value to a ~
 lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
-  (:method ((type (eql (cffi:foreign-enum-value 'registry-value-type :sz))) data size)
+  (:method ((type (eql :sz)) data size)
     (cffi:foreign-string-to-lisp data :max-chars size)))
 
 (defun reg-read-val (base-key subkey value-name)
