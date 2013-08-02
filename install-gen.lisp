@@ -216,14 +216,14 @@
   (:wow64-64key #x0100)
   (:key-write #x20006))
 
-(cffi:defcfun (reg-open-key-ex "RegOpenKeyExA" :library advapi32) :long
+(cffi:defcfun (reg-open-key-ex "RegOpenKeyExA") :long
   (key :pointer)
   (subkey :pointer)
   (options :ulong)
   (regsam :ulong)
   (result :pointer))
 
-(cffi:defcfun (reg-query-value-ex "RegQueryValueExA" :library advapi32) :long
+(cffi:defcfun (reg-query-value-ex "RegQueryValueExA") :long
   (key :pointer)
   (subkey :pointer)
   (reserved :pointer)
