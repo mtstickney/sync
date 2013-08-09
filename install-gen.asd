@@ -5,6 +5,6 @@
   :description "A basic installer generator."
   :author "Your Name <your.name@example.com>"
   :license "Specify license here"
-  :depends-on (#:cl-secure-read #:cl-fad #:external-program #:cffi)
+  :depends-on (#:cl-secure-read #:cl-fad #:external-program #:cffi #:trivial-backtrace)
   :components ((:file "package")
                (:file "install-gen")))
