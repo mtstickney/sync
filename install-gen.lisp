@@ -46,12 +46,12 @@
   (assert (cl-fad:pathname-relative-p path) (path)
           "Path ~S is not relative" path)
   (macrolet ((fetcher (base-symb)
-                      `(lambda ()
-                         (declare (special ,base-symb))
-                         (check-type ,base-symb (or string pathname))
-                         (if (cl-fad:directory-pathname-p path)
-                             (cl-fad:merge-pathnames-as-directory ,base-symb path)
-                             (cl-fad:merge-pathnames-as-file ,base-symb path)))))
+               `(lambda ()
+                  (declare (special ,base-symb))
+                  (check-type ,base-symb (or string pathname))
+                  (if (cl-fad:directory-pathname-p path)
+                      (cl-fad:merge-pathnames-as-directory ,base-symb path)
+                      (cl-fad:merge-pathnames-as-file ,base-symb path)))))
              ;; TODO: PROBE-FILE :src and :aux (but then we can't
              ;; build the code without having all the resources...)
              (ecase type
