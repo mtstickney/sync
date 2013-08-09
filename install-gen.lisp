@@ -557,6 +557,29 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
   (lambda ()
     (format t msg)))
 
+(definstaller :cmax-4.3-db
+  (:probes (*src-dir* #P"src/")
+           (*res-dir* #P"res/")
+           (*compass-install-dir* (product-install-dir +compass-product-code+))
+           (*dest-dir* (merge-pathnames #P"code/" *compass-install-dir*))
+           ;; NOTE: the Progress tools assume %DLC% points to the
+           ;; Progress install, or that Progress is installed as
+           ;; C:\Progress\OpenEdge\
+           (*progress-dir* (cl-fad:pathname-as-directory
+                            (or (env-value "DLC")
+                                "C:\\Progress\\OpenEdge\\")))
+           (*version* "4.3.1")
+           (*product* "CompassMax")
+           (*db-file* (merge-pathnames #P"dbase/compass.db" *compass-install-dir*))
+           (*db-running* (probe-file (merge-pathnames (make-pathname :type "lk") *db-file*))))
+  (:pre-effects :shutdown-db
+                (:msg "Adding areas...")
+                (:add-st "df/addarea.st")
+                (:msg "Done.~%")
+                (:msg "Updating definitions...")
+                (:add-df "df/delta2.df")
+                (:msg "Done.~%")))
+
 (defeffect :run-installer (name)
   (lambda ()
     (funcall (find-installer name))))
