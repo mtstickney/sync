@@ -454,6 +454,31 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
                                                          (list *db-file* "-by")))))
             (unless (= code 0)
               (error 'db-shutdown-error))))))))
+
+(defun strip-dbpath (db-file)
+  (check-type db-file (or string pathname))
+  (let ((path (cl-fad:pathname-as-file db-file)))
+    (make-pathname :type nil :defaults path)))
+
+(defeffect :add-st (st-file)
+  (check-type st-file (or string pathname))
+  (let* ((st-path (cl-fad:pathname-as-file st-file))
+         (pather (path-getter st-path :src)))
+    (assert (not (cl-fad:directory-pathname-p st-path)) ()
+            "~S is not a file pathname." st-path)
+    (lambda ()
+      (declare (special *db-file*))
+      (let ((st-path (funcall pather))
+            (prostrct-path (progress-bin #P"bin/_dbutil.exe")))
+        (require-file prostrct-path "Progress binary" "can't run PROSTRCT")
+        (require-file st-path "structure file")
+        (require-file *db-file* "database file")
+        ;; No good way to do error checking, we have to assume success
+        (external-program:run (progress-bin #P"bin/_dbutil.exe")
+                              (list "prostrct"
+                                    "add"
+                                    (strip-dbpath *db-file*)
+                                    st-path))))))
   (lambda ()
   (lambda ()
 
