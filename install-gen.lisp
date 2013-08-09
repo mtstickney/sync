@@ -552,6 +552,9 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
                          :errors (abl-error-errors c)))))
           (delete-file comm-file)
           (cl-fad:delete-directory-and-files temp-dir))))))
+
+(defeffect :msg (msg)
   (lambda ()
+    (format t msg)))
   (lambda ()
 
