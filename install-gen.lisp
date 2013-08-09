@@ -129,59 +129,6 @@
       (loop for app in applicators
          do (funcall app)))))
 
-(defun st-file-applicator (file db-name)
-  (check-type file (or pathname string))
-  (check-type file (or pathname string))
-  (let ((st-pather (path-getter file :aux)))
-    (lambda ()
-      (declare (special *progress-dir* *dest-dir*))
-      (let* ((prostrct-path (merge-pathnames "bin/_dbutil.exe" *progress-dir*))
-             (st-path (funcall st-pather))
-             (db-path (merge-pathnames (cl-fad:pathname-as-file db-name)
-                                       *dest-dir*))
-             (db-file-path (merge-pathnames db-path (make-pathname :type "db"))))
-        (require-file prostrct-path "Progress binary" "can't run PROSTRCT")
-        (require-file st-path "structure file")
-        (require-file db-file-path "database file")
-        ;; Just have to assume this succeeds, because Progress doesn't
-        ;; understand return codes.
-        (external-program:run prostrct-path (list "prostrct" "add"
-                                                  db-path
-                                                  st-path))))))
-
-(defun df-file-applicator (file db-file)
-  (check-type file (or pathname string))
-  (check-type db-file (or pathname string))
-  (let ((pather (path-getter file :aux))
-        (load-pather (path-getter "applydf.r" :aux))
-        (db-pather (path-getter db-file :dest)))
-    (lambda ()
-      (declare (special *dest-dir*))
-      (let ((df-path (funcall pather))
-            (db-file (funcall db-pather))
-            (load-proc (funcall load-pather)))
-        (require-file df-path "definition file")
-        (require-file load-proc "system procedure")
-        (require-file db-file "database file")
-        (run-abl load-proc db-file df-path)))))
-
-;; TODO: Should the sys/ dir have its own :sys type?
-(defun data-file-loader (file db-file)
-  (check-type file (or pathname string))
-  (check-type db-file (or pathname string))
-  (let ((pather (path-getter file :aux))
-        (load-pather (path-getter "sys/load_d.r" :aux))
-        (db-pather (path-getter db-file :dest)))
-    (lambda ()
-      (declare (special *dest-dir*))
-      (let ((d-path (funcall pather))
-            (db-file (funcall db-pather))
-            (load-proc (funcall load-pather)))
-        (require-file load-proc "system procedure")
-        (require-file db-file "database file")
-        (require-file d-path "data file")
-        (run-abl load-proc db-file d-path)))))
-
 ;; TODO: make sure to handle EOF errors
 (defun run-abl (proc output-file system-args &rest args)
   (declare (special *progress-dir*))
@@ -213,27 +160,6 @@
   (check-type name symbol)
   `(setf (gethash (symbol-name ,name) *effects*)
          (lambda ,args ,@body)))
-
-(defeffect :db-structure (db-file &rest st-files)
-  (let ((applicators (map nil (lambda (f)
-                                (st-file-applicator f db-file))
-                          st-files)))
-    (lambda ()
-      (map nil #'funcall applicators))))
-
-(defeffect :db-defs (db-file &rest df-files)
-  (let ((applicators (map nil (lambda (f)
-                                (df-file-applicator f db-file))
-                          df-files)))
-    (lambda ()
-      (map nil #'funcall applicators))))
-
-(defeffect :db-binary-data (db-file &rest d-files)
-  (let ((applicators (map nil (lambda (f)
-                                (data-file-loader f db-file))
-                          d-files)))
-    (lambda ()
-      (map nil #'funcall applicators))))
 
 ;;; FFI stuff for registry key business
 (cffi:define-foreign-library advapi32
@@ -431,16 +357,6 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
   #+sbcl (sb-posix:getenv var)
   #-(or clisp sbcl) (error "ENV-VALUE is unsupported on this Lisp."))
 
-;; TODO: Later
-;; (defeffect :set-reg-key (key val)
-;;   (etypecase key
-;;     (string )
-;;     )
-;;   )
-
-;; (defeffect :backup-if-space ()
-;; )
-
 (defun effects-applicator (effects)
   (let ((applicators (loop for e in effects
                         collect (if (not (listp e))
@@ -511,92 +427,9 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
 
 (defconstant +compass-product-code+ "{74013052-2EA3-4493-B92F-11A0368F9102}")
 
-(definstaller cmax-5
-  (:version "5.0.1.1")
-  (:product "CompassMax")
-  (:src-dir #P"res/")
-  (:probes (*src-dir* (lambda (def)
-                        (cdr (assoc :src-dir def))))
-           (*compass-install-dir* (lambda (def)
-                                    (product-install-dir +compass-product-code+)))
-           (*dest-dir* (lambda (def)
-                         (merge-pathnames #P"code/" *compass-install-dir*)))
-           (*progress-dir* #'find-progress-dir)
-           (*version* (lambda (def)
-                        (second (assoc :version def))))
-           (*product* (lambda (def)
-                        (second (assoc :product def))))
-           (*db-file* (lambda (def)
-                        (probe-file (merge-pathnames #P"dbase/compass.db"
-                                                     *compass-install-dir*))))
 
-           )
-  ;(:check-sources t) ; defaults to t, used to check resource paths
-  ;when building
-  (:tree (:+ "client/include/blargl.r")
-         (:- "client/procedure/NotAThing.r"))
-  (:pre-effects :backup-if-space)
-  (:post-effects (:db-structure "dbase/addarea.st")
-                 (:db-defs "df/mailingevent.df"
-                           "df/area2.df"
-                           "df/thingy.df")
-                 (:db-binary-data "defaults.d")
-                 ;; Maybe don't want this
-                 (:set-reg-key "HCOM\\Foo\\MS\\Blurb\\MTG\\Compass\\Version" "5.0.1.1")
-                 ;; Tree copy with a special destination. Hmmm...
-                 (:add-or-update-shortcut (merge-pathnames "CompassMax 4.3.2.6.lnk" (desktop-dir)))))
 
-(defeffect :print-source-dir ()
-  (declare (special *src-dir*))
   (lambda ()
-    (format t "Source dir is ~S~%" *src-dir*)))
-
-(defeffect :print-compass-install-dir ()
-  (declare (special *compass-install-dir*))
   (lambda ()
-    (format t "CompassMax is installed at ~S~%" *compass-install-dir*)))
-
-(defeffect :print-dest-dir ()
-  (declare (special *dest-dir*))
   (lambda ()
-    (format t "Destination dir for files is ~S~%" *dest-dir*)))
 
-(defeffect :print-db-file ()
-  (declare (special *db-file*))
-  (lambda ()
-    (format t "Database file is ~S~%" *db-file*)))
-
-(defeffect :print-db-lockfile ()
-  (declare (special *db-running*))
-  (lambda ()
-    (format t "Database lockfile is ~S~%" *db-running*)))
-
-(definstaller cmax-test
-  (:version "5.0.1.1")
-  (:product "CompassMax")
-  (:src-dir #P"res/")
-  (:probes (*src-dir* (lambda (def)
-                        (second (assoc :src-dir def))))
-           (*compass-install-dir* (lambda (def)
-                                    (declare (ignore def))
-                                    (product-install-dir +compass-product-code+)))
-           (*dest-dir* (lambda (def)
-                         (declare (ignore def))
-                         (merge-pathnames #P"code/" *compass-install-dir*)))
-           ;(*progress-dir* #'find-progress-dir)
-           (*version* (lambda (def)
-                        (second (assoc :version def))))
-           (*product* (lambda (def)
-                        (second (assoc :product def))))
-           (*db-file* (lambda (def)
-                        (declare (ignore def))
-                        (probe-file (merge-pathnames #P"dbase/compass.db"
-                                                     *compass-install-dir*))))
-           (*db-running* (lambda (def)
-                           (declare (ignore def))
-                           (probe-file (merge-pathnames (make-pathname :type "lk") *db-file*)))))
-  (:pre-effects :print-source-dir
-                :print-compass-install-dir
-                :print-dest-dir
-                :print-db-file
-                :print-db-lockfile))
