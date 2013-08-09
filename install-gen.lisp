@@ -516,6 +516,42 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
        (unwind-protect (progn ,@body)
          (setf (cwd) ,saved-cwd-var
                *default-pathname-defaults* ,saved-dpd-var)))))
+
+(define-condition df-application-error (abl-error)
+  ((df-path :initarg :path
+            :reader df-path)))
+
+(defeffect :add-df (df-file)
+  (check-type df-file (or string pathname))
+  (let* ((df-path (cl-fad:pathname-as-file df-file))
+         (df-pather (path-getter df-path :src))
+         (load-pather (path-getter "applydf.r" :aux)))
+    (assert (not (cl-fad:directory-pathname-p df-path)) ()
+            "~S is not a file pathname." df-path)
+    (lambda ()
+      (declare (special *db-file*))
+      (let ((df-path (funcall df-pather))
+            (load-proc (funcall load-pather))
+            (comm-file (mk-temp-file "comm"))
+            (temp-dir (mk-temp-dir "df-application")))
+        ;; (require-file df-path "definition file")
+        ;; (require-file load-proc "system procedure")
+        ;; (require-file *db-file* "database file")
+        (unwind-protect
+            (with-cwd (temp-dir)
+              (handler-case
+                  (run-abl (merge-pathnames load-proc)
+                           comm-file
+                           (list "-db" *db-file*
+                                 "-1")
+                           (merge-pathnames df-path)
+                           (merge-pathnames comm-file))
+                (abl-error (c)
+                  (error 'df-application-error
+                         :path df-path
+                         :errors (abl-error-errors c)))))
+          (delete-file comm-file)
+          (cl-fad:delete-directory-and-files temp-dir))))))
   (lambda ()
   (lambda ()
 
