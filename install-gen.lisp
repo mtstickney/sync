@@ -593,3 +593,8 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
   (lambda ()
     (funcall (find-installer name))))
 
+(definstaller :cmax-4.3
+  (:pre-effects (:msg "Copying files...")
+                (:run-installer :cmax-4.3-code)
+                (:msg "Done.~%")
+                (:run-installer :cmax-4.3-db)))
