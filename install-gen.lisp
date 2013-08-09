@@ -52,13 +52,15 @@
                   (if (cl-fad:directory-pathname-p path)
                       (cl-fad:merge-pathnames-as-directory ,base-symb path)
                       (cl-fad:merge-pathnames-as-file ,base-symb path)))))
-             ;; TODO: PROBE-FILE :src and :aux (but then we can't
-             ;; build the code without having all the resources...)
-             (ecase type
-               (:src (fetcher *src-dir*))
-               (:dest (fetcher *dest-dir*))
-               (:aux (fetcher *res-dir*))
-               (:gen (fetcher *res-dir*)))))
+    ;; TODO: PROBE-FILE :src and :aux (but then we can't
+    ;; build the code without having all the resources...)
+    (ecase type
+      (:src (fetcher *src-dir*))
+      (:dest (fetcher *dest-dir*))
+      (:aux (fetcher *res-dir*))
+      ;; Note: exists for things that are generated, bypasses
+      ;; (future) check during build.
+      (:gen (fetcher *res-dir*)))))
 
 ;; TODO: Maybe want a higher-level "ignore-missing" restart for
 ;; multiple files
