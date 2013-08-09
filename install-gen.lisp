@@ -153,7 +153,7 @@
   (check-type file (or pathname string))
   (check-type db-file (or pathname string))
   (let ((pather (path-getter file :aux))
-        (load-pather (path-getter "sys/load_df.r" :aux))
+        (load-pather (path-getter "applydf.r" :aux))
         (db-pather (path-getter db-file :dest)))
     (lambda ()
       (declare (special *dest-dir*))
@@ -183,7 +183,7 @@
         (run-abl load-proc db-file d-path)))))
 
 ;; TODO: make sure to handle EOF errors
-(defun run-abl (proc system-args &rest args)
+(defun run-abl (proc output-file system-args &rest args)
   (declare (special *progress-dir*))
   (check-type *progress-dir* (or string pathname))
   (labels ((prowin-args (proc system-args args)
@@ -195,18 +195,18 @@
                                                      *progress-dir*)))
                           (require-file path "Progress binary" "unable to run ABL procedure")
                           path))
-           (result-str (with-output-to-string (fh)
-                         (external-program:run
-                          prowin-path
-                          (prowin-args proc system-args args)))))
+           (result (progn
+                     (external-program:run
+                      prowin-path
+                      (prowin-args proc system-args args))
+                     (with-open-file (fh output-file)
+                       (read fh)))))
       ;; TODO: Use CL-SECURE-READ for this
-      (let ((result (read-from-string result-str)))
-        ;; TODO: c'mon now, can't recover from this
-        (check-type result list)
-        ;; TODO: Neither is this.
-        (ecase (car result)
-          (:data (apply #'values (cdr result)))
-          (:error (error 'abl-error :errors (cdr result))))))))
+      (check-type result list)
+      ;; TODO: Neither is this.
+      (ecase (car result)
+        (:data (apply #'values (cdr result)))
+        (:error (error 'abl-error :errors (cdr result)))))))
 
 (defmacro defeffect (name args &body body)
   (check-type args list)
