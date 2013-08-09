@@ -479,6 +479,43 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
                                     "add"
                                     (strip-dbpath *db-file*)
                                     st-path))))))
+
+(defun mk-temp-file (name)
+  #+sbcl (cl-fad:with-output-to-temporary-file (str))
+  #+clisp (let ((stream (posix:mkstemp name)))
+            (prog1
+                (pathname stream)
+              (close stream))))
+
+(defun mk-temp-dir (name)
+  #+clisp (posix:mkdtemp name)
+  #-clisp (error "MK-TEMP-DIR not implemented in this Lisp."))
+
+(defun cwd ()
+  #+clisp (ext:cd)
+  #+sbcl (truename ".")
+  #-(or clisp sbcl) (error "CWD not implemented in this Lisp."))
+
+(defun (setf cwd) (dir)
+  (let ((path (cl-fad:pathname-as-directory dir)))
+    #+clisp (ext:cd path)
+    #+sbcl (sb-posix:chdir path)
+    #-(or sbcl clisp) (error "SETF CWD not implemented in this Lisp.")))
+
+(defmacro with-cwd ((dir) &body body)
+  (let ((dir-var (gensym "DIR"))
+        (saved-cwd-var (gensym "SAVED-CWD"))
+        (saved-dpd-var (gensym "SAVED-DPD")))
+    `(let ((,saved-dpd-var *default-pathname-defaults*)
+           (,saved-cwd-var (cwd))
+           (,dir-var (cl-fad:pathname-as-directory ,dir)))
+       (format *debug-io* "Saved DPD is ~S~%" ,saved-dpd-var)
+       (setf (cwd) ,dir
+             *default-pathname-defaults* ,saved-dpd-var)
+       (format *debug-io* "Restored saved DPD ~S (~S)~%" ,saved-dpd-var *default-pathname-defaults*)
+       (unwind-protect (progn ,@body)
+         (setf (cwd) ,saved-cwd-var
+               *default-pathname-defaults* ,saved-dpd-var)))))
   (lambda ()
   (lambda ()
 
