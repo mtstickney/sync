@@ -580,6 +580,15 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
                 (:add-df "df/delta2.df")
                 (:msg "Done.~%")))
 
+;; TODO: Add piccap killer
+(definstaller :cmax-4.3-code
+  ;; Copy the whole src directory
+  (:probes (*src-dir* #P"src/")
+           (*compass-install-dir* (product-install-dir +compass-product-code+))
+           (*dest-dir* *compass-install-dir*)
+           (*res-dir* #P"res/"))
+  (:tree (:+ #P"./")))
+
 (defeffect :run-installer (name)
   (lambda ()
     (funcall (find-installer name))))
