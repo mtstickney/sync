@@ -425,6 +425,12 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
   (let ((subkey (product-subkey product-code)))
     (reg-value-exists-p hkey-local-machine subkey "InstallLocation")))
 
+(defun env-value (var)
+  (check-type var string)
+  #+clisp (ext:getenv var)
+  #+sbcl (sb-posix:getenv var)
+  #-(or clisp sbcl) (error "ENV-VALUE is unsupported on this Lisp."))
+
 ;; TODO: Later
 ;; (defeffect :set-reg-key (key val)
 ;;   (etypecase key
