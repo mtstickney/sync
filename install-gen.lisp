@@ -7,7 +7,7 @@
 (defvar *defs* (make-hash-table :test 'equal))
 (defvar *effects* (make-hash-table :test 'equal))
 
-(define-condition missing-file ()
+(define-condition missing-file-error ()
   ((path :initarg :path
          :reader missing-file-path)
    (type :initarg :type
