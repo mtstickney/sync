@@ -427,9 +427,33 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
 
 (defconstant +compass-product-code+ "{74013052-2EA3-4493-B92F-11A0368F9102}")
 
+(define-condition db-shutdown-error () ()
+  (:report "Unable to shutdown database."))
 
+(defun progress-bin (binary-path)
+  (declare (special *progress-dir*))
+  (check-type binary-path (or string pathname))
+  (let ((path (cl-fad:pathname-as-file binary-path)))
+    (assert (cl-fad:pathname-relative-p path) (path)
+            "~S is not a relative pathname." path)
+    (merge-pathnames path *progress-dir*)))
 
+(defeffect :shutdown-db ()
   (lambda ()
+    (declare (special *db-running* *db-file* *progress-dir*))
+    ;; Early return to avoid error checks
+    (when *db-running*
+      (unless *progress-dir*
+        ;; TODO: This should probably go in the probe
+        (error "Couldn't locate progress directory"))
+      (let ((shutdown-cmd (probe-file (progress-bin #P"bin/_mprshut.exe"))))
+        (unless shutdown-cmd
+          (error "Shutdown binary appears to be missing"))
+        (when *db-running*
+          (let ((code (nth-value 1 (external-program:run shutdown-cmd
+                                                         (list *db-file* "-by")))))
+            (unless (= code 0)
+              (error 'db-shutdown-error))))))))
   (lambda ()
   (lambda ()
 
