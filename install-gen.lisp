@@ -49,7 +49,9 @@
                       `(lambda ()
                          (declare (special ,base-symb))
                          (check-type ,base-symb (or string pathname))
-                         (merge-pathnames path ,base-symb))))
+                         (if (cl-fad:directory-pathname-p path)
+                             (cl-fad:merge-pathnames-as-directory ,base-symb path)
+                             (cl-fad:merge-pathnames-as-file ,base-symb path)))))
              ;; TODO: PROBE-FILE :src and :aux (but then we can't
              ;; build the code without having all the resources...)
              (ecase type
