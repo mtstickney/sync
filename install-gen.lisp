@@ -556,5 +556,8 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
 (defeffect :msg (msg)
   (lambda ()
     (format t msg)))
+
+(defeffect :run-installer (name)
   (lambda ()
+    (funcall (find-installer name))))
 
