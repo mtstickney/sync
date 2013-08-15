@@ -144,3 +144,11 @@
       (when root
         (push-items root height))
       items)))
+
+(defun test-vec (n)
+  (let* ((items (loop for i from 1 to n collect n))
+         (vec (make-instance 'persistent-array))
+         (single-call (apply #'add vec items))
+         (multi-call (reduce #'add items :initial-value vec)))
+    (assert (equalp items (vec->list single-call)))
+    (assert (equalp items (vec->list multi-call)))))
