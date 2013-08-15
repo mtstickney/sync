@@ -126,3 +126,21 @@
          if (< i len)
          do (format stream ", ")))
     (format stream "]")))
+
+(defun vec->list (coll)
+  (check-type coll persistent-array)
+  (let ((items '())
+        (tail (array-tail coll))
+        (root (array-root coll))
+        (height (array-height coll)))
+    (labels ((push-items (node height)
+               (if (= height 0)
+                   (push node items)
+                   (loop for i from (1- (length node)) downto 0
+                      do (push-items (elt node i) (1- height))))))
+      ;; push the tail items
+      (when tail
+        (push-items tail 1))
+      (when root
+        (push-items root height))
+      items)))
