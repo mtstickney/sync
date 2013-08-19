@@ -556,17 +556,54 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
   (lambda ()
     (format t msg)))
 
+(defun prompt-until (msg pred &key (key #'identity))
+  "Prompt for a value with MSG until PRED returns true. PRED is passed the line read from input."
+  (flet ((prompt ()
+           (format *query-io* "~A: " msg)
+           (force-output *query-io*)
+           (read-line *query-io*)))
+    (loop for val = (prompt)
+       until (funcall pred (funcall key val))
+       finally (return val))))
+
+(defun directory-with-files (prompt initial-dirs &rest files)
+  "Return a directory that contains all of FILES, prompting for directories as needed. The directory returned is the first directory in INITIAL-DIRS that contains all of FILES, or the first prompted value that meets the condition."
+  (flet ((has-files-p (dir)
+           (let ((dir (cl-fad:pathname-as-directory dir)))
+             (reduce (lambda (v f)
+                       (let ((f (cl-fad:pathname-as-file f)))
+                         (and v (probe-file (merge-pathnames f dir)))))
+                     files
+                     :initial-value t))))
+    ;; Check the initial dirs first
+    (loop for d in initial-dirs
+       if (has-files-p d)
+       do (return-from directory-with-files d))
+    ;; If that fails, prompt for a value
+    (cl-fad:pathname-as-directory (prompt-until prompt #'has-files-p))))
+
 (definstaller :cmax-4.3-db
   (:probes (*src-dir* #P"src/")
            (*res-dir* #P"res/")
-           (*compass-install-dir* (product-install-dir +compass-product-code+))
+           (*compass-install-dir* (if (boundp '*compass-install-dir*)
+                                      *compass-install-dir*
+                                      (directory-with-files "Unable to find the CompassMax database. Please enter the directory where CompassMax is installed"
+                                                            (list (product-install-dir +compass-product-code+))
+                                                            #P"dbase/compass.db")))
            (*dest-dir* (merge-pathnames #P"code/" *compass-install-dir*))
            ;; NOTE: the Progress tools assume %DLC% points to the
            ;; Progress install, or that Progress is installed as
            ;; C:\Progress\OpenEdge\
-           (*progress-dir* (cl-fad:pathname-as-directory
-                            (or (env-value "DLC")
-                                "C:\\Progress\\OpenEdge\\")))
+           (*progress-dir* (directory-with-files "Unable to find Progress programs. Please enter the directory where Progress is installed"
+                                                 (list (or (env-value "DLC")
+                                                           "C:\\Progress\\OpenEdge\\")
+                                                       ;; Look for
+                                                       ;; files even
+                                                       ;; if DLC is invalid
+                                                       "C:\\Progress\\OpenEdge\\")
+                                                 #P"bin/prowin32.exe"
+                                                 #P"bin/_mprshut.exe"
+                                                 #P"bin/_dbutil.exe"))
            (*version* "4.3.1")
            (*product* "CompassMax")
            (*db-file* (merge-pathnames #P"dbase/compass.db" *compass-install-dir*))
@@ -583,7 +620,12 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
 (definstaller :cmax-4.3-code
   ;; Copy the whole src directory
   (:probes (*src-dir* #P"src/")
-           (*compass-install-dir* (product-install-dir +compass-product-code+))
+           (*compass-install-dir* (if (boundp '*compass-install-dir*)
+                                      *compass-install-dir*
+                                      (directory-with-files "Unable to find CompassMax code. Please enter the directory where CompassMax was installed"
+                                                            (list (product-install-dir +compass-product-code+))
+                                                            ;; Arbitrary file
+                                                            #P"code/client/gui/dlgAddActivityw.r")))
            (*dest-dir* *compass-install-dir*)
            (*res-dir* #P"res/"))
   (:tree (:+ #P"./")))
