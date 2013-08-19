@@ -635,6 +635,12 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
     (funcall (find-installer name))))
 
 (definstaller :cmax-4.3
+  ;; Bind this in the outer installer so the user is only prompted
+  ;; once when running the sub-installers.
+  (:probes (*compass-install-dir* (directory-with-files "Unable to find the CompassMax installation directory. Please enter the directory where Progress is installed"
+                                                        (list (product-install-dir +compass-product-code+))
+                                                        #P"dbase/compass.db"
+                                                        #P"code/client/gui/dlgAddActivityw.r")))
   (:pre-effects (:msg "Copying files...")
                 (:run-installer :cmax-4.3-code)
                 (:msg "Done.~%")
