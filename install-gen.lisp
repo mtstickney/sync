@@ -261,12 +261,11 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
     (cffi:with-foreign-objects ((key :pointer)
                                 (type 'registry-value-type)
                                 (data-size :ulong))
-      (let (ret)
-        (setf ret (reg-open-key-ex hkey-local-machine
-                                   subkey-str
-                                   0
-                                   (cffi:foreign-enum-value 'reg-key-access :query-value)
-                                   key))
+      (let ((ret (reg-open-key-ex hkey-local-machine
+                                  subkey-str
+                                  0
+                                  (cffi:foreign-enum-value 'reg-key-access :query-value)
+                                  key)))
         (unless (zerop ret)
           (system-error ret "Error opening registry key ~S~%"
                         (format nil "~A\\~A" base-key subkey)))
