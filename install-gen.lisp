@@ -344,7 +344,7 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
 
 (defun product-installed-p (product-code)
   "Returns T if the product with the GUID PRODUCT-CODE is installed on the machine, NIL otherwise (this is true if the program appears in the 'Add/Remove Programs' listing."
-  (let (subkey (product-subkey product-code))
+  (let ((subkey (product-subkey product-code)))
     (reg-key-exists-p hkey-local-machine subkey)))
 
 (defun product-install-dir (product-code)
