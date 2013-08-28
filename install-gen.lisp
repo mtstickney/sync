@@ -658,3 +658,45 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
     (with-open-file (log logfile :direction :output :if-exists :append)
       (format log "~A: ~A~%" timestamp msg))))
 
+(defun run-compass-installer (name)
+  "Run the CompassMax installer designated by NAME, returning T if the installer succeeded or NIL otherwise. Error conditions related"
+  (check-type name installer-designator)
+  (flet ((bail (logfile msg &rest args)
+           (format t "~&********~%~A A log file is located at ~A. Please contact Maineline Technology Group (1-800-354-2525) for assistance.~%"
+                   (apply #'format nil msg args)
+                   logfile)
+           (return-from run-compass-installer nil)))
+    (let* ((installer (find-installer name))
+           (log-dir (mk-temp-dir "compass-install"))
+           (log-file (merge-pathnames #P"install.log" log-dir)))
+      (handler-bind
+          ((df-application-error
+            (lambda (err)
+              (log-error err log-file)
+              (bail log-file "Oh no! There was an error while updating the database.")))
+           ;; we run ABL scripts either to apply df files, or do
+           ;; initialization
+           ;; TODO: Does ABL-ERROR include the script that was run?
+           (abl-error
+            (lambda (err)
+              (log-error err log-file)
+              (bail log-file "There was an error initializing the database.")))
+           (simple-file-error
+            (lambda (err)
+              (log-error err log-file)
+              (bail log-file "There was an error installing new code.")))
+           (warning
+            (lambda (c)
+              ;; Log it, but don't bail
+              (log-msg (format nil "~A" c) log-file)
+              (muffle-warning c)))
+           ;; Trap /everything/
+           (condition
+            (lambda (err)
+              (log-error err log-file)
+              (bail log-file "Yikes! There was an unknown error during installation."))))
+        (funcall installer))
+      ;; If we completed successfully, remove the temp directory
+      (cl-fad:delete-directory-and-files log-dir :if-does-not-exist :ignore)
+      ;; TODO: print success (in installer, not here)
+      )))
