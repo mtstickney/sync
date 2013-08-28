@@ -610,7 +610,10 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
                                                  #P"bin/_dbutil.exe"))
            (*version* "4.3.1")
            (*product* "CompassMax")
-           (*db-file* (merge-pathnames #P"dbase/compass.db" *compass-install-dir*))
+           (*db-file* (merge-pathnames #P"compass.db"
+                                       (directory-with-files "Unable to locate CompassMax database. Please enter the directory where compass.db is located"
+                                                             (list (merge-pathnames #P"dbase\\" *compass-install-dir*))
+                                                             #P"compass.db"))))
   (:pre-effects :shutdown-db
                 (:msg "Adding areas...")
                 (:add-st "df/addarea.st")
