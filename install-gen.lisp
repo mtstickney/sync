@@ -438,6 +438,8 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
 (define-condition db-shutdown-error (error) ()
   (:report "Unable to shutdown database."))
 
+(defun db-running-p (db-file)
+  (probe-file (make-pathname :type "lk" :defaults db-file)))
 
 (defeffect :shutdown-db ()
   (lambda ()
