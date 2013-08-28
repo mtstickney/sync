@@ -647,3 +647,14 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
                 (:run-installer :cmax-4.3-code)
                 (:msg "Done.~%")
                 (:run-installer :cmax-4.3-db)))
+
+;; TODO: Add exception handling for this (print a logging error and bail)
+(defun log-error (condition logfile)
+  (with-open-file (log logfile :direction :output)
+    (trivial-backtrace:print-backtrace condition :output log)))
+
+(defun log-msg (msg logfile)
+  (let ((timestamp (trivial-backtrace::date-time-string)))
+    (with-open-file (log logfile :direction :output :if-exists :append)
+      (format log "~A: ~A~%" timestamp msg))))
+
