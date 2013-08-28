@@ -7,7 +7,7 @@
 (defvar *defs* (make-hash-table :test 'equal))
 (defvar *effects* (make-hash-table :test 'equal))
 
-(define-condition missing-file-error ()
+(define-condition missing-file-error (error)
   ((path :initarg :path
          :reader missing-file-path)
    (type :initarg :type
@@ -25,7 +25,7 @@
                  (format stream "."))
              (values))))
 
-(define-condition abl-error ()
+(define-condition abl-error (error)
   ((errors :initarg :errors
            :reader abl-error-errors))
   (:documentation "Condition signalled to report errors from a callout to ABL.")
@@ -231,7 +231,7 @@
   (:success 0)
   (:more-data #xEA))
 
-(define-condition foreign-system-error ()
+(define-condition foreign-system-error (error)
   ((datum :initarg :datum
           :reader sys-error-datum)
    (args :initarg :args
@@ -426,7 +426,7 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
 
 (defconstant +compass-product-code+ "{74013052-2EA3-4493-B92F-11A0368F9102}")
 
-(define-condition db-shutdown-error () ()
+(define-condition db-shutdown-error (error) ()
   (:report "Unable to shutdown database."))
 
 (defun progress-bin (binary-path)
