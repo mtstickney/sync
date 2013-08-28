@@ -537,9 +537,9 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
             (load-proc (funcall load-pather))
             (comm-file (mk-temp-file "comm"))
             (temp-dir (mk-temp-dir "df-application")))
-        ;; (require-file df-path "definition file")
-        ;; (require-file load-proc "system procedure")
-        ;; (require-file *db-file* "database file")
+        (require-file df-path "definition file")
+        (require-file load-proc "system procedure")
+        (require-file *db-file* "database file")
         (unwind-protect
             (with-cwd (temp-dir)
               (handler-case
