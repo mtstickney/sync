@@ -443,20 +443,15 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
 
 (defeffect :shutdown-db ()
   (lambda ()
-    (declare (special *db-running* *db-file* *progress-dir*))
-    ;; Early return to avoid error checks
-    (when *db-running*
-      (unless *progress-dir*
-        ;; TODO: This should probably go in the probe
-        (error "Couldn't locate progress directory"))
-      (let ((shutdown-cmd (probe-file (progress-bin #P"bin/_mprshut.exe"))))
-        (unless shutdown-cmd
-          (error "Shutdown binary appears to be missing"))
-        (when *db-running*
-          (let ((code (nth-value 1 (external-program:run shutdown-cmd
-                                                         (list *db-file* "-by")))))
-            (unless (= code 0)
-              (error 'db-shutdown-error))))))))
+    (declare (special *db-file* *progress-dir*))
+    (let ((shutdown-cmd (probe-file (progress-bin #P"bin/_mprshut.exe"))))
+      (loop for running-p = (db-running-p *db-file*)
+         while running-p
+         do (with-simple-restart (retry-shutdown "Retry database shutdown")
+              (let ((code (nth-value 1 (external-program:run shutdown-cmd
+                                                             (list *db-file* "-by")))))
+                (unless (= code 0)
+                  (error 'db-shutdown-error))))))))
 
 (defun strip-dbpath (db-file)
   (check-type db-file (or string pathname))
@@ -541,18 +536,18 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
         (require-file load-proc "system procedure")
         (require-file *db-file* "database file")
         (unwind-protect
-            (with-cwd (temp-dir)
-              (handler-case
-                  (run-abl (merge-pathnames load-proc)
-                           comm-file
-                           (list "-db" *db-file*
-                                 "-1")
-                           (merge-pathnames df-path)
-                           (merge-pathnames comm-file))
-                (abl-error (c)
-                  (error 'df-application-error
-                         :path df-path
-                         :errors (abl-error-errors c)))))
+             (with-cwd (temp-dir)
+               (with-simple-restart (skip-file "Skip the application of this df file")
+                 (handler-case
+                     (run-abl (merge-pathnames load-proc)
+                              comm-file
+                              (list "-db" *db-file* "-1")
+                              (merge-pathnames df-path)
+                              (merge-pathnames comm-file))
+                   (abl-error (c)
+                     (error 'df-application-error
+                            :path df-path
+                            :errors (abl-error-errors c))))))
           (delete-file comm-file)
           (cl-fad:delete-directory-and-files temp-dir))))))
 
