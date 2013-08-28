@@ -397,8 +397,10 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
       (when post-applicator
         (funcall post-applicator)))))
 
+(deftype installer-designator () '(or symbol string function))
+
 (defun find-installer (installer-designator)
-  (check-type installer-designator (or symbol string function))
+  (check-type installer-designator installer-designator)
   (etypecase installer-designator
     (function installer-designator)
     (symbol (gethash (symbol-name installer-designator) *defs*))
