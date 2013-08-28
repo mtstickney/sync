@@ -611,7 +611,6 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
            (*version* "4.3.1")
            (*product* "CompassMax")
            (*db-file* (merge-pathnames #P"dbase/compass.db" *compass-install-dir*))
-           (*db-running* (probe-file (merge-pathnames (make-pathname :type "lk") *db-file*))))
   (:pre-effects :shutdown-db
                 (:msg "Adding areas...")
                 (:add-st "df/addarea.st")
