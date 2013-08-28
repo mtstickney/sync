@@ -625,12 +625,13 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
 (definstaller :cmax-4.3-code
   ;; Copy the whole src directory
   (:probes (*src-dir* #P"src/")
-           (*compass-install-dir* (if (boundp '*compass-install-dir*)
-                                      *compass-install-dir*
-                                      (directory-with-files "Unable to find CompassMax code. Please enter the directory where CompassMax was installed"
-                                                            (list (product-install-dir +compass-product-code+))
-                                                            ;; Arbitrary file
-                                                            #P"code/client/gui/dlgAddActivityw.r")))
+           (*compass-install-dir*
+            (if (boundp '*compass-install-dir*)
+                *compass-install-dir*
+              (directory-with-files "Unable to find CompassMax code. Please enter the directory where CompassMax was installed"
+                                    (list (product-install-dir +compass-product-code+))
+                                    ;; Arbitrary file
+                                    #P"code/client/gui/dlgAddActivityw.r")))
            (*dest-dir* *compass-install-dir*)
            (*res-dir* #P"res/"))
   (:tree (:+ #P"./")))
@@ -642,10 +643,11 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
 (definstaller :cmax-4.3
   ;; Bind this in the outer installer so the user is only prompted
   ;; once when running the sub-installers.
-  (:probes (*compass-install-dir* (directory-with-files "Unable to find the CompassMax installation directory. Please enter the directory where Progress is installed"
-                                                        (list (product-install-dir +compass-product-code+))
-                                                        #P"dbase/compass.db"
-                                                        #P"code/client/gui/dlgAddActivityw.r")))
+  (:probes (*compass-install-dir*
+            (directory-with-files "Unable to find the CompassMax installation directory. Please enter the directory where Progress is installed"
+                                  (list (product-install-dir +compass-product-code+))
+                                  #P"dbase/compass.db"
+                                  #P"code/client/gui/dlgAddActivityw.r")))
   (:pre-effects (:msg "Copying files...")
                 (:run-installer :cmax-4.3-code)
                 (:msg "Done.~%")
