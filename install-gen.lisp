@@ -129,6 +129,14 @@
       (loop for app in applicators
          do (funcall app)))))
 
+(defun progress-bin (binary-path)
+  (declare (special *progress-dir*))
+  (check-type binary-path (or string pathname))
+  (let ((path (cl-fad:pathname-as-file binary-path)))
+    (assert (cl-fad:pathname-relative-p path) (path)
+            "~S is not a relative pathname." path)
+    (merge-pathnames path *progress-dir*)))
+
 ;; TODO: make sure to handle EOF errors
 (defun run-abl (proc output-file system-args &rest args)
   (declare (special *progress-dir*))
@@ -138,8 +146,7 @@
                           (list "-p" proc
                                 "-param" (format nil "~{~A~^,~}" args))
                           system-args)))
-    (let* ((prowin-path (let ((path (merge-pathnames "bin/prowin32.exe"
-                                                     *progress-dir*)))
+    (let* ((prowin-path (let ((path (progress-bin "bin/prowin32.exe")))
                           (require-file path "Progress binary" "unable to run ABL procedure")
                           path))
            (result (progn
@@ -429,13 +436,6 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
 (define-condition db-shutdown-error (error) ()
   (:report "Unable to shutdown database."))
 
-(defun progress-bin (binary-path)
-  (declare (special *progress-dir*))
-  (check-type binary-path (or string pathname))
-  (let ((path (cl-fad:pathname-as-file binary-path)))
-    (assert (cl-fad:pathname-relative-p path) (path)
-            "~S is not a relative pathname." path)
-    (merge-pathnames path *progress-dir*)))
 
 (defeffect :shutdown-db ()
   (lambda ()
