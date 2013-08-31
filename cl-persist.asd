@@ -10,4 +10,4 @@
                (:file "cl-persist")
                (:file "util")
                (:file "array-node")
-               ))
+               (:file "map-node")))

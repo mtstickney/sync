@@ -151,3 +151,28 @@
          (multi-call (reduce #'add items :initial-value vec)))
     (assert (equalp items (vec->list single-call)))
     (assert (equalp items (vec->list multi-call)))))
+
+;;; Persistent Map container
+(defclass persistent-map ()
+  ((root :initarg :root
+         :reader map-root)
+   (size :initarg :size
+         :reader map-size)
+   (height :initarg :height
+           :reader map-height)
+   (node-bits :initarg :node-bits
+              :reader map-node-bits)
+   (node-size :reader map-node-size))
+  (:default-initargs
+   :root nil
+    :tail nil
+    :size 0
+    :height 0
+    :node-bits 5))
+
+(defmethod initialize-instance :after ((coll persistent-map) &key node-bits &allow-other-keys)
+  (check-type node-bits (integer 1))
+  (setf (slot-value coll 'node-size) (expt 2 node-bits)))
+
+(defmethod size ((coll persistent-map))
+  (map-size coll))
