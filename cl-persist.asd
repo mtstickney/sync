@@ -8,5 +8,6 @@
   :depends-on (#:alexandria)
   :components ((:file "package")
                (:file "cl-persist")
+               (:file "util")
                (:file "array-node")
                ))

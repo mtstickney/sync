@@ -1,28 +1,9 @@
 (in-package #:cl-persist)
 
-(defun array-node-push (item node max-size)
-  (check-type node vector)
-  ;; Double the size with a special case for 0 instead of using 2n+1
-  ;; (yields power-of-two sized arrays, which we want).
-  (flet ((next-size (n)
-           (if (= n 0)
-               1
-               (* 2 n))))
-    ;; If the node is already full, we signal an error:
-    (when (>= (length node)
-              max-size)
-      (error "Node is full, cannot push item"))
-    (let* ((allocated (array-total-size node))
-           ;; Re-allocate if necessary
-           (new-node (if (>= (length node) allocated)
-                         (adjust-array node (min max-size
-                                                 (next-size allocated)))
-                         node)))
-      (vector-push item new-node)
-      ;; Return the new array so it can be stored somewhere
-      ;; (adjust-array may not happen in-place)
-      new-node)))
+;;; TODO: investigate whether we really need the (null root) check
+;;; when inserting, since VISIT will do a nil -> node conversion
 
+;; TODO: Maybe start with non-fully-allocated nodes?
 (defun make-array-node (size &rest items)
   (let* ((array (make-array size
                             :fill-pointer 0
@@ -32,7 +13,7 @@
        if (> j size)
        ;; ELT will throw an error, but including the max size is nice
        do (error "Too many items for node to hold, need <=~S~%" size)
-       do (setf array (array-node-push i array size)))
+       do (setf array (vector-expand i array size)))
     array))
 
 ;; Inserting nodes can be thought of as counting in base K for a K-way
@@ -71,22 +52,6 @@ existing node."
        do (setf node (make-array-node size node)))
     node))
 
-;; To get the child of a node in the tree corresponding to a
-;; particular key, we must first extract an index for this particular
-;; level of the tree.
-(defun array-node-index (node-bits height key)
-  (check-type node-bits (integer 1))
-  (check-type height (integer 1))
-  (check-type key unsigned-byte)
-  ;; If NODE-BITS is the number of bits for a node index, the portion
-  ;; of the key we want is the (1- height)th group of NODE-BITS bits,
-  ;; from least significant to most. First we construct a mask of
-  ;; NODE-BITS bits:
-  (logand (1- (ash 1 node-bits))
-          ;; Right-shifting the key by (1- height) groups of NODE-BITS
-          ;; bits and ANDing with the mask yields our index:
-          (ash key (- (* node-bits (1- height))))))
-
 (defun copy-persistent-array (arr)
   ;; Shallow copy (intentional, nodes will be copied as part of traversal
   (make-instance 'persistent-array
@@ -105,7 +70,7 @@ existing node."
   (let* ((node (funcall copier node))
          (new-root node))
     (loop for h from node-height downto (1+ end-height)
-       do (let ((idx (array-node-index node-bits h key)))
+       do (let ((idx (key-partition key h node-bits)))
             (setf (elt node idx) (funcall copier (elt node idx)))
             (setf node (elt node idx))))
     (values new-root node)))
@@ -130,7 +95,7 @@ existing node."
   (labels ((expand (node)
              (let ((node-size (expt 2 node-bits)))
                (if node
-                   (array-node-push nil (funcall copier node) node-size)
+                   (vector-expand nil (funcall copier node) node-size)
                    (make-array-node node-size nil))))
            (visit (idx node)
              (if (or (null node)
@@ -142,13 +107,13 @@ existing node."
     (let* ((p (make-array-node (expt 2 node-bits) root))
            (parent p))
       (loop for child-height from start-height downto (1+ end-height)
-         do (let* ((child-idx (array-node-index node-bits (1+ child-height) key))
-                   (next-child-idx (array-node-index node-bits child-height key))
+         do (let* ((child-idx (key-partition key (1+ child-height) node-bits))
+                   (next-child-idx (key-partition key child-height node-bits))
                    (child (visit next-child-idx (elt parent child-idx))))
               (setf (elt parent child-idx) child
                     parent child)))
       ;; Set the final child
-      (let ((item-idx (array-node-index node-bits (1+ end-height) key)))
+      (let ((item-idx (key-partition key (1+ end-height) node-bits)))
         (setf (elt parent item-idx) item))
       (elt p 0))))
 
@@ -200,7 +165,7 @@ existing node."
       (t
        (let ((new-tail (funcall node-copier (array-tail new-array))))
          (setf (slot-value new-array 'tail)
-               (array-node-push x new-tail node-size)))))
+               (vector-expand x new-tail node-size)))))
     (setf (slot-value new-array 'size) (1+ size))
     new-array))
 
@@ -222,7 +187,7 @@ existing node."
   ;; Note that we assume key is within bounds for the array (check is
   ;; done in UPDATE
   (multiple-value-bind (new-root last-child) (copy-path root key height bits)
-    (setf (elt last-child (array-node-index bits 1 key)) val)
+    (setf (elt last-child (key-partition key 1 bits)) val)
     new-root))
 
 (defmethod update ((coll persistent-array) key val &rest others)
@@ -266,5 +231,5 @@ existing node."
         (let ((node (array-root coll))
               (bits (array-node-bits coll)))
           (loop for h from (array-height coll) downto 1
-             do (setf node (elt node (array-node-index bits h x))))
+             do (setf node (elt node (key-partition x h bits))))
           node))))
