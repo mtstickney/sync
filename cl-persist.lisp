@@ -84,10 +84,9 @@
            :reader array-height)
    (node-bits :initarg :node-bits
               :reader array-node-bits)
-   (node-size :reader array-node-size)
-   (key-mask :reader array-key-mask))
+   (node-size :reader array-node-size))
   (:default-initargs
-   :root nil ;;(make-array-node)
+   :root nil
     :tail nil
     :size 0
     :height 0
@@ -97,8 +96,7 @@
 (defmethod initialize-instance :after
     ((arr persistent-array) &key node-bits &allow-other-keys)
   (check-type node-bits (integer 1))
-  (setf (slot-value arr 'node-size) (expt 2 node-bits)
-        (slot-value arr 'key-mask) (1- (ash 1 node-bits))))
+  (setf (slot-value arr 'node-size) (expt 2 node-bits)))
 
 (defmethod size ((array persistent-array))
   (array-size array))
@@ -109,6 +107,7 @@
 (defmethod print-object ((object persistent-array) stream)
   ;; TODO: replace with something that doesn't depend on TCO (or use
   ;; recursion without it)
+  ;; TODO: Use the Pretty-Printer, Luke
   (labels ((print-items (node height)
              (if (= height 0)
                  (format stream "~S, " node)
