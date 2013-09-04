@@ -145,6 +145,16 @@
             "~S is not a relative pathname." path)
     (merge-pathnames path *progress-dir*)))
 
+(defun read-abl-result (file)
+  ;; TODO: use cl-secure-read for this
+  (let ((result (with-open-file (fh file)
+                  (read fh))))
+    (check-type result list)
+    (case (car result)
+      (:data (apply #'values (cdr result)))
+      (:error (error 'abl-error :errors (cdr result)))
+      (t (error 'abl-error :errors (list "ABL process failed to return legible result."))))))
+
 ;; TODO: make sure to handle EOF errors
 (defun run-abl (proc output-file system-args &rest args)
   (declare (special *progress-dir*))
@@ -156,19 +166,13 @@
                           system-args)))
     (let* ((prowin-path (let ((path (progress-bin "bin/prowin32.exe")))
                           (require-file path "Progress binary" "unable to run ABL procedure")
-                          path))
-           (result (progn
-                     (external-program:run
+                          path)))
+      (external-program:run
                       prowin-path
                       (prowin-args proc system-args args))
-                     (with-open-file (fh output-file)
-                       (read fh)))))
-      ;; TODO: Use CL-SECURE-READ for this
-      (check-type result list)
-      ;; TODO: Neither is this.
-      (ecase (car result)
-        (:data (apply #'values (cdr result)))
-        (:error (error 'abl-error :errors (cdr result)))))))
+      (if output-file
+          (read-abl-result output-file)
+          (values)))))
 
 (defun run-java (class &key classpath defs args)
   (declare (special *progress-dir* *db-file*))
