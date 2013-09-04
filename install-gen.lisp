@@ -528,6 +528,30 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
                   ;; Save the databases for later restart
                   (setf *stopped-dbs* stopped-dbs))))))))
 
+(define-condition db-startup-error (error) ()
+  (:report "Unable to restart database."))
+
+(defeffect :restart-db ()
+  (let ((dba-jar-pather (path-getter "DBAdmin.jar" :aux)))
+    (lambda ()
+      (declare (special *progress-dir* *stopped-dbs* *db-file*))
+      (let ((dba-class "com.mtg.makemeasandwich.DBAdmin")
+            (args (concatenate 'list
+                               (list "127.0.0.1" "20931" "startdbs")
+                               (loop for (db config) in *stopped-dbs*
+                                  collect db
+                                  collect config))))
+        (when *stopped-dbs*
+          (run-java dba-class
+                    :classpath (list (funcall dba-jar-pather)
+                                     (host-path-namestring
+                                      (merge-pathnames #P"java/progress.jar"
+                                                       *progress-dir*)))
+                    :defs `(("Install.Dir" ,(host-path-namestring *progress-dir*)))
+                    :args args)
+          (unless (db-running-p *db-file*)
+            (error 'db-startup-error)))))))
+
 (defun strip-dbpath (db-file)
   (check-type db-file (or string pathname))
   (let ((path (cl-fad:pathname-as-file db-file)))
