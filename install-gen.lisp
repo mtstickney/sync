@@ -663,6 +663,24 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
   (lambda ()
     (format t msg)))
 
+(defeffect :ensure-backup ()
+  (lambda ()
+    (format t "~&~%********~%")
+    (format t "It is very important that you back up your database before running this installer, in case anything goes wrong. Please ensure your database has been backed up, then enter the work 'BACKUP' to continue. Enter anything else to exit the installer.~%")
+    (format t "~&********~%")
+    (format *query-io* "Enter 'BACKUP' to continue (anything else to exit installer): ")
+    (force-output *query-io*)
+    (let ((resp (read-line *query-io*)))
+      (unless (equalp resp "BACKUP")
+        (exit-installer)))))
+
+(defeffect :ensure-db-machine ()
+  (lambda ()
+    (format t "~&~%This installer will attempt to update your database, and should only be run on the machine that hosts your database.~%")
+    (unless (y-or-n-p "Is the CompassMax database hosted on this machine?")
+      (format t "The installer will now exit.~%")
+      (exit-installer))))
+
 (defun prompt-until (msg pred &key (key #'identity))
   "Prompt for a value with MSG until PRED returns true. PRED is passed the result of calling KEY on the line read from input."
   (flet ((prompt ()
@@ -717,7 +735,8 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
                                        (directory-with-files "Unable to locate CompassMax database. Please enter the directory where compass.db is located"
                                                              (list (merge-pathnames #P"dbase\\" *compass-install-dir*))
                                                              #P"compass.db"))))
-  (:pre-effects :shutdown-db
+  (:pre-effects :ensure-db-machine
+                :ensure-backup
                 (:msg "Adding areas...")
                 (:add-st "df/addarea.st")
                 (:msg "Done.~%")
