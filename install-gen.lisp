@@ -734,14 +734,17 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
            (*db-file* (merge-pathnames #P"compass.db"
                                        (directory-with-files "Unable to locate CompassMax database. Please enter the directory where compass.db is located"
                                                              (list (merge-pathnames #P"dbase\\" *compass-install-dir*))
-                                                             #P"compass.db"))))
+                                                             #P"compass.db")))
+           (*stopped-dbs* nil))
   (:pre-effects :ensure-db-machine
                 :ensure-backup
+                :shutdown-db
                 (:msg "Adding areas...")
                 (:add-st "df/addarea.st")
                 (:msg "Done.~%")
                 (:msg "Updating definitions...")
                 (:add-df "df/delta2.df")
+                :restart-db
                 (:msg "Done.~%")))
 
 (definstaller :cmax-4.3-code
