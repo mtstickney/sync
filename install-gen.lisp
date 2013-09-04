@@ -438,12 +438,13 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
     (when tree-spec
       (setf tree-applicator (tree-application (cdr tree-spec))))
     (lambda ()
-      (when pre-applicator
-        (funcall pre-applicator))
-      (when tree-applicator
-        (funcall tree-applicator))
-      (when post-applicator
-        (funcall post-applicator)))))
+      (catch :exit-installer
+        (when pre-applicator
+          (funcall pre-applicator))
+        (when tree-applicator
+          (funcall tree-applicator))
+        (when post-applicator
+          (funcall post-applicator))))))
 
 (deftype installer-designator () '(or symbol string function))
 
@@ -621,6 +622,11 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
   ((df-path :initarg :path
             :reader df-path)))
 
+(defun exit-installer ()
+  (if (boundp '*as-child*)
+      (throw :exit-toplevel nil)
+      (throw :exit-installer nil)))
+
 (defeffect :add-df (df-file)
   (check-type df-file (or string pathname))
   (let* ((df-path (cl-fad:pathname-as-file df-file))
@@ -771,33 +777,34 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
     (let* ((installer (find-installer name))
            (log-dir (mk-temp-dir "compass-install"))
            (log-file (merge-pathnames #P"install.log" log-dir)))
-      (handler-bind
-          ((df-application-error
-            (lambda (err)
-              (log-error err log-file)
-              (bail log-file "Oh no! There was an error while updating the database.")))
-           ;; we run ABL scripts either to apply df files, or do
-           ;; initialization
-           ;; TODO: Does ABL-ERROR include the script that was run?
-           (abl-error
-            (lambda (err)
-              (log-error err log-file)
-              (bail log-file "There was an error initializing the database.")))
-           (simple-file-error
-            (lambda (err)
-              (log-error err log-file)
-              (bail log-file "There was an error installing new code.")))
-           (warning
-            (lambda (c)
-              ;; Log it, but don't bail
-              (log-msg (format nil "~A" c) log-file)
-              (muffle-warning c)))
-           ;; Trap /everything/
-           (condition
-            (lambda (err)
-              (log-error err log-file)
-              (bail log-file "Yikes! There was an unknown error during installation."))))
-        (funcall installer))
+      (catch :exit-toplevel
+        (handler-bind
+            ((df-application-error
+              (lambda (err)
+                (log-error err log-file)
+                (bail log-file "Oh no! There was an error while updating the database.")))
+             ;; we run ABL scripts either to apply df files, or do
+             ;; initialization
+             ;; TODO: Does ABL-ERROR include the script that was run?
+             (abl-error
+              (lambda (err)
+                (log-error err log-file)
+                (bail log-file "There was an error initializing the database.")))
+             (simple-file-error
+              (lambda (err)
+                (log-error err log-file)
+                (bail log-file "There was an error installing new code.")))
+             (warning
+              (lambda (c)
+                ;; Log it, but don't bail
+                (log-msg (format nil "~A" c) log-file)
+                (muffle-warning c)))
+             ;; Trap /everything/
+             (condition
+              (lambda (err)
+                (log-error err log-file)
+                (bail log-file "Yikes! There was an unknown error during installation."))))
+          (funcall installer)))
       ;; If we completed successfully, remove the temp directory
       (cl-fad:delete-directory-and-files log-dir :if-does-not-exist :ignore)
       ;; TODO: print success (in installer, not here)
