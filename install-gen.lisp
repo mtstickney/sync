@@ -685,7 +685,7 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
     ;; Check the initial dirs first
     (loop for d in initial-dirs
        if (has-files-p d)
-       do (return-from directory-with-files d))
+       do (return-from directory-with-files (cl-fad:pathname-as-directory d)))
     ;; If that fails, prompt for a value
     (cl-fad:pathname-as-directory (prompt-until prompt #'has-files-p))))
 
