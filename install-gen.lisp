@@ -669,7 +669,8 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
 
 (defeffect :msg (msg)
   (lambda ()
-    (format t msg)))
+    (format t msg)
+    (force-output *standard-output*)))
 
 (defeffect :ensure-backup ()
   (lambda ()
