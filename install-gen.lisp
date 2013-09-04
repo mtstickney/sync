@@ -794,6 +794,12 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
               (lambda (err)
                 (log-error err log-file)
                 (bail log-file "There was an error installing new code.")))
+             (db-shutdown-error
+              (lambda (err)
+                (declare (ignore error))
+                (format t "~%The installer was unable to shut down the database. This might be caused by an open instance of the Data Dictionary, Data Administration, or other progress tool. Please close or disconnect all Progress tools, and re-run the installer.~%")
+                (force-output *standard-output*)
+                (exit-installer)))
              (warning
               (lambda (c)
                 ;; Log it, but don't bail
