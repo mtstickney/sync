@@ -707,6 +707,10 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
     ;; If that fails, prompt for a value
     (cl-fad:pathname-as-directory (prompt-until prompt #'has-files-p))))
 
+(defeffect :funcall (func)
+  (lambda ()
+    (funcall func)))
+
 (definstaller :cmax-4.3-db
   (:probes (*src-dir* #P"src/")
            (*res-dir* #P"res/")
@@ -744,6 +748,10 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
                 (:msg "Done.~%")
                 (:msg "Updating definitions...")
                 (:add-df "df/delta2.df")
+                (:msg "Done.~%")
+                (:funcall (lambda ()
+                            (when *stopped-dbs*
+                              (format t "Restarting the database...."))))
                 :restart-db
                 (:msg "Done.~%")))
 
