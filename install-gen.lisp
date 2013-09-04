@@ -854,4 +854,6 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
           (funcall installer)))
       ;; If we completed successfully, remove the temp directory
       (cl-fad:delete-directory-and-files log-dir :if-does-not-exist :ignore)
-      )))
+      (format t "~%Press enter to close.~%")
+      (force-output *standard-output*)
+      (read-char))))
