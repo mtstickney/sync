@@ -84,6 +84,7 @@
 ;; Note: the use of TRUENAME fixes an issue with ENOUGH-NAMESTRING
 ;; when the case of FROM doesn't match the case on the filesystem
 (defun copy-directory (from to &key overwrite)
+  (declare (special *file-callback*))
   (check-type from (or string pathname))
   (check-type to (or string pathname))
   (format *debug-io* "Copying directory ~S to ~S~%" from to)
@@ -96,6 +97,8 @@
                                       (cl-fad:pathname-as-file postfix))
                                   to)))
              (copy-item (item)
+               (when (boundp '*file-callback*)
+                 (funcall *file-callback* item))
                (format *debug-io* "Supposedly copying ~S~%" item)
                (let ((dest (dest-path item)))
                  (if (cl-fad:directory-pathname-p item)
