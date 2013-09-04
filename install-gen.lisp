@@ -752,7 +752,9 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
             (directory-with-files "Unable to find the CompassMax installation directory. Please enter the directory where Progress is installed"
                                   (list (product-install-dir +compass-product-code+))
                                   #P"dbase/compass.db"
-                                  #P"code/client/gui/dlgAddActivityw.r")))
+                                  #P"code/client/gui/dlgAddActivityw.r"))
+           ;; Let the others know they are children
+           (*as-child* 1))
   (:pre-effects (:run-installer :cmax-4.3-db)
                 (:run-installer :cmax-4.3-code)
 
