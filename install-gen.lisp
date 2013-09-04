@@ -655,6 +655,18 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
           (delete-file comm-file)
           (cl-fad:delete-directory-and-files temp-dir))))))
 
+(defeffect :run-procedure (proc location &rest args)
+  (check-type proc (or string pathname))
+  (check-type location keyword)
+  (let ((proc-pather (path-getter proc location)))
+    (lambda ()
+      (declare (special *db-file*))
+      (let ((proc-path (funcall proc-pather)))
+        (require-file proc-path "procedure")
+        (run-abl (merge-pathnames load-proc)
+                 nil
+                 (list "-db" *db-file* "-1"))))))
+
 (defeffect :msg (msg)
   (lambda ()
     (format t msg)))
