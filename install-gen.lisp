@@ -33,6 +33,14 @@
              (format stream "~@<ABL returned with errors:~@:_~I~{~<~A: ~:_~I~W~@:_~:>~}~:>"
                      (abl-error-errors condition)))))
 
+(define-condition java-error (error)
+  ((errors :initarg :errors
+           :reader java-error-errors))
+  (:documentation "Condition signalled to report errors from a callout to Java.")
+  (:report (lambda (condition stream)
+             (format stream "~@<Java returned with errors:~@:_~I~{~<~A: ~:_~I~W~@:_~:>~}~:>"
+                     (java-error-errors condition)))))
+
 (defun require-file (path type &optional use)
   (check-type path (or string pathname))
   (unless (probe-file path)
@@ -161,6 +169,38 @@
       (ecase (car result)
         (:data (apply #'values (cdr result)))
         (:error (error 'abl-error :errors (cdr result)))))))
+
+(defun run-java (class &key classpath defs args)
+  (declare (special *progress-dir* *db-file*))
+  (flet ((java-args (class classpath defs args)
+           (concatenate 'list
+                        (if classpath
+                            (list "-cp"
+                                  ;; Windows classpath separator is ';'
+                                  (format nil "~{~A~^;~}" classpath))
+                            '())
+                        (loop for def in defs
+                           collect
+                             (destructuring-bind (term val) def
+                               (format nil "-D~A=~A" term val)))
+                        (list class)
+                        args)))
+    (let* ((comm-file (mk-temp-file "jcomm"))
+           (result (unwind-protect
+                        (progn
+                          (external-program:run (funcall (path-getter #P"jre7/bin/java.exe" :aux))
+                                                (java-args class classpath defs (cons comm-file args)))
+                          (with-open-file (fh comm-file)
+                            (read fh nil :eof)))
+                     (delete-file comm-file))))
+      (if (and (listp result)
+               (keywordp (car result))
+               (or (eql (car result) :data)
+                   (eql (car result) :error)))
+          (case (car result)
+            (:data (cdr result))
+            (:error (error 'java-error :errors (cdr result))))
+          (error 'java-error :errors (list "Java process failed to return legible result."))))))
 
 (defmacro defeffect (name args &body body)
   (check-type args list)
@@ -442,17 +482,44 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
 (defun db-running-p (db-file)
   (probe-file (make-pathname :type "lk" :defaults db-file)))
 
+(defun host-path-namestring (path)
+  (check-type path pathname)
+  #+clisp (namestring path)
+  #+sbcl (map 'string (lambda (c)
+                        ;; Replace path separators
+                        (if (eql c #\/)
+                            #\\
+                            c))
+              (namestring path)))
+
 (defeffect :shutdown-db ()
-  (lambda ()
-    (declare (special *db-file* *progress-dir*))
-    (let ((shutdown-cmd (probe-file (progress-bin #P"bin/_mprshut.exe"))))
-      (loop for running-p = (db-running-p *db-file*)
-         while running-p
-         do (with-simple-restart (retry-shutdown "Retry database shutdown")
-              (let ((code (nth-value 1 (external-program:run shutdown-cmd
-                                                             (list *db-file* "-by")))))
-                (unless (= code 0)
-                  (error 'db-shutdown-error))))))))
+  (let ((dba-jar-pather (path-getter "DBAdmin.jar" :aux)))
+    (lambda ()
+      (declare (special *db-file* *progress-dir* *stopped-dbs*))
+      (let* ((dba-class "com.mtg.makemeasandwich.DBAdmin")
+             (args (list "127.0.0.1" "20931" "stopdbs" (host-path-namestring *db-file*)))
+             (stopped-dbs ))
+        (loop for running-p = (db-running-p *db-file*)
+           while running-p
+           do (with-simple-restart (retry-shutdown "Retry database shutdown")
+                (let ((stopped-dbs (run-java dba-class
+                                             :classpath (list (funcall dba-jar-pather)
+                                                              (host-path-namestring
+                                                               (merge-pathnames #P"java/progress.jar"
+                                                                                *progress-dir*)))
+                                             :defs `(("Install.Dir" ,(host-path-namestring *progress-dir*)))
+                                             :args args)))
+                  (unless (or (not (db-running-p *db-file*))
+                              ;; If there were dbs, we'll wait for them
+                              stopped-dbs)
+                    (error 'db-shutdown-error))
+                  ;; We're trusting that we'll never get a legit return from a
+                  ;; failed shutdown (or else this will hang)
+                  (loop while (db-running-p *db-file*)
+                     do (sleep 1))
+
+                  ;; Save the databases for later restart
+                  (setf *stopped-dbs* stopped-dbs))))))))
 
 (defun strip-dbpath (db-file)
   (check-type db-file (or string pathname))
