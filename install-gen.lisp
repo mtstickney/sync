@@ -763,7 +763,7 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
 
 (defun log-msg (msg logfile)
   (let ((timestamp (trivial-backtrace::date-time-string)))
-    (with-open-file (log logfile :direction :output :if-exists :append)
+    (with-open-file (log logfile :direction :output :if-exists :append :if-does-not-exist :create)
       (format log "~A: ~A~%" timestamp msg))))
 
 (defun run-compass-installer (name)
