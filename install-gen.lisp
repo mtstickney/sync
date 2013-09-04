@@ -664,7 +664,7 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
     (format t msg)))
 
 (defun prompt-until (msg pred &key (key #'identity))
-  "Prompt for a value with MSG until PRED returns true. PRED is passed the line read from input."
+  "Prompt for a value with MSG until PRED returns true. PRED is passed the result of calling KEY on the line read from input."
   (flet ((prompt ()
            (format *query-io* "~A: " msg)
            (force-output *query-io*)
