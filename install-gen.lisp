@@ -409,7 +409,7 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
                         collect (if (not (listp e))
                                     (funcall (find-effect e))
                                     (apply (find-effect (car e))
-                                           (cdr e))))))
+                                           (mapcar #'eval (cdr e)))))))
     ;; TODO: Add some facility to outputting status messages while
     ;; these things are happening
     (lambda ()
