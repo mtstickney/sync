@@ -795,6 +795,7 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
            (*as-child* 1))
   (:pre-effects (:run-installer :cmax-4.3-db)
                 (:run-installer :cmax-4.3-code)
+                (:msg "~%Congratulations! You have successfully installed CompassMax v4.3.2.6~%")))
 
 ;; TODO: Add exception handling for this (print a logging error and bail)
 (defun log-error (condition logfile)
@@ -853,5 +854,4 @@ lisp type. TYPE, DATA, and SIZE are those reported by RegQueryValueEx.")
           (funcall installer)))
       ;; If we completed successfully, remove the temp directory
       (cl-fad:delete-directory-and-files log-dir :if-does-not-exist :ignore)
-      ;; TODO: print success (in installer, not here)
       )))
