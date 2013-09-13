@@ -165,7 +165,6 @@
    (node-size :reader map-node-size))
   (:default-initargs
    :root nil
-    :tail nil
     :size 0
     :height 0
     :node-bits 5))
