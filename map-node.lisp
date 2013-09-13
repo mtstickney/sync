@@ -1,5 +1,14 @@
 (in-package #:cl-persist)
 
+(defun copy-persistent-map (map)
+  "Return a shallow-copy of the PERSISTENT-MAP instance MAP."
+  (check-type map persistent-map)
+  (make-instance 'persistent-map
+                 :root (map-root map)
+                 :size (map-size map)
+                 :height (map-height map)
+                 :node-bits (map-node-bits map)))
+
 (defstruct (map-node (:constructor mk-map-node))
   (map nil :type simple-bit-vector :read-only t)
   (items nil :type vector))
