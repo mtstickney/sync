@@ -177,7 +177,7 @@
           "ADD requires at least two arguments for a persistent-map.")
   (let ((new-coll (copy-persistent-map coll)))
     (add-item% new-coll x (car xs))
-    (loop for (key . rest) on xs by #'cddr
+    (loop for (key . rest) on (cdr xs) by #'cddr
        if (null rest)
        do (error "ADD requires an even number of arguments.")
        do (add-item% new-coll key (car rest)))
