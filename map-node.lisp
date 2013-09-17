@@ -159,10 +159,9 @@
     ;; root, is thus in the same key space (subtree) as the nodes in
     ;; root, and thus nodes must be copied to avoid modification (the
     ;; root node, at minimum).
-    (multiple-value-bind (new-root new-height) (reparent root height key bits)
-
+    (multiple-value-bind (new-root new-height) (reparent root height hash bits)
       (multiple-value-bind (new-root added-p)
-          (insert-key new-root new-height key val bits
+          (insert-key new-root new-height hash key val bits
                       :copier (if (eq new-root root)
                                   #'copy-map-node
                                   #'identity))
