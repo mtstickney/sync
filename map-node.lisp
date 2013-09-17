@@ -124,7 +124,9 @@
             (setf (element node idx) new-child
                   node new-child))
        finally (let* ((idx (key-partition hash 0 partition-bits))
-                      (chain (element node idx)))
+                      (chain (if (has-item node idx)
+                                 (element node idx)
+                                 nil)))
                  (setf (element node idx)
                        (cond
                          ((not (has-item node idx))
