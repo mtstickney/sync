@@ -28,7 +28,7 @@
 ;; level of the tree.
 (defun key-partition (key partition partition-bits)
   (check-type key unsigned-byte)
-  (check-type partition (integer 1))
+  (check-type partition unsigned-byte)
   (check-type partition-bits (integer 1))
   ;; If PARTITION-BITS is the number of bits for a partition index, the portion
   ;; of the key we want is the (1- partition)th group of PARTITION-BITS bits,
