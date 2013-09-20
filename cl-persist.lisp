@@ -188,7 +188,7 @@
    (node-size :reader map-node-size))
   (:default-initargs
    :size 0
-    :height 0
+    :height 1
     :node-bits 5))
 
 (defmethod initialize-instance :after ((coll persistent-map) &key node-bits &allow-other-keys)
