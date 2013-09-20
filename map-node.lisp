@@ -101,11 +101,11 @@
        (ceiling (integer-length key) partition-bits)))
 
 (defun reparent (root height hash partition-bits)
-  "Return a (possibly new) tree node that is tall enough to support KEY."
+  "Return a (possibly new) tree node that is tall enough to support a key with hash HASH."
   (let ((new-height (max-partition hash partition-bits))
         (node-size (length (map-node-map root))))
     (loop with node = root
-       for h from height to new-height
+       for h from (1+ height) to new-height
        do (setf node (make-map-node node-size 0 node))
        finally (return (values node (max height new-height))))))
 
