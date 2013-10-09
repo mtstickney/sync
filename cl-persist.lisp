@@ -126,22 +126,6 @@
          do (format stream ", ")))
     (format stream "]")))
 
-(defmethod print-object ((object persistent-map) stream)
-  ;; TODO: replace with something that doesn't depend on TCO (or use
-  ;; recursion without it)
-  ;; TODO: Use the Pretty-Printer, Luke
-  (labels ((print-items (node height)
-             (if (= height 0)
-                 (loop for ((key . val) . tail) on node
-                    do (format stream "~S: ~S" key val)
-                      (when tail
-                        (format stream ", ")))
-                 (loop for i across (map-node-items node)
-                    do (print-items i (1- height))))))
-    (format stream "{")
-    (print-items (map-root object) (map-height object))
-    (format stream "}")))
-
 (defun count-chain (node)
   (labels ((count-height (n i)
              (if (= (length (map-node-items n)) 0)
@@ -199,3 +183,19 @@
 
 (defmethod size ((coll persistent-map))
   (map-size coll))
+
+(defmethod print-object ((object persistent-map) stream)
+  ;; TODO: replace with something that doesn't depend on TCO (or use
+  ;; recursion without it)
+  ;; TODO: Use the Pretty-Printer, Luke
+  (labels ((print-items (node height)
+             (if (= height 0)
+                 (loop for ((key . val) . tail) on node
+                    do (format stream "~S: ~S" key val)
+                      (when tail
+                        (format stream ", ")))
+                 (loop for i across (map-node-items node)
+                    do (print-items i (1- height))))))
+    (format stream "{")
+    (print-items (map-root object) (map-height object))
+    (format stream "}")))
