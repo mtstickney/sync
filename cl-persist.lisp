@@ -175,11 +175,13 @@
     :height 1
     :node-bits 5))
 
-(defmethod initialize-instance :after ((coll persistent-map) &key node-bits &allow-other-keys)
+(defmethod initialize-instance :after ((coll persistent-map) &key node-bits (root nil root-p) &allow-other-keys)
+  (declare (ignore root))
   (check-type node-bits (integer 1))
   (let ((node-size (expt 2 node-bits)))
-    (setf (slot-value coll 'node-size) node-size
-          (slot-value coll 'root) (make-map-node node-size))))
+    (setf (slot-value coll 'node-size) node-size)
+    (unless root-p
+      (setf (slot-value coll 'root) (make-map-node node-size)))))
 
 (defmethod size ((coll persistent-map))
   (map-size coll))
