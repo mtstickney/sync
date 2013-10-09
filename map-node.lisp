@@ -9,9 +9,15 @@
                  :height (map-height map)
                  :node-bits (map-node-bits map)))
 
-(defstruct (map-node (:constructor mk-map-node))
+(defstruct (map-node (:constructor mk-map-node)
+                     (:copier))
   (map nil :type simple-bit-vector :read-only t)
   (items nil :type vector))
+
+(defun copy-map-node (node)
+  (let ((map (alexandria:copy-array (map-node-map node)))
+        (items (alexandria:copy-array (map-node-items node))))
+    (mk-map-node :map map :items items)))
 
 (define-condition invalid-index-error ()
   ((idx :initarg :idx
