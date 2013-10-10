@@ -100,7 +100,7 @@
         (node (map-root coll))
         (bits (map-node-bits coll)))
     (handler-case
-        (loop for h from (map-height coll) downto 1
+        (loop for h from (1- (map-height coll)) downto 0
            do (setf node (element node (key-partition hash h bits))))
       (invalid-index-error (c)
         (declare (ignore c))

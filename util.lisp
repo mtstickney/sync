@@ -37,4 +37,4 @@
   (logand (1- (ash 1 partition-bits))
           ;; Right-shifting the key by (1- height) groups of NODE-BITS
           ;; bits and ANDing with the mask yields our index:
-          (ash key (- (* partition-bits (1- partition))))))
+          (ash key (- (* partition-bits partition)))))
