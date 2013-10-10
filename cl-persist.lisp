@@ -71,6 +71,11 @@
 (defgeneric lookup (collection x &rest xs)
   (:documentation "Return the element of COLLECTION described by X and XS."))
 
+(defun default-node-bits ()
+  ;; We want to be able to cover fixnum with 6 or 7 partitions to keep
+  ;; the depth down
+  (floor (integer-length most-positive-fixnum) 6))
+
 ;;; Persistent Array container
 
 (defclass persistent-array ()
@@ -90,7 +95,7 @@
     :tail nil
     :size 0
     :height 0
-    :node-bits 5))
+    :node-bits (default-node-bits)))
 
 ;; TODO: trim the extra junk out of here (and the class def)
 (defmethod initialize-instance :after
@@ -173,7 +178,7 @@
   (:default-initargs
    :size 0
     :height 1
-    :node-bits 5))
+    :node-bits (default-node-bits)))
 
 (defmethod initialize-instance :after ((coll persistent-map) &key node-bits (root nil root-p) &allow-other-keys)
   (declare (ignore root))
