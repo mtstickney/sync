@@ -59,11 +59,21 @@
     (unless (< idx (length bitmap))
       (error 'out-of-bounds-index-error :idx idx))
     (let* ((item-idx (count 1 bitmap :end idx))
-           (new-items (if (< item-idx (length items))
-                          (progn
-                            (setf (elt items item-idx) val)
-                            items)
-                          (vector-expand val items (length bitmap)))))
+           (new-items (cond
+                        ((has-item node idx)
+                         (setf (elt items item-idx) val)
+                         items)
+                        ((= item-idx (length items))
+                         ;; No need to insert, just push
+                         (vector-expand val items (length bitmap)))
+                        (t
+                         ;; shift the items after item-idx
+                         (let ((new-items (vector-expand nil items (length bitmap))))
+                           (replace new-items new-items
+                                    :start1 (1+ item-idx)
+                                    :start2 item-idx)
+                           (setf (elt new-items item-idx) val)
+                           new-items)))))
       (setf (map-node-items node) new-items
             (elt bitmap idx) 1)
       val)))
