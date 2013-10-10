@@ -111,14 +111,14 @@
           (values (cdr entry) t)
           (values nil nil)))))
 
-(defun max-partition (key partition-bits)
+(defun num-partitions (key partition-bits)
   ;; We always require at least one partition
   (max 1
        (ceiling (integer-length key) partition-bits)))
 
 (defun reparent (root height hash partition-bits)
   "Return a (possibly new) tree node that is tall enough to support a key with hash HASH."
-  (let ((new-height (max-partition hash partition-bits))
+  (let ((new-height (num-partitions hash partition-bits))
         (node-size (length (map-node-map root))))
     (loop with node = root
        for h from (1+ height) to new-height
