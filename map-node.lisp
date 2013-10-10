@@ -202,3 +202,44 @@
        do (error "ADD requires an even number of arguments.")
        do (add-item% new-coll key (car rest)))
     new-coll))
+
+(defun tree-paths (map)
+  "Return a list of tree paths for entries in the PERSISTENT-MAP MAP. A tree path is a list of indexes into internal tree nodes, where the final element is the leaf-node (the collision-chain, in this case)."
+  (check-type map persistent-map)
+  (let ((q (let ((q (queues:make-queue
+                     :priority-queue
+                     :compare (lambda (a b)
+                                ;; items at greater heights come
+                                ;; first
+                                (> (car a) (car b))))))
+             (queues:qpush q (cons (map-height map) (map-root map)))
+             q))
+        ;; Dictionary of node -> path-to-node mappings
+        (scratch (let ((m (make-hash-table :test 'eq)))
+                   (setf (gethash (map-root map) m) '())
+                   m)))
+    (loop while (> (queues:qsize q) 0)
+       do (destructuring-bind (height . node) (queues:qpop q)
+            (when (= height 0)
+              (return))
+            (let* ((bitmap (map-node-map node))
+                   (indexes (loop for e across bitmap
+                               for i from 0
+                               if (= e 1)
+                               collect i))
+                   (children (map 'list #'cons indexes (map-node-items node))))
+              ;; Add the new parent paths for the child nodes
+              (loop for (idx . n) in children
+                 for parent-path = (gethash node scratch)
+                 do (setf (gethash n scratch) (cons idx parent-path))
+                 ;; Put the children in the queue
+                   (queues:qpush q (cons (1- height) n)))
+              ;; Remove the parent now that we have the children
+              (remhash node scratch))))
+    ;; SCRATCH should now be a map from leaf chains -> index paths
+    (let ((lst '()))
+      (maphash (lambda (leaf path)
+                 (push (reverse (cons leaf path))
+                       lst))
+               scratch)
+      lst)))
