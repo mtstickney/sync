@@ -132,6 +132,8 @@
         (node-size (length (map-node-map root)))
         (added-item nil))
     (loop with node = new-root
+       ;; At the end of each iteration, node is a node of height (1-
+       ;; h), so we end with a leaf.
        for h from (1- height) downto 1
        do (let* ((idx (key-partition hash h partition-bits))
                  (new-child (if (has-item node idx)
