@@ -5,4 +5,5 @@
   (:export #:persistent-array
            #:persistent-map
            #:lookup
-           #:add))
+           #:add
+           #:seq))

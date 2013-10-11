@@ -111,6 +111,17 @@
           (values (cdr entry) t)
           (values nil nil)))))
 
+(defmethod seq ((coll persistent-map))
+  (let ((seq '()))
+    (labels ((print-items (node height)
+               (if (= height 0)
+                   (loop for entry in node
+                      do (push entry seq))
+                   (loop for i across (map-node-items node)
+                      do (print-items i (1- height))))))
+      (print-items (map-root coll) (map-height coll))
+      seq)))
+
 (defun num-partitions (key partition-bits)
   ;; We always require at least one partition
   (max 1
