@@ -122,6 +122,17 @@
       (print-items (map-root coll) (map-height coll))
       seq)))
 
+(defmethod equals ((a persistent-map) (b persistent-map))
+  (flet ((key-subset (entries map)
+           (loop for (key . val) in entries
+              if (or (not (nth-value 1 (lookup map key)))
+                     (not (equalp val (lookup map key))))
+              return nil
+              finally (return t))))
+    ;; Mutual subset proves equivalence
+    (and (key-subset (seq a) b)
+         (key-subset (seq b) a))))
+
 (defun num-partitions (key partition-bits)
   ;; We always require at least one partition
   (max 1

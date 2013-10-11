@@ -60,6 +60,9 @@
 (defgeneric seq (collection) ; seq
   (:documentation "Return a sequence for the elements in COLLECTION."))
 
+(defgeneric equals (a b)
+  (:documentation "Return true if two collection A and B are equal."))
+
 ;; Note: applies to map-like things, e.g. map & vector
 (defgeneric link (collection key val &rest xs) ; assoc
   (:documentation "Return a new collection with KEY associated with VAL (as well as alternating key/val pairs in XS)."))

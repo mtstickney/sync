@@ -6,4 +6,5 @@
            #:persistent-map
            #:lookup
            #:add
-           #:seq))
+           #:seq
+           #:equals))
