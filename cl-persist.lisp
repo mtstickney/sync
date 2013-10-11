@@ -195,15 +195,11 @@
   ;; TODO: replace with something that doesn't depend on TCO (or use
   ;; recursion without it)
   ;; TODO: Use the Pretty-Printer, Luke
-  (let ((num-items (map-size object))
-        (i 0))
-    (labels ((print-items (node height)
-               (if (= height 0)
-                   (loop for ((key . val) . rest) on node
-                      do (incf i)
-                        (format stream "~S: ~S~@[, ~]" key val (/= i num-items)))
-                   (loop for i across (map-node-items node)
-                      do (print-items i (1- height))))))
-      (format stream "{")
-      (print-items (map-root object) (map-height object))
-      (format stream "}"))))
+  (flet ((print-dict-entry (stream e)
+           (format stream "~S ~S" (car e) (cdr e))))
+    (write-string "{" stream)
+    (loop for (e . rest) on (seq object)
+       do (print-dict-entry stream e)
+       if rest
+       do (write-string ", " stream))
+    (write-string "}" stream)))
