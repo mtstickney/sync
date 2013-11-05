@@ -131,3 +131,8 @@
                           for new-head being the hash-values of replacements
                           collect (make-rule new-head hyp))))
     (cons rewritten-rule new-rules)))
+
+(defun rewrite-wildcard-rules (rules)
+  "Return a new set of rules such that wildcard vars only occur in rules with exactly one hypothesis."
+  (loop for r in rules
+     nconc (rewrite-wildcard-rule r)))
