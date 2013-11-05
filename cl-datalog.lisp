@@ -170,3 +170,6 @@
         (rewrite-hyps (rule-hypotheses rule))
       (cons (apply #'make-rule (rule-conclusion rule) new-hyps)
             new-rules))))
+
+(defun rewrite-long-rules (rules)
+  (loop for rule in rules nconc (rewrite-to-duples rule)))
