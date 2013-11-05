@@ -136,3 +136,37 @@
   "Return a new set of rules such that wildcard vars only occur in rules with exactly one hypothesis."
   (loop for r in rules
      nconc (rewrite-wildcard-rule r)))
+
+;; Code for rewriting rules to at most two hypotheses
+;; NOTE: Assumes no wildcard vars in large hypothesis blocks, use
+;; after REWRITE-WILDCARD-RULES
+
+(defun body-var-list (hypotheses)
+  "Return a list of (unique) variables used in HYPOTHESES, assuming no wildcard vars."
+  (let ((var-set (map-set:make-map-set)))
+    (loop for hyp in hypotheses
+       do (loop for var in (form-vars hyp)
+             do (map-set:ms-insert var-set var)))
+    (map-set:ms-map 'list #'identity var-set)))
+
+(defun rewrite-to-duples (rule)
+  (check-type rule datalog-rule)
+  (labels ((rewrite-hyps (hyps)
+            (if (or (null hyps)
+                    (null (cdr hyps))
+                    (null (cddr hyps)))
+                ;; <= 2 hypotheses
+                (values hyps '())
+                ;; Otherwise, rewrite the rest of them and go from
+                ;; there
+                (multiple-value-bind (new-hyps new-rules) (rewrite-hyps (cdr hyps))
+                  (let* ((tail-vars (body-var-list new-hyps))
+                         (tail-rule-name (make-rule-name "DUPLE-RULE"))
+                         (new-head (cons tail-rule-name tail-vars))
+                         (tail-rule (apply #'make-rule new-head new-hyps)))
+                    (values (list (car hyps) new-head)
+                            (cons tail-rule new-rules)))))))
+    (multiple-value-bind (new-hyps new-rules)
+        (rewrite-hyps (rule-hypotheses rule))
+      (cons (apply #'make-rule (rule-conclusion rule) new-hyps)
+            new-rules))))
