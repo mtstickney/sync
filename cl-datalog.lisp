@@ -116,7 +116,8 @@
                  (setf (gethash hyp new-rules)
                        (cons (car new-rule)
                              (remove var (cdr new-rule) :test #'eq)))))
-             single-hypothesis-vars)))
+             single-hypothesis-vars)
+    new-rules))
 
 (defun rewrite-wildcard-rule (rule)
   (let* ((replacements (wildcard-rewrites (wildcard-vars! (var-forms rule)
