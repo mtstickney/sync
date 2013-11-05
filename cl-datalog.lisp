@@ -117,3 +117,16 @@
                        (cons (car new-rule)
                              (remove var (cdr new-rule) :test #'eq)))))
              single-hypothesis-vars)))
+
+(defun rewrite-wildcard-rule (rule)
+  (let* ((replacements (wildcard-rewrites (wildcard-vars! (var-forms rule)
+                                                         (form-vars (rule-conclusion rule)))))
+         (rewritten-rule (apply #'make-rule
+                                (rule-conclusion rule)
+                                (mapcar (lambda (hypothesis)
+                                          (gethash hypothesis replacements hypothesis))
+                                        (rule-hypotheses rule))))
+         (new-rules (loop for hyp being the hash-keys of replacements
+                          for new-head being the hash-values of replacements
+                          collect (make-rule new-head hyp))))
+    (cons rewritten-rule new-rules)))
