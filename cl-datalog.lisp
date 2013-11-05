@@ -111,7 +111,7 @@
     (maphash (lambda (var hyp)
                (let ((new-rule (gethash hyp new-rules
                                         (cons (make-rule-name "WILDCARD-RULE")
-                                              (cdr hyp)))))
+                                              (form-vars hyp)))))
                  ;; Remove the var from the new form
                  (setf (gethash hyp new-rules)
                        (cons (car new-rule)
