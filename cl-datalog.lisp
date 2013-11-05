@@ -173,3 +173,6 @@
 
 (defun rewrite-long-rules (rules)
   (loop for rule in rules nconc (rewrite-to-duples rule)))
+
+(defun normalize-rules (rules)
+  (rewrite-long-rules (rewrite-wildcard-rules rules)))
