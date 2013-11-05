@@ -27,7 +27,7 @@
 (defun make-rule (conclusion &rest hypotheses)
   (cons conclusion hypotheses))
 
-(defun rule-conslusion (rule)
+(defun rule-conclusion (rule)
   (check-type rule datalog-rule)
   (car rule))
 
