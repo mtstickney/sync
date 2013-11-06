@@ -176,3 +176,53 @@
 
 (defun normalize-rules (rules)
   (rewrite-long-rules (rewrite-wildcard-rules rules)))
+
+;; Code for doing bottom-up evaluation
+
+;; This is faster for forms with lots of vars, but it conses more and
+;; even at 80 variables per form, the speed difference isn't
+;; measurable until you run it 1000 times.
+;; (defun shared-vars (form1 form2)
+;;   (let ((form1-set (map-set:make-map-set))
+;;         (shared-vars '()))
+;;     (loop for var in (form-vars form1)
+;;        do (map-set:ms-insert form1-set var))
+;;     (loop for var in (form-vars form2)
+;;        if (map-set:ms-member-p form1-set var)
+;;        do (push var shared-vars))
+;;     shared-vars))
+
+(defun shared-vars (form1 form2)
+  (intersection (remove-duplicates (form-vars form1) :test #'eq)
+                (remove-duplicates (form-vars form2) :test #'eq)))
+
+(defun wildcard-vars (conclusion hypothesis)
+  (set-difference (remove-duplicates (form-vars hypothesis))
+                  (shared-vars conclusion hypothesis)))
+
+(defun unify-clause (equivalent-vars)
+  "Given a dictionary mapping variables to other variables that stand for the same value, return a clause asserting the appropriate values are EQUAL."
+  (cons 'and (loop for var being the hash-keys of equivalent-vars
+                for other-vars being the hash-values of equivalent-vars
+                nconc (loop for v in other-vars
+                         collect `(equal ,var ,v)))))
+
+;; TODO: doing wildcards here is an optimization, but it's not
+;; actually necessary, and there are probably better places (e.g. a
+;; second pass).
+(defun unifying-match-form (form &optional head)
+  "Return an OPTIMA pattern that will match FORM with the appropriate unification. If supplied, HEAD will be used to determine wildcard vars."
+  (let* ((wildcard-vars (if head (wildcard-vars head form) nil))
+         (renamed-vars (make-hash-table :test 'eq))
+         (vars (form-vars form))
+         (match-vars (loop for v in vars
+                        collect (if (member v wildcard-vars)
+                                    '_
+                                    (if (nth-value 1 (gethash v renamed-vars))
+                                        (first (push (gensym "?VAR") (gethash v renamed-vars)))
+                                        (progn (setf (gethash v renamed-vars) '())
+                                               v)))))
+         (unifying-pred (unify-clause renamed-vars)))
+    ;; TODO: find a way to do more than lists here (you'd need to fix
+    ;; match-vars etc. too...)
+    `(and (list ,@match-vars) (satisfies (lambda (it) (declare (ignore it)) ,unifying-pred)))))
