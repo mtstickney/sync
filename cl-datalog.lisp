@@ -200,29 +200,20 @@
   (set-difference (remove-duplicates (form-vars hypothesis))
                   (shared-vars conclusion hypothesis)))
 
-(defun unify-clause (equivalent-vars)
-  "Given a dictionary mapping variables to other variables that stand for the same value, return a clause asserting the appropriate values are EQUAL."
-  (cons 'and (loop for var being the hash-keys of equivalent-vars
-                for other-vars being the hash-values of equivalent-vars
-                nconc (loop for v in other-vars
-                         collect `(equal ,var ,v)))))
-
-;; TODO: doing wildcards here is an optimization, but it's not
-;; actually necessary, and there are probably better places (e.g. a
-;; second pass).
 (defun unifying-match-form (form &optional head)
   "Return an OPTIMA pattern that will match FORM with the appropriate unification. If supplied, HEAD will be used to determine wildcard vars."
   (let* ((wildcard-vars (if head (wildcard-vars head form) nil))
-         (renamed-vars (make-hash-table :test 'eq))
-         (vars (form-vars form))
-         (match-vars (loop for v in vars
-                        collect (if (member v wildcard-vars)
-                                    '_
-                                    (if (nth-value 1 (gethash v renamed-vars))
-                                        (first (push (gensym "?VAR") (gethash v renamed-vars)))
-                                        (progn (setf (gethash v renamed-vars) '())
-                                               v)))))
-         (unifying-pred (unify-clause renamed-vars)))
-    ;; TODO: find a way to do more than lists here (you'd need to fix
-    ;; match-vars etc. too...)
-    `(and (list ,@match-vars) (satisfies (lambda (it) (declare (ignore it)) ,unifying-pred)))))
+         (vars '()))
+    (cons (car form)
+          (loop for p in (cdr form)
+                if (varp p)
+                collect (cond
+                         ((member p wildcard-vars) '_)
+                         ((member p vars)
+                          (let ((new-var (gensym "?VAR")))
+                            ;; EQUAL is probably not sufficient here
+                            `(guard ,new-var (equal ,new-var ,p))))
+                         (t (push p vars)
+                            p))
+                else
+                collect p))))
