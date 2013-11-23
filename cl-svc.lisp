@@ -71,13 +71,14 @@
 
 (cffi:defctype service-status-handle :int "Handle to a SERVICE-STATUS struct.")
 
-(cffi:defcfun (register-service-ctrl-handler "RegisterServiceCtrlHandlerA"
+(cffi:defcfun (register-service-ctrl-handler "RegisterServiceCtrlHandlerExA"
                                              :convention :stdcall
                                              :library advapi32)
     service-status-handle
   "Register a service handler table for use. Returns a handle that can be used to set the service status."
   (service-name :string)
-  (handler :pointer))
+  (handler :pointer)
+  (data :pointer))
 
 (cffi:defcfun (set-status-service "SetServiceStatus"
                                   :convention :stdcall
