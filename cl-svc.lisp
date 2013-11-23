@@ -76,7 +76,8 @@
                                              :library advapi32)
     service-status-handle
   "Register a service handler table for use. Returns a handle that can be used to set the service status."
-  (service-table (:pointer (:struct service-table-entry))))
+  (service-name :string)
+  (handler :pointer))
 
 (cffi:defcfun (set-status-service "SetServiceStatus"
                                   :convention :stdcall
