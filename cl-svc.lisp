@@ -16,7 +16,7 @@
                                              :convention :stdcall
                                              :library advapi32)
     :int
-  (service-table :pointer))
+  (service-table (:pointer (:struct service-table))))
 
 (cffi:defcenum (service-type :ulong)
   (:file-system-driver #x02)
