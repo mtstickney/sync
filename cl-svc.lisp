@@ -157,6 +157,12 @@
   (service-start-account (:string :encoding :utf-16))
   (password (:string :encoding :utf-16)))
 
+(cffi:defcfun (close-service-handle "CloseServiceHandle"
+                                    :library advapi32
+                                    :convention :stdcall)
+    :int
+  (handle sc-handle))
+
 (defclass service ()
   ((status :initarg :status
            :accessor service-status-obj)
