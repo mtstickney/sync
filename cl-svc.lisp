@@ -124,6 +124,20 @@
   (database-name (:string :encoding :utf-16))
   (desired-access :ulong))
 
+(cffi:defcenum (service-start-type :ulong)
+  (:auto-start #x02)
+  (:boot-start #x00)
+  (:demand-start #x03)
+  (:disabled #x04)
+  (:system-start #x01))
+
+;; Used to indicate the level of error if the service fails to start
+(cffi:defcenum (service-error-level :ulong)
+  (:critical #x03)
+  (:ignore #x00)
+  (:normal #x01)
+  (:severe #x02))
+
 (defclass service ()
   ((status :initarg :status
            :accessor service-status-obj)
