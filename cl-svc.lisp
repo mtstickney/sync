@@ -9,10 +9,10 @@
 
 (cffi:defcstruct service-table-entry
   "SERVICE_TABLE_ENTRY for Windows services."
-  (service-name :string)
+  (service-name (:string :encoding :utf-16))
   (service-func :pointer))
 
-(cffi:defcfun (start-service-ctrl-dispatcher "StartServiceCtrlDispatcherA"
+(cffi:defcfun (start-service-ctrl-dispatcher "StartServiceCtrlDispatcherW"
                                              :convention :stdcall
                                              :library advapi32)
     :int
@@ -71,12 +71,12 @@
 
 (cffi:defctype service-status-handle :int "Handle to a SERVICE-STATUS struct.")
 
-(cffi:defcfun (register-service-ctrl-handler "RegisterServiceCtrlHandlerExA"
+(cffi:defcfun (register-service-ctrl-handler "RegisterServiceCtrlHandlerExW"
                                              :convention :stdcall
                                              :library advapi32)
     service-status-handle
   "Register a service handler table for use. Returns a handle that can be used to set the service status."
-  (service-name :string)
+  (service-name (:string :encoding :utf-16))
   (handler :pointer)
   (data :pointer))
 
