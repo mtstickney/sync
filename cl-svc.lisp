@@ -173,6 +173,21 @@
                               :convention :stdcall)
     :ulong)
 
+(cffi:defcfun (%get-module-name "GetModuleFileNameW"
+                                :library kernel32
+                                :convention :stdcall)
+    :ulong
+  (module :pointer)
+  (buf (:string :encoding :utf-16))
+  (bufsize :ulong))
+
+(defun get-module-name (&optional (module (cffi:null-pointer)))
+  (cffi:with-foreign-object (buf :char (* 2 261))
+    (%get-module-name module buf (1- (* 2 261)))
+    (setf (cffi:mem-aref buf :char 260) 0)
+    ;; Why does this have to be :utf-16le instead of just :utf-16?
+    (cffi:foreign-string-to-lisp buf :encoding :utf-16le)))
+
 (defun make-deps-string (deps group-deps)
   (with-output-to-string (str)
     (loop for dep in deps
