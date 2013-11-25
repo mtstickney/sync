@@ -86,3 +86,20 @@
     :int
   (status-handle service-status-handle)
   (status (:pointer (:struct service-status))))
+
+(defclass service ()
+  ((status :initarg :status
+           :accessor service-status-obj)
+   (status-handle :accessor status-handle))
+  (:documentation "Wrapper for a windows service."))
+
+(defgeneric tick (service)
+  "Indicate that another initialization or shutdown step has occurred.")
+
+(defgeneric set-status (service status &optional timeout)
+  "Set SERVICE's status to STATUS, indicating an error if TIMEOUT has elapsed before the pending operation has completed or a tick occurs.")
+
+(defgeneric handle-control (service control event-type event-data data)
+  "Control handler for SERVICE.")
+
+(defmethod )
