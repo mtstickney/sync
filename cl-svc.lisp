@@ -163,6 +163,16 @@
     :int
   (handle sc-handle))
 
+(cffi:define-foreign-library kernel32
+  ((or :windows :mswindows :win32) (:default "kernel32")))
+
+(cffi:use-foreign-library kernel32)
+
+(cffi:defcfun (get-last-error "GetLastError"
+                              :library kernel32
+                              :convention :stdcall)
+    :ulong)
+
 (defclass service ()
   ((status :initarg :status
            :accessor service-status-obj)
