@@ -71,6 +71,7 @@
 
 (cffi:defctype handle :pointer "Handle to in-memory resource.")
 (cffi:defctype service-status-handle handle "Handle to a SERVICE-STATUS struct.")
+(cffi:defctype sc-handle handle "Handle to a service control manager database.")
 
 (cffi:defcfun (register-service-ctrl-handler "RegisterServiceCtrlHandlerExW"
                                              :convention :stdcall
@@ -87,6 +88,33 @@
     :int
   (status-handle service-status-handle)
   (status (:pointer (:struct service-status))))
+
+;;; Code for installing/uninstalling a service
+(cffi:defcenum (generic-rights :ulong)
+    (:delete #x00010000)
+    (:read-control #x00020000)
+    (:write-dac #x00040000)
+    (:write-owner #x00080000)
+    (:synchronize #x00100000)
+    (:required #x000F0000)
+    (:read #x00020000) ; :read-control
+    (:write #x00020000) ; :read-control
+    (:execute #x#x00020000) ; :read-control
+    (:all #x001F0000)
+    (:specific-all #x0000FFFF)
+    (:generic-all #x10000000)
+    (:generic-execute #x20000000)
+    (:generic-write #x40000000)
+    (:generic-read #x#x80000000))
+
+(cffi:defcenum (sc-manager-rights)
+  (:all-access #xF003F)
+  (:create-service #x0002)
+  (:connect #x0001)
+  (:enumerate-service #x0004)
+  (:lock #x0008)
+  (:modify-boot-config #x20)
+  (:query-lock-status #x10))
 
 (defclass service ()
   ((status :initarg :status
