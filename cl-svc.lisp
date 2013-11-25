@@ -173,6 +173,59 @@
                               :convention :stdcall)
     :ulong)
 
+(defun make-deps-string (deps group-deps)
+  (with-output-to-string (str)
+    (loop for dep in deps
+       do (format str "~A~C" dep (code-char 0)))
+    (loop for gdep in group-deps
+       ;; '+' is SC_GROUP_IDENTIFIER
+       do (format str "+~A~C" gdep (code-char 0)))
+    ;; Just to be safe (requires a "double null" at the end, which may
+    ;; or may not include the null of the last string)
+    (write-char (code-char 0) str)))
+
+(defun install-service (name &key (type :win32-shared-process)
+                               (start-type :demand-start)
+                               (error-level :normal)
+                               (load-order-group (cffi:null-pointer))
+                               (dependencies '())
+                               (group-dependencies '())
+                               (account (cffi:null-pointer))
+                               (password (cffi:null-pointer))
+                               get-tag-id)
+  (macrolet ((with-sc-manager ((var) &body body)
+               `(let ((,var (open-sc-manager (cffi:null-pointer)
+                                             (cffi:null-pointer)
+                                             (flags 'sc-manager-rights :all-access))))
+                  (when (cffi:null-pointer-p scm-handle)
+                    (error "Failed opening the Service Control Manager."))
+                  (unwind-protect
+                       (progn
+                         ,@body)
+                    (close-service-handle scm-handle)))))
+    (with-sc-manager (scm-handle)
+      (cffi:with-foreign-objects ((tag-id :ulong))
+        (let ((service-handle (create-service scm-handle
+                                              name ;service name
+                                              name ; display name
+                                              (flags 'sc-manager-rights :all-access)
+                                              type
+                                              start-type
+                                              error-level
+                                              (cffi:null-pointer)
+                                              load-order-group
+                                              (if get-tag-id tag-id (cffi:null-pointer))
+                                              (let ((s (make-deps-string dependencies
+                                                                         group-dependencies)))
+                                                (if (> (length s) 0)
+                                                    s
+                                                    (cffi:null-pointer)))
+                                              account
+                                              password)))
+          (when (cffi:null-pointer-p service-handle)
+            (error "Failed to create the service."))
+          (values service-handle (if get-tag-id (cffi:mem-aref tag-id :ulong) nil)))))))
+
 (defclass service ()
   ((status :initarg :status
            :accessor service-status-obj)
