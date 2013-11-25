@@ -138,6 +138,25 @@
   (:normal #x01)
   (:severe #x02))
 
+(cffi:defcfun (create-service "CreateServiceW"
+                              :library advapi32
+                              :convention :stdcall)
+    sc-handle
+  (sc-manager sc-handle)
+  (service-name (:string :encoding :utf-16))
+  (display-name (:string :encoding :utf-16))
+  (desired-access :ulong)
+  (service-type service-type)
+  (start-type service-start-type)
+  (error-level service-error-level)
+  (binary-path (:string :encoding :utf-16))  ; can include args for auto-start services
+  (load-order-group (:string :encoding :utf-16))
+  (tag-id (:pointer :ulong)) ; Out, optional
+  (dependencies (:string :encoding :utf-16))          ;; double-NUL terminated list of
+  ;; NUL-terminated strings
+  (service-start-account (:string :encoding :utf-16))
+  (password (:string :encoding :utf-16)))
+
 (defclass service ()
   ((status :initarg :status
            :accessor service-status-obj)
