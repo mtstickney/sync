@@ -116,6 +116,14 @@
   (:modify-boot-config #x20)
   (:query-lock-status #x10))
 
+(cffi:defcfun (open-sc-manager "OpenSCManagerW"
+                               :convention :stdcall
+                               :library advapi32)
+    sc-handle
+  (machine-name (:string :encoding :utf-16))
+  (database-name (:string :encoding :utf-16))
+  (desired-access :ulong))
+
 (defclass service ()
   ((status :initarg :status
            :accessor service-status-obj)
