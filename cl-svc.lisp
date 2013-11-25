@@ -69,7 +69,8 @@
                      ; increment/status change
   )
 
-(cffi:defctype service-status-handle :int "Handle to a SERVICE-STATUS struct.")
+(cffi:defctype handle :pointer "Handle to in-memory resource.")
+(cffi:defctype service-status-handle handle "Handle to a SERVICE-STATUS struct.")
 
 (cffi:defcfun (register-service-ctrl-handler "RegisterServiceCtrlHandlerExW"
                                              :convention :stdcall
