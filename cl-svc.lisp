@@ -239,7 +239,7 @@
                                               type
                                               start-type
                                               error-level
-                                              (cffi:null-pointer)
+                                              (get-module-name) ; Despite being labeled "OPT", this has to be filled in
                                               load-order-group
                                               (if get-tag-id tag-id (cffi:null-pointer))
                                               (let ((s (make-deps-string dependencies
