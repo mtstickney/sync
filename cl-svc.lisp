@@ -180,6 +180,12 @@
                               :convention :stdcall)
     :ulong)
 
+(cffi:defcfun (set-last-error "SetLastError"
+                              :library kernel32
+                              :convention :stdcall)
+    :void
+  (code :ulong))
+
 (cffi:defcfun (%get-module-name "GetModuleFileNameW"
                                 :library kernel32
                                 :convention :stdcall)
