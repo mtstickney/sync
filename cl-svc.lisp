@@ -2,6 +2,15 @@
 
 (in-package #:cl-svc)
 
+(cffi:define-foreign-library advapi32
+  ((or :mswindows :win32 :windows) (:default "advapi32")))
+
+(cffi:define-foreign-library kernel32
+  ((or :windows :mswindows :win32) (:default "kernel32")))
+
+(cffi:use-foreign-library advapi32)
+(cffi:use-foreign-library kernel32)
+
 ;; For unicode decoding portability. Note that it won't work with a
 ;; foreign-endian unicode string, even with a BOM
 (define-symbol-macro host-utf16
@@ -9,21 +18,9 @@
     #+big-endian :utf-16be
     #-(or little-endian bit-endian) :utf-16)
 
-(cffi:define-foreign-library advapi32
-  ((or :mswindows :win32 :windows) (:default "advapi32")))
-
-(cffi:use-foreign-library advapi32)
-
-(cffi:defcstruct service-table-entry
-  "SERVICE_TABLE_ENTRY for Windows services."
-  (service-name (:string :encoding host-utf16))
-  (service-func :pointer))
-
-(cffi:defcfun (start-service-ctrl-dispatcher "StartServiceCtrlDispatcherW"
-                                             :convention :stdcall
-                                             :library advapi32)
-    :int
-  (service-table (:pointer (:struct service-table-entry))))
+(cffi:defctype handle :pointer "Handle to in-memory resource.")
+(cffi:defctype service-status-handle handle "Handle to a SERVICE-STATUS struct.")
+(cffi:defctype sc-handle handle "Handle to a service control manager database.")
 
 (cffi:defcenum (service-type :ulong)
   (:file-system-driver #x02)
@@ -40,6 +37,20 @@
   (:pause-pending #x06)
   (:paused #x07))
 
+(cffi:defcenum (service-start-type :ulong)
+  (:auto-start #x02)
+  (:boot-start #x00)
+  (:demand-start #x03)
+  (:disabled #x04)
+  (:system-start #x01))
+
+;; Used to indicate the level of error if the service fails to start
+(cffi:defcenum (service-error-level :ulong)
+  (:critical #x03)
+  (:ignore #x00)
+  (:normal #x01)
+  (:severe #x02))
+
 (cffi:defcenum (service-control-set :ulong)
   (:stop #x01)
   (:pause-continue #x002)
@@ -55,48 +66,6 @@
   (:trigger-event #x400)
   (:user-mode-reboot #x800))
 
-(defun flags (type &rest values)
-  "Return an ORed set of flags for the VALUES of enum TYPE."
-  (apply #'logior
-         (mapcar (lambda (v)
-                   (typecase v
-                     (keyword (cffi:foreign-enum-value type v))
-                     (t (cffi:foreign-enum-value type (cffi:foreign-enum-keyword type v)))))
-                 values)))
-
-(cffi:defcstruct service-status
-  "SERVICE_STATUS for Windows services."
-  (service-type service-type)
-  (status service-state)
-  (accepted-controls :ulong)
-  (win32-exit-code :ulong)
-  (service-specific-exit-code :ulong)
-  (checkpoint :ulong) ; progress during initialization/shutdown
-  (wait-hint :ulong) ; timeout to wait for a checkpoint
-                     ; increment/status change
-  )
-
-(cffi:defctype handle :pointer "Handle to in-memory resource.")
-(cffi:defctype service-status-handle handle "Handle to a SERVICE-STATUS struct.")
-(cffi:defctype sc-handle handle "Handle to a service control manager database.")
-
-(cffi:defcfun (register-service-ctrl-handler "RegisterServiceCtrlHandlerExW"
-                                             :convention :stdcall
-                                             :library advapi32)
-    service-status-handle
-  "Register a service handler table for use. Returns a handle that can be used to set the service status."
-  (service-name (:string :encoding host-utf16))
-  (handler :pointer)
-  (data :pointer))
-
-(cffi:defcfun (set-status-service "SetServiceStatus"
-                                  :convention :stdcall
-                                  :library advapi32)
-    :int
-  (status-handle service-status-handle)
-  (status (:pointer (:struct service-status))))
-
-;;; Code for installing/uninstalling a service
 (cffi:defcenum (generic-rights :ulong)
     (:delete #x00010000)
     (:read-control #x00020000)
@@ -123,57 +92,31 @@
   (:modify-boot-config #x20)
   (:query-lock-status #x10))
 
-(cffi:defcfun (open-sc-manager "OpenSCManagerW"
-                               :convention :stdcall
-                               :library advapi32)
-    sc-handle
-  (machine-name (:string :encoding host-utf16))
-  (database-name (:string :encoding host-utf16))
-  (desired-access :ulong))
+(defun flags (type &rest values)
+  "Return an ORed set of flags for the VALUES of enum TYPE."
+  (apply #'logior
+         (mapcar (lambda (v)
+                   (typecase v
+                     (keyword (cffi:foreign-enum-value type v))
+                     (t (cffi:foreign-enum-value type (cffi:foreign-enum-keyword type v)))))
+                 values)))
 
-(cffi:defcenum (service-start-type :ulong)
-  (:auto-start #x02)
-  (:boot-start #x00)
-  (:demand-start #x03)
-  (:disabled #x04)
-  (:system-start #x01))
-
-;; Used to indicate the level of error if the service fails to start
-(cffi:defcenum (service-error-level :ulong)
-  (:critical #x03)
-  (:ignore #x00)
-  (:normal #x01)
-  (:severe #x02))
-
-(cffi:defcfun (create-service "CreateServiceW"
-                              :library advapi32
-                              :convention :stdcall)
-    sc-handle
-  (sc-manager sc-handle)
+(cffi:defcstruct service-table-entry
+  "SERVICE_TABLE_ENTRY for Windows services."
   (service-name (:string :encoding host-utf16))
-  (display-name (:string :encoding host-utf16))
-  (desired-access :ulong)
+  (service-func :pointer))
+
+(cffi:defcstruct service-status
+  "SERVICE_STATUS for Windows services."
   (service-type service-type)
-  (start-type service-start-type)
-  (error-level service-error-level)
-  (binary-path (:string :encoding host-utf16))  ; can include args for auto-start services
-  (load-order-group (:string :encoding host-utf16))
-  (tag-id (:pointer :ulong)) ; Out, optional
-  (dependencies (:string :encoding host-utf16))          ;; double-NUL terminated list of
-  ;; NUL-terminated strings
-  (service-start-account (:string :encoding host-utf16))
-  (password (:string :encoding host-utf16)))
-
-(cffi:defcfun (close-service-handle "CloseServiceHandle"
-                                    :library advapi32
-                                    :convention :stdcall)
-    :int
-  (handle sc-handle))
-
-(cffi:define-foreign-library kernel32
-  ((or :windows :mswindows :win32) (:default "kernel32")))
-
-(cffi:use-foreign-library kernel32)
+  (status service-state)
+  (accepted-controls :ulong)
+  (win32-exit-code :ulong)
+  (service-specific-exit-code :ulong)
+  (checkpoint :ulong) ; progress during initialization/shutdown
+  (wait-hint :ulong) ; timeout to wait for a checkpoint
+                     ; increment/status change
+  )
 
 (cffi:defcfun (get-last-error "GetLastError"
                               :library kernel32
@@ -199,6 +142,75 @@
     (%get-module-name module buf (1- (* 2 261)))
     (setf (cffi:mem-aref buf :char 260) 0)
     (cffi:foreign-string-to-lisp buf :encoding host-utf16)))
+
+(cffi:defcfun (close-service-handle "CloseServiceHandle"
+                                    :library advapi32
+                                    :convention :stdcall)
+    :int
+  (handle sc-handle))
+
+(cffi:defcfun (open-sc-manager "OpenSCManagerW"
+                               :convention :stdcall
+                               :library advapi32)
+    sc-handle
+  (machine-name (:string :encoding host-utf16))
+  (database-name (:string :encoding host-utf16))
+  (desired-access :ulong))
+
+(cffi:defcfun (open-service "OpenServiceW"
+                            :library advapi32
+                            :convention :stdcall)
+    sc-handle
+  (scm-handle sc-handle)
+  (svc-name (:string :encoding host-utf16))
+  (access :ulong))
+
+(cffi:defcfun (create-service "CreateServiceW"
+                              :library advapi32
+                              :convention :stdcall)
+    sc-handle
+  (sc-manager sc-handle)
+  (service-name (:string :encoding host-utf16))
+  (display-name (:string :encoding host-utf16))
+  (desired-access :ulong)
+  (service-type service-type)
+  (start-type service-start-type)
+  (error-level service-error-level)
+  (binary-path (:string :encoding host-utf16))  ; can include args for auto-start services
+  (load-order-group (:string :encoding host-utf16))
+  (tag-id (:pointer :ulong)) ; Out, optional
+  (dependencies (:string :encoding host-utf16))          ;; double-NUL terminated list of
+  ;; NUL-terminated strings
+  (service-start-account (:string :encoding host-utf16))
+  (password (:string :encoding host-utf16)))
+
+(cffi:defcfun (delete-service "DeleteService"
+                              :library advapi32
+                              :convention :stdcall)
+    :int
+  (svc-handle sc-handle))
+
+(cffi:defcfun (start-service-ctrl-dispatcher "StartServiceCtrlDispatcherW"
+                                             :convention :stdcall
+                                             :library advapi32)
+    :int
+  (service-table (:pointer (:struct service-table-entry))))
+
+(cffi:defcfun (register-service-ctrl-handler "RegisterServiceCtrlHandlerExW"
+                                             :convention :stdcall
+                                             :library advapi32)
+    service-status-handle
+  "Register a service handler table for use. Returns a handle that can be used to set the service status."
+  (service-name (:string :encoding host-utf16))
+  (handler :pointer)
+  (data :pointer))
+
+(cffi:defcfun (set-status-service "SetServiceStatus"
+                                  :convention :stdcall
+                                  :library advapi32)
+    :int
+  (status-handle service-status-handle)
+  (status (:pointer (:struct service-status))))
 
 (defun make-deps-string (deps group-deps)
   (with-output-to-string (str)
@@ -252,20 +264,6 @@
           (when (cffi:null-pointer-p service-handle)
             (error "Failed to create the service."))
           (values service-handle (if get-tag-id (cffi:mem-aref tag-id :ulong) nil)))))))
-
-(cffi:defcfun (delete-service "DeleteService"
-                              :library advapi32
-                              :convention :stdcall)
-    :int
-  (svc-handle sc-handle))
-
-(cffi:defcfun (open-service "OpenServiceW"
-                            :library advapi32
-                            :convention :stdcall)
-    sc-handle
-  (scm-handle sc-handle)
-  (svc-name (:string :encoding host-utf16))
-  (access :ulong))
 
 (defclass service ()
   ((status :initarg :status
