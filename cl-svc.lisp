@@ -2,6 +2,13 @@
 
 (in-package #:cl-svc)
 
+;; For unicode decoding portability. Note that it won't work with a
+;; foreign-endian unicode string, even with a BOM
+(define-symbol-macro host-utf16
+    #+little-endian :utf-16le
+    #+big-endian :utf-16be
+    #-(or little-endian bit-endian) :utf-16)
+
 (cffi:define-foreign-library advapi32
   ((or :mswindows :win32 :windows) (:default "advapi32")))
 
@@ -9,7 +16,7 @@
 
 (cffi:defcstruct service-table-entry
   "SERVICE_TABLE_ENTRY for Windows services."
-  (service-name (:string :encoding :utf-16))
+  (service-name (:string :encoding host-utf16))
   (service-func :pointer))
 
 (cffi:defcfun (start-service-ctrl-dispatcher "StartServiceCtrlDispatcherW"
@@ -78,7 +85,7 @@
                                              :library advapi32)
     service-status-handle
   "Register a service handler table for use. Returns a handle that can be used to set the service status."
-  (service-name (:string :encoding :utf-16))
+  (service-name (:string :encoding host-utf16))
   (handler :pointer)
   (data :pointer))
 
@@ -120,8 +127,8 @@
                                :convention :stdcall
                                :library advapi32)
     sc-handle
-  (machine-name (:string :encoding :utf-16))
-  (database-name (:string :encoding :utf-16))
+  (machine-name (:string :encoding host-utf16))
+  (database-name (:string :encoding host-utf16))
   (desired-access :ulong))
 
 (cffi:defcenum (service-start-type :ulong)
@@ -143,19 +150,19 @@
                               :convention :stdcall)
     sc-handle
   (sc-manager sc-handle)
-  (service-name (:string :encoding :utf-16))
-  (display-name (:string :encoding :utf-16))
+  (service-name (:string :encoding host-utf16))
+  (display-name (:string :encoding host-utf16))
   (desired-access :ulong)
   (service-type service-type)
   (start-type service-start-type)
   (error-level service-error-level)
-  (binary-path (:string :encoding :utf-16))  ; can include args for auto-start services
-  (load-order-group (:string :encoding :utf-16))
+  (binary-path (:string :encoding host-utf16))  ; can include args for auto-start services
+  (load-order-group (:string :encoding host-utf16))
   (tag-id (:pointer :ulong)) ; Out, optional
-  (dependencies (:string :encoding :utf-16))          ;; double-NUL terminated list of
+  (dependencies (:string :encoding host-utf16))          ;; double-NUL terminated list of
   ;; NUL-terminated strings
-  (service-start-account (:string :encoding :utf-16))
-  (password (:string :encoding :utf-16)))
+  (service-start-account (:string :encoding host-utf16))
+  (password (:string :encoding host-utf16)))
 
 (cffi:defcfun (close-service-handle "CloseServiceHandle"
                                     :library advapi32
@@ -178,15 +185,14 @@
                                 :convention :stdcall)
     :ulong
   (module :pointer)
-  (buf (:string :encoding :utf-16))
+  (buf (:string :encoding host-utf16))
   (bufsize :ulong))
 
 (defun get-module-name (&optional (module (cffi:null-pointer)))
   (cffi:with-foreign-object (buf :char (* 2 261))
     (%get-module-name module buf (1- (* 2 261)))
     (setf (cffi:mem-aref buf :char 260) 0)
-    ;; Why does this have to be :utf-16le instead of just :utf-16?
-    (cffi:foreign-string-to-lisp buf :encoding :utf-16le)))
+    (cffi:foreign-string-to-lisp buf :encoding host-utf16)))
 
 (defun make-deps-string (deps group-deps)
   (with-output-to-string (str)
