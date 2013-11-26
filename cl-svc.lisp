@@ -253,6 +253,20 @@
             (error "Failed to create the service."))
           (values service-handle (if get-tag-id (cffi:mem-aref tag-id :ulong) nil)))))))
 
+(cffi:defcfun (delete-service "DeleteService"
+                              :library advapi32
+                              :convention :stdcall)
+    :int
+  (svc-handle sc-handle))
+
+(cffi:defcfun (open-service "OpenServiceW"
+                            :library advapi32
+                            :convention :stdcall)
+    sc-handle
+  (scm-handle sc-handle)
+  (svc-name (:string :encoding host-utf16))
+  (access :ulong))
+
 (defclass service ()
   ((status :initarg :status
            :accessor service-status-obj)
