@@ -265,6 +265,82 @@
             (error "Failed to create the service."))
           (values service-handle (if get-tag-id (cffi:mem-aref tag-id :ulong) nil)))))))
 
+(cffi:defcallback (handle-svc-control :convention :stdcall) :ulong
+    ((control :ulong) (event-type :ulong) (event-data :pointer) (data :pointer))
+  (declare (ignore event-data data))
+  (format *debug-io* "Control: ~X Event-type: ~X~%" control event-type)
+  0)
+
+(cffi:define-foreign-library wrapper
+  ((or :mswindows :windows :win32) (:default "CreateServiceWrapper")))
+
+(cffi:use-foreign-library wrapper)
+
+(cffi:defcfun (%create-service-wrap "CreateServiceWrapper"
+                              :library advapi32
+                              :convention :cdecl)
+    :ulong
+  (sc-manager sc-handle)
+  (service-name (:string :encoding #.host-utf16))
+  (display-name (:string :encoding #.host-utf16))
+  (desired-access :ulong)
+  (service-type service-type)
+  (start-type service-start-type)
+  (error-level service-error-level)
+  (binary-path (:string :encoding #.host-utf16))  ; can include args for auto-start services
+  (load-order-group (:string :encoding #.host-utf16))
+  (tag-id (:pointer :ulong)) ; Out, optional
+  (dependencies (:string :encoding #.host-utf16))          ;; double-NUL terminated list of
+  ;; NUL-terminated strings
+  (service-start-account (:string :encoding #.host-utf16))
+  (password (:string :encoding #.host-utf16))
+  (success :pointer))
+
+(defun create-service-wrap (&rest args)
+  (cffi:with-foreign-object (result :int)
+    (let ((code (apply #'%create-service-wrap
+                       (append args (list result)))))
+      (values code (cffi:mem-aref result :int)))))
+
+(defun install-service-dbg (name &key (type :win32-shared-process)
+                               (start-type :demand-start)
+                               (error-level :normal)
+                               (load-order-group (cffi:null-pointer))
+                               (dependencies '())
+                               (group-dependencies '())
+                               (account (cffi:null-pointer))
+                               (password (cffi:null-pointer))
+                               get-tag-id)
+  (macrolet ((with-sc-manager ((var) &body body)
+               `(let ((,var (open-sc-manager (cffi:null-pointer)
+                                             (cffi:null-pointer)
+                                             (flags 'sc-manager-rights :all-access))))
+                  (when (cffi:null-pointer-p scm-handle)
+                    (error "Failed opening the Service Control Manager."))
+                  (unwind-protect
+                       (progn
+                         ,@body)
+                    (close-service-handle scm-handle)))))
+    (with-sc-manager (scm-handle)
+      (cffi:with-foreign-objects ((tag-id :ulong))
+        (create-service-wrap scm-handle
+                             name                               ;service name
+                             name                               ; display name
+                             (flags 'sc-manager-rights :all-access)
+                             type
+                             start-type
+                             error-level
+                             (get-module-name) ; Despite being labeled "OPT", this has to be filled in
+                             load-order-group
+                             (if get-tag-id tag-id (cffi:null-pointer))
+                             (let ((s (make-deps-string dependencies
+                                                        group-dependencies)))
+                               (if (> (length s) 0)
+                                   s
+                                   (cffi:null-pointer)))
+                             account
+                             password)))))
+
 (defclass service ()
   ((status :initarg :status
            :accessor service-status-obj)
