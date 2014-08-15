@@ -50,13 +50,13 @@ cl_object read(const char *s, cl_object pool)
                 cl_object val;
 
                 if (pool != OBJNULL)
-                        ecl_bsd_bind(env, pool_var, pool);
+                        ecl_bds_bind(env, pool_var, pool);
                 ECL_UNWIND_PROTECT_BEGIN(env) {
                         /* cl_funcall will handle the multiple-value magic. */
                         val = cl_funcall(2, safe_read_from_string, ecl_cstring_to_base_string_or_nil(s));
                 } ECL_UNWIND_PROTECT_EXIT {
                         if (pool != OBJNULL)
-                                ecl_bsd_unwind1(env);
+                                ecl_bds_unwind1(env);
                 } ECL_UNWIND_PROTECT_END;
 
                 /* Note that since cl_funcall has already set up the env we just need to get
