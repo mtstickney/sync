@@ -16,7 +16,7 @@ cl_object eval(const char *s, cl_object pool)
 {
         cl_env_ptr env = ecl_process_env();
 
-        CL_CATCH_ALL_BEGIN(env) {
+        ECL_CATCH_ALL_BEGIN(env) {
                 cl_object safe_eval_string = ecl_make_symbol("SAFE-EVAL-STRING", "SHECL");
                 cl_object pool_var = ecl_make_symbol("*POOL*", "SHECL");
                 cl_object val;
@@ -35,16 +35,16 @@ cl_object eval(const char *s, cl_object pool)
                  * set up the return values in env, we just have to get the primary one out.
                  * This may cause problems if ecl_returnX() changes in the future. */
                 return val;
-        } CL_CATCH_ALL_IF_CAUGHT {
+        } ECL_CATCH_ALL_IF_CAUGHT {
                 ecl_return2(env, OBJNULL, OBJNULL);
-        } CL_CATCH_ALL_END
+        } ECL_CATCH_ALL_END
 }
 
 cl_object read(const char *s, cl_object pool)
 {
         cl_env_ptr env = ecl_process_env();
 
-        CL_CATCH_ALL_BEGIN(env) {
+        ECL_CATCH_ALL_BEGIN(env) {
                 cl_object safe_read_from_string = ecl_make_symbol("SAFE-READ-FROM-STRING", "SHECL");
                 cl_object pool_var = ecl_make_symbol("*POOL*", "SHECL");
                 cl_object val;
@@ -62,9 +62,9 @@ cl_object read(const char *s, cl_object pool)
                 /* Note that since cl_funcall has already set up the env we just need to get
                  * the primary one out. Note that this may break if ecl_returnX() changes in the future. */
                 return val;
-        } CL_CATCH_ALL_IF_CAUGHT {
+        } ECL_CATCH_ALL_IF_CAUGHT {
                 ecl_return2(env, OBJNULL, OBJNULL);
-        } CL_CATCH_ALL_END
+        } ECL_CATCH_ALL_END
 }
 
 /* Poor man's substitute for (apply #'list arg1 arg2 ...) -- including spread behavior of the last arg. */
@@ -99,7 +99,7 @@ cl_object call(int nargs, cl_object pool, cl_object func, cl_object arg, ...)
         cl_env_ptr env = ecl_process_env();
         cl_object val;
 
-        CL_CATCH_ALL_BEGIN(env) {
+        ECL_CATCH_ALL_BEGIN(env) {
                 cl_object error = ecl_make_symbol("ERROR", "CL");
                 ECL_HANDLER_CASE_BEGIN(env, ecl_list1(error)) {
                         int i;
@@ -129,7 +129,7 @@ cl_object call(int nargs, cl_object pool, cl_object func, cl_object arg, ...)
                 } ECL_HANDLER_CASE(1, condition) {
                         ecl_return2(env, condition, ecl_cstring_to_base_string_or_nil("Error constructing function call"));
                 } ECL_HANDLER_CASE_END
-        } CL_CATCH_ALL_IF_CAUGHT {
+        } ECL_CATCH_ALL_IF_CAUGHT {
                 ecl_return2(env, OBJNULL, OBJNULL);
-        } CL_CATCH_ALL_END
+        } ECL_CATCH_ALL_END
 }
