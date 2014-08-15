@@ -76,6 +76,7 @@ cl_object call(int nargs, cl_object func, cl_object arg, ...)
                         for (i = 0; i < nargs - 2; i++) {
                                 arglist = cl_cons(ecl_va_arg(arglist), arglist);
                         }
+                        ecl_va_end(varargs);
 
                         nreverse = ecl_make_symbol("NREVERSE", "CL");
                         arglist = cl_funcall(2, nreverse, arglist);
