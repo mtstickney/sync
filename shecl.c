@@ -15,22 +15,13 @@ void shecl_shutdown(void)
 /* TODO: add out-of-band error parameter (cl_object* or something). */
 cl_object eval(const char *s, cl_object pool)
 {
-        cl_object form;
-        cl_object val;
-        cl_object error;
         cl_env_ptr env = ecl_process_env();
 
         CL_CATCH_ALL_BEGIN(env) {
-                error = ecl_make_symbol("ERROR", "CL");
-                ECL_HANDLER_CASE_BEGIN(env, ecl_list1(error)) {
-                        form = ecl_read_from_cstring(s);
-                        val = cl_eval(1, form);
-                        /* TODO: add the result to pool before returning it. */
-                        ecl_return1(env, val);
-                ECL_HANDLER_CASE(1, condition) {
-                        /* FIXME: dunno what to do here (how do we get the actual error back out?) */
-                        ecl_return1(env, OBJNULL);
-                } ECL_HANDLER_CASE_END
+                cl_object safe_eval_string = ecl_make_symbol("SAFE-EVAL-STRING", "SHECL");
+
+                /* TODO: add value to pool before returning it. */
+                return cl_funcall(2, safe_eval_string, ecl_cstring_to_base_string_or_nil(s));
         } CL_CATCH_ALL_IF_CAUGHT {
                 ecl_return1(env, OBJNULL);
         } CL_CATCH_ALL_END
@@ -39,19 +30,12 @@ cl_object eval(const char *s, cl_object pool)
 /* TODO: add out-of-band error parameter. */
 cl_object read(const char *s, cl_object pool)
 {
-        cl_object form;
         cl_env_ptr env = ecl_process_env();
 
         CL_CATCH_ALL_BEGIN(env) {
-                error = ecl_make_symbol("ERROR", "CL");
-                ECL_HANDLER_CASE_BEGIN(env, ecl_list1(error)) {
-                        form = ecl_read_from_cstring(s);
-                        /* TODO: add form to pool before returning it. */
-                        ecl_return1(env, form);
-                } ECL_HANDLER_CASE(1, condition) {
-                        /* FIXME: need to get the actual error info out somehow. */
-                        ecl_return1(env, OBJNULL);
-                } ECL_HANDLER_CASE_END
+                cl_object safe_read_from_string = ecl_make_symbol("SAFE-READ-FROM-STRING", "SHECL");
+                /* TODO: add form to pool before returning it. */
+                return cl_funcall(2, safe_read_from_string, ecl_cstring_to_base_string_or_nil(s));
         } CL_CATCH_ALL_IF_CAUGHT {
                 ecl_return1(env, OBJNULL);
         } CL_CATCH_ALL_END
@@ -60,7 +44,7 @@ cl_object read(const char *s, cl_object pool)
 /* FIXME: no room for out-of-band error-handling param (!) */
 cl_object call(int nargs, cl_object func, cl_object arg, ...)
 {
-        cl_object apply;
+        cl_object safe_apply;
         cl_object error;
         cl_object nreverse;
         cl_object arglist = arg;
@@ -81,8 +65,8 @@ cl_object call(int nargs, cl_object func, cl_object arg, ...)
                         nreverse = ecl_make_symbol("NREVERSE", "CL");
                         arglist = cl_funcall(2, nreverse, arglist);
 
-                        apply = ecl_make_symbol("APPLY", "CL");
-                        ecl_return1(env, cl_funcall(2, apply, arglist);
+                        safe_apply = ecl_make_symbol("SAFE-APPLY", "SHECL");
+                        return cl_funcall(2, safe_apply, arglist);
                 } ECL_HANDLER_CASE(1, condition) {
                         /* FIXME: need to get the actual error info out somehow. */
                         ecl_return1(env, OBJNULL);
