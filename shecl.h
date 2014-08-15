@@ -1,5 +1,5 @@
 #ifndef SHECL_H
-#define #SHECL_H
+#define SHECL_H
 
 #include <ecl.h>
 
