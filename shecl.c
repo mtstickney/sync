@@ -73,6 +73,7 @@ cl_object varglist(int nvargs, cl_object fixedarg, ecl_va_list varargs)
         cl_env_ptr env = ecl_process_env();
         cl_object arglist;
         cl_object lastcons;
+        int i;
 
         if (nvargs = 0) {
                 ecl_return1(env, fixedarg);
