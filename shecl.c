@@ -91,7 +91,7 @@ cl_object varglist(int nvargs, cl_object fixedarg, ecl_va_list varargs)
                 cl_rplacd(lastcons, arg);
                 lastcons = arg;
         }
-        ecl_return1(arglist);
+        ecl_return1(env, arglist);
 }
 
 cl_object call(int nargs, cl_object pool, cl_object func, cl_object arg, ...)
