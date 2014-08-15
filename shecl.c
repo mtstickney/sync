@@ -129,7 +129,7 @@ cl_object call(int nargs, cl_object pool, cl_object func, cl_object arg, ...)
                 } ECL_HANDLER_CASE(1, condition) {
                         ecl_return2(env, condition, ecl_cstring_to_base_string_or_nil("Error constructing function call"));
                 } ECL_HANDLER_CASE_END
-        CL_CATCH_ALL_IF_CAUGHT {
+        } CL_CATCH_ALL_IF_CAUGHT {
                 ecl_return2(env, OBJNULL, OBJNULL);
         } CL_CATCH_ALL_END
 }
