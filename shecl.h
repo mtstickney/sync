@@ -22,7 +22,7 @@ cl_object SHECL_API eval(const char *s, cl_object pool);
 cl_object SHECL_API read(const char *s, cl_object pool);
 
 /* APPLY func to the arguments. There must be at least one other argument, a spreadable list of args. */
-cl_object SHECL_API call(int nargs, cl_object func, cl_object arg, ...);
+cl_object SHECL_API call(int nargs, cl_object pool, cl_object func, cl_object arg, ...);
 
 #ifdef __cplusplus
 }

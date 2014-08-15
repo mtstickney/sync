@@ -19,9 +19,23 @@ cl_object eval(const char *s, cl_object pool)
 
         CL_CATCH_ALL_BEGIN(env) {
                 cl_object safe_eval_string = ecl_make_symbol("SAFE-EVAL-STRING", "SHECL");
+                cl_object pool_var = ecl_make_symbol("*POOL*", "SHECL");
+                cl_object val;
 
-                /* TODO: add value to pool before returning it. */
-                return cl_funcall(2, safe_eval_string, ecl_cstring_to_base_string_or_nil(s));
+                if (pool != OBJNULL)
+                        ecl_bds_bind(env, pool_var, pool);
+                ECL_UNWIND_PROTECT_BEGIN(env) {
+                        /* Note that cl_funcall handles the multiple-value magic. */
+                        val = cl_funcall(2, safe_eval_string, ecl_cstring_to_base_string_or_nil(s));
+                } ECL_UNWIND_PROTECT_EXIT {
+                        if (pool != OBJNULL)
+                                ecl_bds_unwind1(env);
+                } ECL_UNWIND_PROTECT_END
+
+                /* Note that we're deliberately not using ecl_returnX(): cl_funcall has already
+                 * set up the return values in env, we just have to get the primary one out.
+                 * This may cause problems if ecl_returnX() changes in the future. */
+                return val;
         } CL_CATCH_ALL_IF_CAUGHT {
                 ecl_return1(env, OBJNULL);
         } CL_CATCH_ALL_END
@@ -34,17 +48,32 @@ cl_object read(const char *s, cl_object pool)
 
         CL_CATCH_ALL_BEGIN(env) {
                 cl_object safe_read_from_string = ecl_make_symbol("SAFE-READ-FROM-STRING", "SHECL");
-                /* TODO: add form to pool before returning it. */
-                return cl_funcall(2, safe_read_from_string, ecl_cstring_to_base_string_or_nil(s));
+                cl_object pool_var = ecl_make_symbol("*POOL*", "SHECL");
+                cl_object val;
+
+                if (pool != OBJNULL)
+                        ecl_bsd_bind(env, pool_var, pool);
+                ECL_UNWIND_PROTECT_BEGIN(env) {
+                        /* cl_funcall will handle the multiple-value magic. */
+                        val = cl_funcall(2, safe_read_from_string, ecl_cstring_to_base_string_or_nil(s));
+                } ECL_UNWIND_PROTECT_EXIT {
+                        if (pool != OBJNULL)
+                                ecl_bsd_unwind1(env);
+                } ECL_UNWIND_PROTECT_END
+
+                /* Note that since cl_funcall has already set up the env we just need to get
+                 * the primary one out. Note that this may break if ecl_returnX() changes in the future. */
+                return val;
         } CL_CATCH_ALL_IF_CAUGHT {
                 ecl_return1(env, OBJNULL);
         } CL_CATCH_ALL_END
 }
 
 /* FIXME: no room for out-of-band error-handling param (!) */
-cl_object call(int nargs, cl_object func, cl_object arg, ...)
+cl_object call(int nargs, cl_object pool, cl_object func, cl_object arg, ...)
 {
         cl_env_ptr env = ecl_process_env();
+        cl_object val;
 
         CL_CATCH_ALL_BEGIN(env) {
                 cl_object error = ecl_make_symbol("ERROR", "CL");
@@ -54,16 +83,28 @@ cl_object call(int nargs, cl_object func, cl_object arg, ...)
                         cl_object arglist = arg;
                         cl_object nreverse = ecl_make_symbol("NREVERSE", "CL");
                         cl_object safe_apply = ecl_make_symbol("SAFE-APPLY", "SHECL");
+                        cl_object pool_var = ecl_make_symbol("*POOL*", "SHECL");
 
-                        /* collect up a (lisp) list of arguments. */
-                        ecl_va_start(varargs, arg, nargs, 2);
-                        for (i = 0; i < nargs - 2; i++) {
-                                arglist = cl_cons(ecl_va_arg(arglist), arglist);
-                        }
-                        ecl_va_end(varargs);
+                        if (pool != OBJNULL)
+                                ecl_bds_bind(env, pool_var, pool);
+                        ECL_UNWIND_PROTECT_BEGIN(env) {
+                                /* collect up a (lisp) list of arguments. */
+                                ecl_va_start(varargs, arg, nargs, 3);
+                                for (i = 0; i < nargs - 2; i++) {
+                                        arglist = cl_cons(ecl_va_arg(arglist), arglist);
+                                }
+                                ecl_va_end(varargs);
 
-                        arglist = cl_funcall(2, nreverse, arglist);
-                        return cl_funcall(2, safe_apply, arglist);
+                                arglist = cl_funcall(2, nreverse, arglist);
+                                /* Note that cl_funcall handles the multiple-values magic. */
+                                val = cl_funcall(2, safe_apply, arglist);
+                        } ECL_UNWIND_PROTECT_EXIT {
+                                if (pool != OBJNULL)
+                                        ecl_bds_unwind1(env);
+                        } ECL_UNWIND_PROTECT_END;
+                        /* Since cl_funcall handled the multiple-value business, just get the primary out.
+                         * Depends on the internals of ecl_returnX() a bit, so it's fragile. */
+                        return val;
                 } ECL_HANDLER_CASE(1, condition) {
                         /* FIXME: need to get the actual error info out somehow. */
                         ecl_return1(env, OBJNULL);
