@@ -3,6 +3,7 @@
 /* At one time this function did something useful. It might again someday, so leave it here. */
 int shecl_boot(int argc, char **argv)
 {
+        /* TODO: load the lisp-side shecl system here (or use a system dll or something). */
         return cl_boot(argc, argv);
 }
 
@@ -11,6 +12,7 @@ void shecl_shutdown(void)
         cl_shutdown();
 }
 
+/* TODO: add out-of-band error parameter (cl_object* or something). */
 cl_object eval(const char *s, cl_object pool)
 {
         cl_object form;
@@ -27,6 +29,7 @@ cl_object eval(const char *s, cl_object pool)
                         /* FIXME: dunno what to do here (how do we get the actual error back out?) */
                         return OBJNULL;
                 } ECL_HANDLER_CASE_END
+                /* TODO: add the result to pool before returning it. */
                 return val;
         CL_CATCH_ALL_IF_CAUGHT {
                 return OBJNULL;
