@@ -18,6 +18,10 @@ extern "C" {
 int SHECL_API shecl_boot(int argc, char **argv);
 void SHECL_API shecl_shutdown(void);
 
+/* Protocol: functions return (VALUES value &optional error-msg). Use Lisp for multiple-values stuff.
+ * If there was an error and we've returned two values, the primary value may be the condition object
+ * that was signaled. */
+
 cl_object SHECL_API eval(const char *s, cl_object pool);
 cl_object SHECL_API read(const char *s, cl_object pool);
 
