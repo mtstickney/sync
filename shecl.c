@@ -67,6 +67,33 @@ cl_object read(const char *s, cl_object pool)
         } CL_CATCH_ALL_END
 }
 
+/* Poor man's substitute for (apply #'list arg1 arg2 ...) -- including spread behavior of the last arg. */
+cl_object varglist(int nvargs, cl_object fixedarg, ecl_va_list varargs)
+{
+        cl_env_ptr env = ecl_process_env();
+        cl_object arglist;
+        cl_object lastcons;
+
+        if (nvargs = 0) {
+                ecl_return1(env, fixedarg);
+        } else {
+                arglist = ecl_list1(fixedarg);
+                lastcons = arglist;
+        }
+
+        for (i = 0; i < nvargs; i++) {
+                cl_object arg = ecl_va_arg(varargs);
+
+                if (i < nvargs - 1)
+                        /* The last argument is already a list, otherwise make a cons. */
+                        arg = cl_cons(arg, ECL_NIL);
+
+                cl_rplacd(lastcons, arg);
+                lastcons = arg;
+        }
+        ecl_return1(arglist);
+}
+
 cl_object call(int nargs, cl_object pool, cl_object func, cl_object arg, ...)
 {
         cl_env_ptr env = ecl_process_env();
