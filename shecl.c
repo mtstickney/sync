@@ -12,7 +12,6 @@ void shecl_shutdown(void)
         cl_shutdown();
 }
 
-/* TODO: add out-of-band error parameter (cl_object* or something). */
 cl_object eval(const char *s, cl_object pool)
 {
         cl_env_ptr env = ecl_process_env();
@@ -37,11 +36,10 @@ cl_object eval(const char *s, cl_object pool)
                  * This may cause problems if ecl_returnX() changes in the future. */
                 return val;
         } CL_CATCH_ALL_IF_CAUGHT {
-                ecl_return1(env, OBJNULL);
+                ecl_return2(env, OBJNULL, OBJNULL);
         } CL_CATCH_ALL_END
 }
 
-/* TODO: add out-of-band error parameter. */
 cl_object read(const char *s, cl_object pool)
 {
         cl_env_ptr env = ecl_process_env();
@@ -65,11 +63,10 @@ cl_object read(const char *s, cl_object pool)
                  * the primary one out. Note that this may break if ecl_returnX() changes in the future. */
                 return val;
         } CL_CATCH_ALL_IF_CAUGHT {
-                ecl_return1(env, OBJNULL);
+                ecl_return2(env, OBJNULL, OBJNULL);
         } CL_CATCH_ALL_END
 }
 
-/* FIXME: no room for out-of-band error-handling param (!) */
 cl_object call(int nargs, cl_object pool, cl_object func, cl_object arg, ...)
 {
         cl_env_ptr env = ecl_process_env();
@@ -106,10 +103,9 @@ cl_object call(int nargs, cl_object pool, cl_object func, cl_object arg, ...)
                          * Depends on the internals of ecl_returnX() a bit, so it's fragile. */
                         return val;
                 } ECL_HANDLER_CASE(1, condition) {
-                        /* FIXME: need to get the actual error info out somehow. */
-                        ecl_return1(env, OBJNULL);
+                        ecl_return2(env, condition, ecl_cstring_to_base_string_or_nil("Error constructing function call"));
                 } ECL_HANDLER_CASE_END
         CL_CATCH_ALL_IF_CAUGHT {
-                ecl_return1(env, OBJNULL);
+                ecl_return2(env, OBJNULL, OBJNULL);
         } CL_CATCH_ALL_END
 }
