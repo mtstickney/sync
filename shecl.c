@@ -26,13 +26,13 @@ cl_object eval(const char *s, cl_object pool)
                         form = ecl_read_from_cstring(s);
                         val = cl_eval(1, form);
                         /* TODO: add the result to pool before returning it. */
-                        return val;
+                        ecl_return1(env, val);
                 ECL_HANDLER_CASE(1, condition) {
                         /* FIXME: dunno what to do here (how do we get the actual error back out?) */
-                        return OBJNULL;
+                        ecl_return1(env, OBJNULL);
                 } ECL_HANDLER_CASE_END
         } CL_CATCH_ALL_IF_CAUGHT {
-                return OBJNULL;
+                ecl_return1(env, OBJNULL);
         } CL_CATCH_ALL_END
 }
 
@@ -47,12 +47,12 @@ cl_object read(const char *s, cl_object pool)
                 ECL_HANDLER_CASE_BEGIN(env, ecl_list1(error)) {
                         form = ecl_read_from_cstring(s);
                         /* TODO: add form to pool before returning it. */
-                        return form;
+                        ecl_return1(env, form);
                 } ECL_HANDLER_CASE(1, condition) {
                         /* FIXME: need to get the actual error info out somehow. */
-                        return OBJNULL;
+                        ecl_return1(env, OBJNULL);
                 } ECL_HANDLER_CASE_END
         } CL_CATCH_ALL_IF_CAUGHT {
-                return OBJNULL;
+                ecl_return1(env, OBJNULL);
         } CL_CATCH_ALL_END
 }
