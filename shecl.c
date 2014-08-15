@@ -29,7 +29,7 @@ cl_object eval(const char *s, cl_object pool)
                 } ECL_UNWIND_PROTECT_EXIT {
                         if (pool != OBJNULL)
                                 ecl_bds_unwind1(env);
-                } ECL_UNWIND_PROTECT_END
+                } ECL_UNWIND_PROTECT_END;
 
                 /* Note that we're deliberately not using ecl_returnX(): cl_funcall has already
                  * set up the return values in env, we just have to get the primary one out.
@@ -37,7 +37,7 @@ cl_object eval(const char *s, cl_object pool)
                 return val;
         } ECL_CATCH_ALL_IF_CAUGHT {
                 ecl_return2(env, OBJNULL, OBJNULL);
-        } ECL_CATCH_ALL_END
+        } ECL_CATCH_ALL_END;
 }
 
 cl_object read(const char *s, cl_object pool)
@@ -57,14 +57,14 @@ cl_object read(const char *s, cl_object pool)
                 } ECL_UNWIND_PROTECT_EXIT {
                         if (pool != OBJNULL)
                                 ecl_bsd_unwind1(env);
-                } ECL_UNWIND_PROTECT_END
+                } ECL_UNWIND_PROTECT_END;
 
                 /* Note that since cl_funcall has already set up the env we just need to get
                  * the primary one out. Note that this may break if ecl_returnX() changes in the future. */
                 return val;
         } ECL_CATCH_ALL_IF_CAUGHT {
                 ecl_return2(env, OBJNULL, OBJNULL);
-        } ECL_CATCH_ALL_END
+        } ECL_CATCH_ALL_END;
 }
 
 /* Poor man's substitute for (apply #'list arg1 arg2 ...) -- including spread behavior of the last arg. */
@@ -128,8 +128,8 @@ cl_object call(int nargs, cl_object pool, cl_object func, cl_object arg, ...)
                         return val;
                 } ECL_HANDLER_CASE(1, condition) {
                         ecl_return2(env, condition, ecl_cstring_to_base_string_or_nil("Error constructing function call"));
-                } ECL_HANDLER_CASE_END
+                } ECL_HANDLER_CASE_END;
         } ECL_CATCH_ALL_IF_CAUGHT {
                 ecl_return2(env, OBJNULL, OBJNULL);
-        } ECL_CATCH_ALL_END
+        } ECL_CATCH_ALL_END;
 }
