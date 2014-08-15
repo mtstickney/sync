@@ -31,7 +31,7 @@ cl_object eval(const char *s, cl_object pool)
                 } ECL_HANDLER_CASE_END
                 /* TODO: add the result to pool before returning it. */
                 return val;
-        CL_CATCH_ALL_IF_CAUGHT {
+        } CL_CATCH_ALL_IF_CAUGHT {
                 return OBJNULL;
         } CL_CATCH_ALL_END
 }
