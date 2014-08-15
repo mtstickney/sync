@@ -104,22 +104,19 @@ cl_object call(int nargs, cl_object pool, cl_object func, cl_object arg, ...)
                 ECL_HANDLER_CASE_BEGIN(env, ecl_list1(error)) {
                         int i;
                         ecl_va_list varargs;
-                        cl_object arglist = arg;
-                        cl_object nreverse = ecl_make_symbol("NREVERSE", "CL");
                         cl_object safe_apply = ecl_make_symbol("SAFE-APPLY", "SHECL");
                         cl_object pool_var = ecl_make_symbol("*POOL*", "SHECL");
 
                         if (pool != OBJNULL)
                                 ecl_bds_bind(env, pool_var, pool);
                         ECL_UNWIND_PROTECT_BEGIN(env) {
+                                cl_object arglist;
+
                                 /* collect up a (lisp) list of arguments. */
                                 ecl_va_start(varargs, arg, nargs, 3);
-                                for (i = 0; i < nargs - 2; i++) {
-                                        arglist = cl_cons(ecl_va_arg(arglist), arglist);
-                                }
+                                arglist = varglist(nargs - 3, arg, varargs);
                                 ecl_va_end(varargs);
 
-                                arglist = cl_funcall(2, nreverse, arglist);
                                 /* Note that cl_funcall handles the multiple-values magic. */
                                 val = cl_funcall(2, safe_apply, arglist);
                         } ECL_UNWIND_PROTECT_EXIT {
