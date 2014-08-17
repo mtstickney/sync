@@ -1,5 +1,18 @@
 #include "shecl.h"
 
+cl_object report_error(cl_env_ptr env, cl_object condition, char *msg) {
+        cl_object error = ecl_make_symbol("ERROR", "CL");
+        ECL_HANDLER_CASE_BEGIN(env, ecl_list1(error)) {
+                cl_object error_string;
+                cl_object write_to_string = ecl_make_symbol("WRITE-TO-STRING", "CL");
+                cl_object escape = ecl_make_keyword("ESCAPE");
+                error_string = cl_funcall(3, write_to_string, condition, escape, ECL_NIL);
+                ecl_return2(env, condition, error_string);
+        } ECL_HANDLER_CASE(1, condition2) {
+                ecl_return2(env, condition, ecl_cstring_to_base_string_or_nil(msg));
+        } ECL_HANDLER_CASE_END;
+}
+
 /* At one time this function did something useful. It might again someday, so leave it here. */
 int shecl_boot(char *shecl_fasl_path, int argc, char **argv)
 {

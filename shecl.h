@@ -15,7 +15,7 @@
 extern "C" {
 #endif
 
-int SHECL_API shecl_boot(int argc, char **argv);
+int SHECL_API shecl_boot(char *shecl_fasl_path, int argc, char **argv);
 void SHECL_API shecl_shutdown(void);
 
 /* Protocol: functions return (VALUES value &optional error-msg). Use Lisp for multiple-values stuff.
