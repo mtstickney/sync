@@ -176,3 +176,226 @@ cl_object call(int nargs, cl_object pool, cl_object func, cl_object arg, ...)
                 ecl_return2(env, OBJNULL, OBJNULL);
         } ECL_CATCH_ALL_END;
 }
+
+/* Type conversion functions */
+
+int shecl_typep(cl_object obj, cl_object type)
+{
+        cl_env_ptr env = ecl_process_env();
+        ECL_CATCH_ALL_BEGIN(env) {
+                cl_object serious_condition = ecl_make_symbol("SERIOUS-CONDITION", "CL");
+                ECL_HANDLER_CASE_BEGIN(env, ecl_list1(serious_condition)) {
+                        cl_object typep = ecl_make_symbol("TYPEP", "CL");
+                        cl_object ret = cl_funcall(3, typep, obj, type);
+                        if (ret == ECL_NIL)
+                                return 0;
+                        return 1;
+                } ECL_HANDLER_CASE(1, condition) {
+                        return -1;
+                } ECL_HANDLER_CASE_END;
+        } ECL_CATCH_ALL_IF_CAUGHT {
+                return -1;
+        } ECL_CATCH_ALL_END;
+}
+
+cl_object signed_byte_type(unsigned int nbits)
+{
+        cl_object signed_byte = ecl_make_symbol("SIGNED-BYTE", "CL");
+        cl_object bits = ecl_make_integer(nbits);
+        return cl_list(2, signed_byte, bits);
+}
+
+/* CHARACTER type */
+cl_object lisp_string(char *str)
+{
+        cl_env_ptr env = ecl_process_env();
+        ECL_CATCH_ALL_BEGIN(env) {
+                cl_object serious_condition = ecl_make_symbol("SERIOUS-CONDITION", "CL");
+                ECL_HANDLER_CASE_BEGIN(env, ecl_list1(serious_condition)) {
+                        cl_object string = ecl_cstring_to_base_string_or_nil(str);
+                        if (string == ECL_NIL)
+                                cl_error(1, ecl_cstring_to_base_string_or_nil("String data was NULL."));
+                } ECL_HANDLER_CASE(1, condition) {
+                        return report_error(env, condition, "Error constructing Lisp string.");
+                } ECL_HANDLER_CASE_END;
+        } ECL_CATCH_ALL_IF_CAUGHT {
+                ecl_return2(env, OBJNULL, OBJNULL);
+        } ECL_CATCH_ALL_END;
+}
+
+int string_p(cl_object obj)
+{
+        cl_env_ptr env = ecl_process_env();
+        ECL_CATCH_ALL_BEGIN(env) {
+                cl_object serious_condition = ecl_make_symbol("SERIOUS-CONDITION", "CL");
+                ECL_HANDLER_CASE_BEGIN(env, ecl_list1(serious_condition)) {
+                        cl_object result = cl_stringp(obj);
+                        if (result == ECL_NIL)
+                                return 1;
+                        return 0;
+                } ECL_HANDLER_CASE(1, condition) {
+                        return -1;
+                } ECL_HANDLER_CASE_END;
+        } ECL_CATCH_ALL_IF_CAUGHT {
+                return -1;
+        } ECL_CATCH_ALL_END;
+}
+
+/* DECIMAL type */
+cl_object lisp_double(double d)
+{
+        cl_env_ptr env = ecl_process_env();
+        ECL_CATCH_ALL_BEGIN(env) {
+                ecl_return1(env, ecl_make_double_float(d));
+        } ECL_CATCH_ALL_IF_CAUGHT {
+                ecl_return2(env, OBJNULL, OBJNULL);
+        } ECL_CATCH_ALL_END;
+}
+
+int double_p(cl_object obj)
+{
+        cl_env_ptr env = ecl_process_env();
+        ECL_CATCH_ALL_BEGIN(env) {
+                cl_object type = ecl_make_symbol("DOUBLE-FLOAT", "CL");
+                return shecl_typep(obj, type);
+        } ECL_CATCH_ALL_IF_CAUGHT {
+                return -1;
+        } ECL_CATCH_ALL_END;
+}
+
+int c_double(cl_object obj, double *d)
+{
+        cl_env_ptr env = ecl_process_env();
+        ECL_CATCH_ALL_BEGIN(env) {
+                *d = ecl_to_double(obj);
+                return 0;
+        } ECL_CATCH_ALL_IF_CAUGHT {
+                return -1;
+        } ECL_CATCH_ALL_END;
+}
+
+/* INT64 type */
+
+cl_object lisp_int64(int64_t i)
+{
+        cl_env_ptr env = ecl_process_env();
+        ECL_CATCH_ALL_BEGIN(env) {
+                ecl_return1(env, ecl_make_int64_t(i));
+        } ECL_CATCH_ALL_IF_CAUGHT {
+                ecl_return2(env, OBJNULL, OBJNULL);
+        } ECL_CATCH_ALL_END;
+}
+
+int int64_p(cl_object obj)
+{
+        cl_env_ptr env = ecl_process_env();
+        ECL_CATCH_ALL_BEGIN(env) {
+                cl_object type = signed_byte_type(64);
+                return shecl_typep(obj, type);
+        } ECL_CATCH_ALL_IF_CAUGHT {
+                return -1;
+        } ECL_CATCH_ALL_END;
+}
+
+int c_int64(cl_object obj, int64_t *i)
+{
+        cl_env_ptr env = ecl_process_env();
+        ECL_CATCH_ALL_BEGIN(env) {
+                cl_object serious_condition = ecl_make_symbol("SERIOUS-CONDITION", "CL");
+                ECL_HANDLER_CASE_BEGIN(env, ecl_list1(serious_condition)) {
+                        *i = ecl_to_int64_t(obj);
+                        return 0;
+                } ECL_HANDLER_CASE(1, condition){
+                        return -1;
+                } ECL_HANDLER_CASE_END;
+        } ECL_CATCH_ALL_IF_CAUGHT {
+                return -1;
+        } ECL_CATCH_ALL_END;
+}
+
+/* INTEGER type */
+cl_object lisp_int(int32_t i)
+{
+        cl_env_ptr env = ecl_process_env();
+        ECL_CATCH_ALL_BEGIN(env) {
+                ecl_return1(env, ecl_make_int32_t(i));
+        } ECL_CATCH_ALL_IF_CAUGHT {
+                ecl_return2(env, OBJNULL, OBJNULL);
+        } ECL_CATCH_ALL_END;
+}
+
+int int_p(cl_object obj)
+{
+        cl_env_ptr env = ecl_process_env();
+        ECL_CATCH_ALL_BEGIN(env) {
+                cl_object type = signed_byte_type(32);
+                return shecl_typep(obj, type);
+        } ECL_CATCH_ALL_IF_CAUGHT {
+                return -1;
+        } ECL_CATCH_ALL_END;
+}
+
+int c_int(cl_object obj, int32_t *i)
+{
+        cl_env_ptr env = ecl_process_env();
+        ECL_CATCH_ALL_BEGIN(env) {
+                cl_object serious_condition = ecl_make_symbol("SERIOUS-CONDITION", "CL");
+                ECL_HANDLER_CASE_BEGIN(env, ecl_list1(serious_condition)) {
+                        *i = ecl_to_int32_t(obj);
+                        return 0;
+                } ECL_HANDLER_CASE(1, condition) {
+                        return -1;
+                } ECL_HANDLER_CASE_END;
+        } ECL_CATCH_ALL_IF_CAUGHT {
+                return -1;
+        } ECL_CATCH_ALL_END;
+}
+
+/* LOGICAL type (note that we're using int as an intermediary). */
+cl_object lisp_bool(int32_t b)
+{
+        cl_env_ptr env = ecl_process_env();
+        ECL_CATCH_ALL_BEGIN(env) {
+                if (b)
+                        ecl_return1(env, ECL_T);
+                else
+                        ecl_return1(env, ECL_NIL);
+        } ECL_CATCH_ALL_IF_CAUGHT {
+                ecl_return2(env, OBJNULL, OBJNULL);
+        } ECL_CATCH_ALL_END;
+}
+
+int bool_p(cl_object obj)
+{
+        cl_env_ptr env = ecl_process_env();
+        ECL_CATCH_ALL_BEGIN(env) {
+                /* (obj == ECL_T || obj == ECL_NIL) */
+                cl_object boolean = ecl_make_symbol("BOOLEAN", "CL");
+                return shecl_typep(obj, boolean);
+        } ECL_CATCH_ALL_IF_CAUGHT {
+                return -1;
+        } ECL_CATCH_ALL_END;
+}
+
+int c_bool(cl_object obj, int *b)
+{
+        if (obj == ECL_T) {
+                *b = 0;
+                return 0;
+        } else if (obj == ECL_NIL) {
+                *b = 1;
+                return 0;
+        }
+        return -1;
+}
+
+int c_generalized_bool(cl_object obj, int *b)
+{
+        if (obj == ECL_NIL) {
+                *b = 0;
+                return 0;
+        } else {
+                *b = 1;
+                return 0;
+        }
+}
