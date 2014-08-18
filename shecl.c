@@ -251,6 +251,37 @@ int string_p(cl_object obj)
         } ECL_CATCH_ALL_END;
 }
 
+char *c_string(cl_object obj)
+{
+        cl_env_ptr env = ecl_process_env();
+        char *data;
+        char *str;
+        ECL_CATCH_ALL_BEGIN(env) {
+                cl_object serious_condition = ecl_make_symbol("SERIOUS-CONDITION", "CL");
+                ECL_HANDLER_CASE_BEGIN(env, ecl_list1(serious_condition)) {
+                        cl_object convert_to_foreign_string = ecl_make_symbol("CONVERT-TO-FOREIGN-STRING", "UFFI");
+                        cl_object free_foreign_object = ecl_make_symbol("FREE-FOREIGN-OBJECT", "UFFI");
+                        cl_object pointer_address = ecl_make_symbol("POINTER-ADDRESS", "UFFI");
+                        cl_object foreign_string = cl_funcall(2, convert_to_foreign_string, obj);
+                        cl_object ptr = cl_funcall(2, pointer_address, foreign_string);
+                        size_t len;
+                        data = (char*)ecl_to_unsigned_integer(ptr);
+                        len = strlen(data);
+                        str = malloc(len);
+                        if (!str)
+                                return NULL;
+                        /* Hooray for overflows! */
+                        strcpy(str, data);
+                        cl_funcall(2, free_foreign_object, foreign_string);
+                        return str;
+                } ECL_HANDLER_CASE(1, condition) {
+                        return NULL;
+                } ECL_HANDLER_CASE_END;
+        } ECL_CATCH_ALL_IF_CAUGHT {
+                return NULL;
+        } ECL_CATCH_ALL_IF_CAUGHT;
+}
+
 /* DECIMAL type */
 cl_object lisp_double(double d)
 {
