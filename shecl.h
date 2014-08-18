@@ -29,6 +29,10 @@ cl_object SHECL_API read(const char *s, cl_object pool);
 /* APPLY func to the arguments. There must be at least one other argument, a spreadable list of args. */
 cl_object SHECL_API call(int nargs, cl_object pool, cl_object func, cl_object arg, ...);
 
+/* Wrappers for macros that fetch multiple return values. */
+cl_object SHECL_API shecl_nvalues(cl_env_ptr env);
+cl_object SHECL_API shecl_nth_value(cl_env_ptr env, int n);
+
 /* Type conversion functions. */
 cl_object SHECL_API lisp_string(char *str);
 int SHECL_API string_p(cl_object obj);

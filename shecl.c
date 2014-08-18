@@ -177,6 +177,16 @@ cl_object call(int nargs, cl_object pool, cl_object func, cl_object arg, ...)
         } ECL_CATCH_ALL_END;
 }
 
+cl_index shecl_nvalues(cl_env_ptr env)
+{
+        return ecl_nvalues(env);
+}
+
+cl_object SHECL_API shecl_nth_value(cl_env_ptr env, int n)
+{
+        return ecl_nth_value(env, n);
+}
+
 /* Type conversion functions */
 
 int shecl_typep(cl_object obj, cl_object type)
