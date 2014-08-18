@@ -151,4 +151,29 @@ PROCEDURE c_generalized_bool {&SHECL_API}:
         DEFINE RETURN PARAMETER ret AS LONG NO-UNDO.
 END.
 
+PROCEDURE CheckForErrors:
+        DEFINE VAR obj AS {&CLOBJECT} NO-UNDO.
+        DEFINE VAR env AS {&ABL_POINTER} NO-UNDO.
+        DEFINE VAR n AS INTEGER NO-UNDO.
+        DEFINE VAR lispStr AS {&CLOBJECT} NO-UNDO.
+        DEFINE VAR errorCStr AS MEMPTR NO-UNDO.
+        DEFINE VAR errorMsg AS CHARACTER NO-UNDO.
+
+        RUN ecl_process_env(OUTPUT env).
+        RUN ecl_nvalues(env, OUTPUT n).
+        IF n <= 1 THEN
+                RETURN.
+
+        /* Go get the second return value. */
+        RUN ecl_nth_value(env, 1, OUTPUT lispStr).
+        /* Now convert it to a C string. */
+        RUN c_string(lispStr, OUTPUT errorCStr).
+        IF GET-POINTER-VALUE(errorCStr) = 0 THEN
+                RETURN ERROR "Error reporting the error message. Ironic, no?".
+        /* Now fetch an ABL string out of the buffer and free the original string. */
+        errorMsg = GET-STRING(errorCStr, 1).
+        SET-SIZE(errorCStr) = 0.
+        RETURN ERROR errorMsg.
+END.
+
 &ENDIF
