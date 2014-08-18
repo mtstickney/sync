@@ -41,7 +41,7 @@
 &ELSE
 /* Otherwise, emit the procedure definitions. */
 
-PROCEDURE ffi_Call{&COUNT} {&SHECL_API}:
+PROCEDURE ffi_Call{&COUNT} {&SHECL_API} ORDINAL 6:
         DEFINE INPUT PARAMETER nargs AS LONG NO-UNDO.
         DEFINE INPUT PARAMETER pool AS {&FFI_CLOBJECT} NO-UNDO.
         {&PARAM_DEF_LIST}
