@@ -43,12 +43,7 @@ PROCEDURE read {&SHECL_API}:
 END.
 
 /* TODO: Add header for multi-value apply calls. */
-PROCEDURE call {&SHECL_API}:
-        DEFINE INPUT PARAMETER nargs AS LONG NO-UNDO.
-        DEFINE INPUT PARAMETER pool AS {&FFI_CLOBJECT} NO-UNDO.
-        DEFINE INPUT PARAMETER arglist AS {&FFI_CLOBJECT} NO-UNDO.
-        DEFINE RETURN PARAMETER ret AS {&FFI_CLOBJECT} NO-UNDO.
-END.
+{client/include/shecl/call.i 1}
 
 /* Type conversion for CHARACTER types. */
 PROCEDURE lisp_string {&SHECL_API}:
