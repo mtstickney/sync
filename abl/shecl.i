@@ -7,7 +7,7 @@
 /* FIXME: breaks if the running AVM is a different architecture than the compiling one. */
 &IF {&PROCESS-ARCHITECTURE} = 32 &THEN
 &SCOPED-DEFINE POINTER LONG
-&ELSEIF {&PROCESS-ARCHTECTURE = 64 &THEN
+&ELSEIF {&PROCESS-ARCHTECTURE} = 64 &THEN
 &SCOPED-DEFINE POINTER INT64
 &ENDIF
 
