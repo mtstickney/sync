@@ -6,7 +6,7 @@
 
 /* Consumers of the dll can use this header to import the relevant symbols,
  * and we can use it to export them. */
-#ifdef _EXPORTING
+#ifdef _EXPORT
 #define SHECL_API __declspec(dllexport)
 #else
 #define SHECL_API __declspec(dllimport)
