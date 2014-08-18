@@ -75,6 +75,7 @@ PROCEDURE string_p {&SHECL_API}:
         DEFINE RETURN PARAMETER ret AS LONG NO-UNDO.
 END.
 
+/* FIXME: THis should probably have the same API as the other to-c-type functions. */
 PROCEDURE c_string {&SHECL_API}:
         DEFINE INPUT PARAMETER obj AS {&FFI_CLOBJECT} NO-UNDO.
         DEFINE RETURN PARAMETER ret AS MEMPTR NO-UNDO.
