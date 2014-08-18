@@ -45,6 +45,17 @@ END.
 /* TODO: Add header for multi-value apply calls. */
 {client/include/shecl/call.i 1}
 
+PROCEDURE shecl_nvalues {&SHECL_API}:
+        DEFINE INPUT PARAMETER env AS {&POINTER} NO-UNDO.
+        DEFINE RETURN PARAMETER ret AS {&FFI_CLOBJECT} NO-UNDO.
+END.
+
+PROCEDURE shecl_nth_value {&SHECL_API}:
+        DEFINE INPUT PARAMETER env AS {&POINTER} NO-UNDO.
+        DEFINE INPUT PARAMETER n AS LONG NO-UNDO.
+        DEFINE RETURN PARAMETER ret AS {&FFI_CLOBJECT} NO-UNDO.
+END.
+
 /* Type conversion for CHARACTER types. */
 PROCEDURE lisp_string {&SHECL_API}:
         DEFINE INPUT PARAMETER str AS CHARACTER NO-UNDO.
