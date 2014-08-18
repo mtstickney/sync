@@ -1,0 +1,66 @@
+&IF defined(COUNT_{1}_I)=0 &THEN
+&GLOBAL-DEFINE COUNT{1}_I_
+
+{C:\Users\mts\Desktop\shecl.i}
+
+&IF defined(COUNT)=0 &THEN
+&SCOPED-DEFINE COUNT {1}
+&ENDIF
+
+&IF {&COUNT} > 0 &THEN
+&SCOPED-DEFINE MAYBE_COMMA ,
+&ENDIF
+
+&IF ({1}) > 0 &THEN
+/* If we're recursing, then maintain macro definitions for parameter lists and so forth */
+
+&SCOPED-DEFINE ITEM param{&SEQUENCE}
+&SCOPED-DEFINE PARAM DEFINE INPUT PARAMETER {&ITEM} AS {&FFI_CLOBJECT} NO-UNDO.
+&SCOPED-DEFINE FUNC_PARAM INPUT {&ITEM} AS {&CLOBJECT}
+
+&IF defined(PARAM_DEF_LIST)=0 &THEN
+&SCOPED-DEFINE PARAM_DEF_LIST {&PARAM}
+&ELSE
+&SCOPED-DEFINE PARAM_DEF_LIST {&PARAM_DEF_LIST} {&PARAM}
+&ENDIF
+
+&IF defined(FUNC_PARAM_LIST)=0 &THEN
+&SCOPED-DEFINE FUNC_PARAM_LIST {&FUNC_PARAM}
+&ELSE
+&SCOPED-DEFINE FUNC_PARAM_LIST {&FUNC_PARAM_LIST}, {&FUNC_PARAM}
+&ENDIF
+
+&IF defined(PLIST)=0 &THEN
+&SCOPED-DEFINE PLIST {&ITEM}
+&ELSE
+&SCOPED-DEFINE PLIST {&PLIST}, {&ITEM}
+&ENDIF
+
+{C:\Users\mts\Desktop\multiparam.i "{1} - 1"}
+
+&ELSE
+/* Otherwise, emit the procedure definitions. */
+
+PROCEDURE ffi_Call{&COUNT} {&SHECL_API}:
+        DEFINE INPUT PARAMETER nargs AS LONG NO-UNDO.
+        DEFINE INPUT PARAMETER pool AS {&FFI_CLOBJECT} NO-UNDO.
+        {&PARAM_DEF_LIST}
+        DEFINE RETURN PARAMETER ret AS {&FFI_CLOBJECT} NO-UNDO.
+END.
+
+
+FUNCTION Call{&COUNT} RETURNS {&CLOBJECT}
+(
+        INPUT pool AS {&CLOBJECT},
+        INPUT func AS {&CLOBJECT}{&MAYBE_COMMA}
+        {&FUNC_PARAM_LIST}
+):
+        DEFINE VAR ret AS {&CLOBJECT} NO-UNDO.
+        RUN call{&COUNT}({&COUNT} + 2, pool, func, {&PLIST}{&MAYBE_COMMA} OUTPUT ret).
+        RUN CheckForErrors.
+        RETURN ret.
+END.
+
+&ENDIF
+
+&ENDIF
