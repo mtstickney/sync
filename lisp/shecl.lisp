@@ -25,7 +25,7 @@
 
 @export
 (defun release-pool (p)
-  (delete p *object-pools*)
+  (setf *object-pools* (delete p *object-pools*))
   (values))
 
 @export
