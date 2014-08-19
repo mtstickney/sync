@@ -30,7 +30,7 @@ cl_object SHECL_API read(const char *s, cl_object pool);
 cl_object SHECL_API call(int nargs, cl_object pool, cl_object func, cl_object arg, ...);
 
 /* Wrappers for macros that fetch multiple return values. */
-cl_object SHECL_API shecl_nvalues(cl_env_ptr env);
+cl_index SHECL_API shecl_nvalues(cl_env_ptr env);
 cl_object SHECL_API shecl_nth_value(cl_env_ptr env, int n);
 
 /* Type conversion functions. */
