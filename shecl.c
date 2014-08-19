@@ -444,9 +444,10 @@ int bool_p(cl_object obj)
 {
         cl_env_ptr env = ecl_process_env();
         ECL_CATCH_ALL_BEGIN(env) {
-                /* (obj == ECL_T || obj == ECL_NIL) */
-                cl_object boolean = ecl_make_symbol("BOOLEAN", "CL");
-                return shecl_typep(obj, boolean);
+                if (obj == ECL_T || obj == ECL_NIL)
+                        return 1;
+                else
+                        return 0;
         } ECL_CATCH_ALL_IF_CAUGHT {
                 return -1;
         } ECL_CATCH_ALL_END;
