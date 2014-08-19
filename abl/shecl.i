@@ -1,10 +1,10 @@
 &IF defined(SHEC_I_)=0 &THEN
 &GLOBAL-DEFINE SHECL_I_
 
-{client/include/shecl_ffi.i}
+{client/include/shecl/shecl_ffi.i}
 {client/include/system.i}
 {client/include/ffi.i}
-{client/include/error.i}
+{client/include/errors.i}
 
 FUNCTION SheclInit RETURNS LOGICAL():
         DEFINE VAR faslPath AS CHARACTER NO-UNDO

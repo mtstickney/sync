@@ -1,7 +1,7 @@
 &IF defined(COUNT_{1}_I)=0 &THEN
 &GLOBAL-DEFINE COUNT{1}_I_
 
-{C:\Users\mts\Desktop\shecl.i}
+{client/include/shecl/shecl_ffi.i}
 
 &IF defined(COUNT)=0 &THEN
 &SCOPED-DEFINE COUNT {1}
@@ -36,7 +36,7 @@
 &SCOPED-DEFINE PLIST {&PLIST}, {&ITEM}
 &ENDIF
 
-{C:\Users\mts\Desktop\multiparam.i "{1} - 1"}
+{client/include/shecl/call.i "{1} - 1"}
 
 &ELSE
 /* Otherwise, emit the procedure definitions. */
