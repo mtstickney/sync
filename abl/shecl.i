@@ -73,7 +73,8 @@ FUNCTION MakeObjPool RETURNS {&CLOBJECT} ():
          * never be collected, so it's safe). */
         nil = Nil().
         makePool = Read(0, "shecl:make-pool").
-        RETURN Call1(makePool, nil).
+        /* Pool is saved when created, no need to create it in a pool of its own. */
+        RETURN Call1(0, makePool, nil).
 END.
 
 FUNCTION ReleaseObjPool RETURNS LOGICAL (INPUT pool AS {&CLOBJECT}):
