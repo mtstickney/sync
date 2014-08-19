@@ -1,4 +1,4 @@
-&IF defined(SHEC_I_)=0 &THEN
+&IF defined(SHECL_I_)=0 &THEN
 &GLOBAL-DEFINE SHECL_I_
 
 {client/include/shecl/shecl_ffi.i}
