@@ -14,7 +14,7 @@ PROCEDURE shecl_boot {&SHECL_API}:
         DEFINE INPUT PARAMETER shecl_fasl_path AS CHARACTER NO-UNDO.
         DEFINE INPUT PARAMETER nargs AS LONG NO-UNDO.
         /* A char** param, but you can't pass NULL with a MEMPTR. */
-        DEFINE INPUT PARAMETER argv AS LONG NO-UNDO.
+        DEFINE INPUT PARAMETER argv AS {&POINTER} NO-UNDO.
         /* FIXME: sizeof(int) != sizeof(long) */
         DEFINE RETURN PARAMETER ret AS LONG NO-UNDO.
 END.
