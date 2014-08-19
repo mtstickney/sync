@@ -2,7 +2,6 @@
 &GLOBAL-DEFINE SHECL_I_
 
 {client/include/shecl/shecl_ffi.i}
-{client/include/system.i}
 {client/include/ffi.i}
 {client/include/errors.i}
 {client/include/shecl/call.i 2}
@@ -14,7 +13,7 @@ FUNCTION SheclInit RETURNS LOGICAL():
         DEFINE VAR argvPtr AS {&ABL_POINTER} NO-UNDO.
         DEFINE VAR ret AS INTEGER NO-UNDO.
 
-        faslPath = FindFile("client/bin/shecl.fasb").
+        faslPath = SEARCH("client/bin/shecl.fasb").
         argv1 = ForeignString("ecl.dll").
         SET-SIZE(argv) = {&POINTER_BYTES}.
 
