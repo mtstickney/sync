@@ -1,7 +1,7 @@
 #include "shecl.h"
 
 cl_object report_error(cl_env_ptr env, cl_object condition, char *msg) {
-        cl_object error = ecl_make_symbol("ERROR", "CL");
+        cl_object error = ecl_make_symbol("SERIOUS-CONDITION", "CL");
         ECL_HANDLER_CASE_BEGIN(env, ecl_list1(error)) {
                 cl_object error_string;
                 cl_object write_to_string = ecl_make_symbol("WRITE-TO-STRING", "CL");
@@ -23,7 +23,7 @@ int shecl_boot(char *shecl_fasl_path, int argc, char **argv)
 
         /* Load the lisp-side code. */
         ECL_CATCH_ALL_BEGIN(env) {
-                cl_object error = ecl_make_symbol("ERROR", "CL");
+                cl_object error = ecl_make_symbol("SERIOUS-CONDITION", "CL");
                 ECL_HANDLER_CASE_BEGIN(env, ecl_list1(error)) {
                         cl_object load = ecl_make_symbol("LOAD", "CL");
 
@@ -117,7 +117,7 @@ cl_object varglist(int nvargs, cl_object fixedarg, ecl_va_list varargs)
         cl_object lastcons;
         int i;
 
-        if (nvargs = 0) {
+        if (nvargs == 0) {
                 ecl_return1(env, fixedarg);
         } else {
                 arglist = ecl_list1(fixedarg);
@@ -143,7 +143,7 @@ cl_object call(int nargs, cl_object pool, cl_object func, cl_object arg, ...)
         cl_object val;
 
         ECL_CATCH_ALL_BEGIN(env) {
-                cl_object error = ecl_make_symbol("ERROR", "CL");
+                cl_object error = ecl_make_symbol("SERIOUS-CONDITION", "CL");
                 ECL_HANDLER_CASE_BEGIN(env, ecl_list1(error)) {
                         int i;
                         ecl_va_list varargs;
