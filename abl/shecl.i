@@ -86,10 +86,10 @@ FUNCTION ReleaseObjPool RETURNS LOGICAL (INPUT pool AS {&CLOBJECT}):
 END.
 
 /* FIXME: type conversion stuff isn't using object pools. */
-FUNCTION LispString RETURNS {&CLOBJECT} (INPUT str AS CHARACTER):
+FUNCTION LispString RETURNS {&CLOBJECT} (INPUT pool AS {&CLOBJECT}, INPUT str AS CHARACTER):
         DEFINE VAR ret AS {&CLOBJECT} NO-UNDO.
 
-        RUN lisp_string(str, OUTPUT ret).
+        RUN lisp_string(pool, str, OUTPUT ret).
         RUN CheckForErrors.
         RETURN ret.
 END.
@@ -120,10 +120,10 @@ FUNCTION ABLString RETURNS CHARACTER (INPUT obj AS {&CLOBJECT}
         RETURN str.
 END.
 
-FUNCTION LispDecimal RETURNS {&CLOBJECT} (INPUT d AS DECIMAL):
+FUNCTION LispDecimal RETURNS {&CLOBJECT} (INPUT pool AS {&CLOBJECT}, INPUT d AS DECIMAL):
         DEFINE VAR ret AS DECIMAL NO-UNDO.
 
-        RUN lisp_double(d, OUTPUT ret).
+        RUN lisp_double(pool, d, OUTPUT ret).
         RUN CheckForErrors.
         RETURN ret.
 END.
@@ -152,10 +152,10 @@ FUNCTION ABLDecimal RETURNS DECIMAL (INPUT obj AS {&CLOBJECT}):
         RETURN d.
 END.
 
-FUNCTION LispInt64 RETURNS {&CLOBJECT} (INPUT i AS INT64):
+FUNCTION LispInt64 RETURNS {&CLOBJECT} (INPUT pool AS {&CLOBJECT}, INPUT i AS INT64):
         DEFINE VAR ret AS {&CLOBJECT} NO-UNDO.
 
-        RUN lisp_int64(i, OUTPUT ret).
+        RUN lisp_int64(pool, i, OUTPUT ret).
         RUN CheckForErrors.
         RETURN ret.
 END.
@@ -184,15 +184,15 @@ FUNCTION ABLInt64 RETURNS INT64 (INPUT obj AS {&CLOBJECT}):
         RETURN i.
 END.
 
-FUNCTION LispBool RETURNS {&CLOBJECT} (INPUT b AS LOGICAL):
+FUNCTION LispBool RETURNS {&CLOBJECT} (INPUT pool AS {&CLOBJECT}, INPUT b AS LOGICAL):
         DEFINE VAR ret AS {&CLOBJECT} NO-UNDO.
 
         IF b = ? THEN
                 Errors:ThrowError("Cannot convert the unknown value to a boolean.").
         IF b THEN
-                RUN lisp_bool(1, OUTPUT ret).
+                RUN lisp_bool(pool, 1, OUTPUT ret).
         ELSE
-                RUN lisp_bool(0, OUTPUT ret).
+                RUN lisp_bool(pool, 0, OUTPUT ret).
         RUN CheckForErrors.
         RETURN ret.
 END.
