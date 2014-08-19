@@ -11,14 +11,22 @@ FUNCTION SheclInit RETURNS LOGICAL():
         DEFINE VAR faslPath AS CHARACTER NO-UNDO.
         DEFINE VAR argv1 AS MEMPTR NO-UNDO.
         DEFINE VAR argv AS MEMPTR NO-UNDO.
-        DEFINE VAR pointerBytes AS INTEGER INITIAL 8 NO-UNDO.
+        DEFINE VAR argvPtr AS {&ABL_POINTER} NO-UNDO.
         DEFINE VAR ret AS INTEGER NO-UNDO.
 
         faslPath = FindFile("client/bin/shecl.fasb").
         argv1 = ForeignString("ecl.dll").
-        SET-SIZE(argv) = pointerBytes.
+        SET-SIZE(argv) = {&POINTER_BYTES}.
+
+        argvPtr = GET-POINTER-VALUE(argv).
+/* Note that we're not using PROCESS-ARCHITECTURE here, as it may not be available. */
+&IF {&POINTER_BYTES} = 8 &THEN
         PUT-INT64(argv, 1) = GET-POINTER-VALUE(argv1).
-        RUN shecl_boot IN sheclApi (faslPath, 1, argv, OUTPUT ret).
+&ELSE
+        PUT-LONG(argv, 1) = GET-POINTER-VALUE(argv1).
+&ENDIF
+        argvPtr = GET-POINTER-VALUE(argv).
+        RUN shecl_boot IN sheclApi (faslPath, 1, argvPtr, OUTPUT ret).
 
         IF ret < 0 THEN DO:
                 Errors:Error("Error initializing Shecl system.").
