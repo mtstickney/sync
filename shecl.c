@@ -45,8 +45,6 @@ int shecl_boot(char *shecl_fasl_path, int argc, char **argv)
                 cl_shutdown();
                 return -1;
         } ECL_CATCH_ALL_END;
-
-        /* TODO: load the lisp-side shecl system here (or use a system dll or something). */
 }
 
 void shecl_shutdown(void)
