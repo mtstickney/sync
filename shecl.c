@@ -161,7 +161,7 @@ cl_object call(int nargs, cl_object pool, cl_object func, cl_object arg, ...)
                                 ecl_va_end(varargs);
 
                                 /* Note that cl_funcall handles the multiple-values magic. */
-                                val = cl_funcall(2, safe_apply, arglist);
+                                val = cl_funcall(3, safe_apply, func, arglist);
                         } ECL_UNWIND_PROTECT_EXIT {
                                 if (pool != OBJNULL)
                                         ecl_bds_unwind1(env);
