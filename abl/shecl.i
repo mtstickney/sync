@@ -20,7 +20,7 @@ FUNCTION SheclInit RETURNS LOGICAL():
         RUN shecl_boot(faslPath, 1, argv, OUTPUT ret).
 
         IF ret < 0 THEN DO:
-                Errors:ThrowError("Error initializing Shecl system.").
+                Errors:Error("Error initializing Shecl system.").
                 RETURN NO.
         END.
         RETURN YES.
@@ -99,7 +99,7 @@ FUNCTION IsCLString RETURNS LOGICAL (INPUT obj AS {&CLOBJECT}):
 
         RUN string_p(obj, OUTPUT ret).
         IF ret < -1 THEN
-                Errors:ThrowError("Error while checking the string-ness of an object.").
+                Errors:Error("Error while checking the string-ness of an object.").
         ELSE IF ret = 0 THEN
                 RETURN NO.
         ELSE
@@ -114,7 +114,7 @@ FUNCTION ABLString RETURNS CHARACTER (INPUT obj AS {&CLOBJECT}
                 Errors:Error("obj is not a lisp string, can't convert it to an ABL string.").
         RUN c_string(obj, OUTPUT ret).
         IF GET-POINTER-VALUE(ret) = 0 THEN
-                Errors:ThrowError("Error converting object to C string.").
+                Errors:Error("Error converting object to C string.").
         str = GET-STRING(ret, 1).
         SET-SIZE(ret) = 0.
         RETURN str.
@@ -133,7 +133,7 @@ FUNCTION IsCLDouble RETURNS LOGICAL (INPUT obj AS {&CLOBJECT}):
 
         RUN double_p(obj, OUTPUT ret).
         IF ret < 0 THEN
-                Errors:ThrowError("Error while checking the double-ness of an object.").
+                Errors:Error("Error while checking the double-ness of an object.").
         ELSE IF ret = 0 THEN
                 RETURN NO.
         ELSE
@@ -148,7 +148,7 @@ FUNCTION ABLDecimal RETURNS DECIMAL (INPUT obj AS {&CLOBJECT}):
                 Errors:Error("obj is not a double, can't convert it to a DECIMAL.").
         RUN c_double(obj, OUTPUT d, OUTPUT ret).
         IF ret <> 0 THEN
-                Errors:ThrowError("Error converting object to C double.").
+                Errors:Error("Error converting object to C double.").
         RETURN d.
 END.
 
@@ -165,7 +165,7 @@ FUNCTION IsCLInt64 RETURNS LOGICAL (INPUT obj AS {&CLOBJECT}):
 
         RUN int64_p(obj, OUTPUT ret).
         IF ret < 0 THEN
-                Errors:ThrowError("Error checking the int64-ness of an object.").
+                Errors:Error("Error checking the int64-ness of an object.").
         ELSE IF ret = 0 THEN
                 RETURN NO.
         ELSE
@@ -177,10 +177,10 @@ FUNCTION ABLInt64 RETURNS INT64 (INPUT obj AS {&CLOBJECT}):
         DEFINE VAR ret AS INTEGER NO-UNDO.
 
         IF NOT isCLInt64(obj) THEN
-                Errors:ThrowError("obj is not a 64-bit int, can't convert it to INT64.").
+                Errors:Error("obj is not a 64-bit int, can't convert it to INT64.").
         RUN c_int64(obj, OUTPUT i, OUTPUT ret).
         IF ret <> 0 THEN
-                Errors:ThrowError("Error converting object to 64-bit int.").
+                Errors:Error("Error converting object to 64-bit int.").
         RETURN i.
 END.
 
@@ -188,7 +188,7 @@ FUNCTION LispBool RETURNS {&CLOBJECT} (INPUT pool AS {&CLOBJECT}, INPUT b AS LOG
         DEFINE VAR ret AS {&CLOBJECT} NO-UNDO.
 
         IF b = ? THEN
-                Errors:ThrowError("Cannot convert the unknown value to a boolean.").
+                Errors:Error("Cannot convert the unknown value to a boolean.").
         IF b THEN
                 RUN lisp_bool(pool, 1, OUTPUT ret).
         ELSE
@@ -202,7 +202,7 @@ FUNCTION IsCLBool RETURNS LOGICAL (INPUT obj AS {&CLOBJECT}):
 
         RUN bool_p(obj, OUTPUT ret).
         IF ret < 0 THEN
-                Errors:ThrowError("Error checking boolean-ness of object.").
+                Errors:Error("Error checking boolean-ness of object.").
         ELSE IF ret = 0 THEN
                 RETURN NO.
         ELSE
@@ -214,10 +214,10 @@ FUNCTION ABLLogical RETURNS LOGICAL (INPUT obj AS {&CLOBJECT}):
         DEFINE VAR ret AS INTEGER NO-UNDO.
 
         IF NOT IsCLBool(obj) THEN
-                Errors:ThrowError("Can't convert non-boolean object to LOGICAL.").
+                Errors:Error("Can't convert non-boolean object to LOGICAL.").
         RUN c_bool(obj, OUTPUT b, OUTPUT ret).
         IF ret <> 0 THEN
-                Errors:ThrowError("Error converting object to LOGICAL.").
+                Errors:Error("Error converting object to LOGICAL.").
 
         IF b = 0 THEN
                 RETURN NO.
@@ -231,7 +231,7 @@ FUNCTION GeneralizedABLLogical RETURNS LOGICAL (INPUT obj AS {&CLOBJECT}):
 
         RUN c_generalized_bool(obj, OUTPUT b, OUTPUT ret).
         IF ret <> 0 THEN
-                Errors:ThrowError("Error converting object to LOGICAL.").
+                Errors:Error("Error converting object to LOGICAL.").
 
         IF b = 0 THEN
                 RETURN NO.
