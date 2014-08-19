@@ -7,10 +7,10 @@
 {client/include/errors.i}
 
 FUNCTION SheclInit RETURNS LOGICAL():
-        DEFINE VAR faslPath AS CHARACTER NO-UNDO
+        DEFINE VAR faslPath AS CHARACTER NO-UNDO.
         DEFINE VAR argv1 AS MEMPTR NO-UNDO.
         DEFINE VAR argv AS MEMPTR NO-UNDO.
-        DEFINE VAR pointerBytes AS INTEGER INITIAL 8 NO-UNDO
+        DEFINE VAR pointerBytes AS INTEGER INITIAL 8 NO-UNDO.
         DEFINE VAR ret AS INTEGER NO-UNDO.
 
         faslPath = FindFile("client/bin/shecl.fasb").
