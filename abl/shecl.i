@@ -192,7 +192,7 @@ FUNCTION ABLInt64 RETURNS INT64 (INPUT obj AS {&CLOBJECT}):
         DEFINE VAR i AS INT64 NO-UNDO.
         DEFINE VAR ret AS INTEGER NO-UNDO.
 
-        IF NOT isCLInt64(obj) THEN
+        IF NOT IsCLInt64(obj) THEN
                 Errors:Error("obj is not a 64-bit int, can't convert it to INT64.").
         RUN c_int64 IN sheclApi (obj, OUTPUT i, OUTPUT ret).
         IF ret <> 0 THEN
