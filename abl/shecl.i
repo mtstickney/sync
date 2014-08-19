@@ -27,6 +27,8 @@ FUNCTION SheclInit RETURNS LOGICAL():
 &ENDIF
         argvPtr = GET-POINTER-VALUE(argv).
         RUN shecl_boot IN sheclApi (faslPath, 1, argvPtr, OUTPUT ret).
+        SET-SIZE(argv1) = 0.
+        SET-SIZE(argv) = 0.
 
         IF ret < 0 THEN DO:
                 Errors:Error("Error initializing Shecl system.").
