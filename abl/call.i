@@ -58,7 +58,7 @@ FUNCTION Call{&COUNT} RETURNS {&CLOBJECT}
 ):
         DEFINE VAR ret AS {&CLOBJECT} NO-UNDO.
         RUN ffi_Call{&COUNT}({&COUNT} + 2, pool, func, {&PLIST}{&MAYBE_COMMA} OUTPUT ret).
-        RUN CheckForErrors.
+        RUN CheckForErrors IN sheclApi.
         RETURN ret.
 END.
 
