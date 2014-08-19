@@ -224,7 +224,7 @@ FUNCTION ABLInteger RETURNS INTEGER (INPUT obj AS {&CLOBJECT}):
         DEFINE VAR i AS INTEGER NO-UNDO.
         DEFINE VAR ret AS INTEGER NO-UNDO.
 
-        IF NOT IsCLInt(obj) THEN
+        IF NOT IsCLInteger(obj) THEN
                 Errors:Error("obj is not a 32-bit int, can't convert it to INTEGER.").
         RUN c_int IN sheclApi (obj, OUTPUT i, OUTPUT ret).
         IF ret <> 0 THEN
