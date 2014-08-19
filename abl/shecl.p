@@ -147,12 +147,12 @@ PROCEDURE CheckForErrors:
         DEFINE VAR errorMsg AS CHARACTER NO-UNDO.
 
         RUN ecl_process_env(OUTPUT env).
-        RUN ecl_nvalues(env, OUTPUT n).
+        RUN shecl_nvalues(env, OUTPUT n).
         IF n <= 1 THEN
                 RETURN.
 
         /* Go get the second return value. */
-        RUN ecl_nth_value(env, 1, OUTPUT lispStr).
+        RUN shecl_nth_value(env, 1, OUTPUT lispStr).
         /* Now convert it to a C string. */
         RUN c_string(lispStr, OUTPUT errorCStr).
         IF GET-POINTER-VALUE(errorCStr) = 0 THEN
