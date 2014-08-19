@@ -28,6 +28,7 @@ int shecl_boot(char *shecl_fasl_path, int argc, char **argv)
                         cl_object load = ecl_make_symbol("LOAD", "CL");
 
                         cl_funcall(2, load, ecl_cstring_to_base_string_or_nil(shecl_fasl_path));
+                        return 0;
                 } ECL_HANDLER_CASE(1, condition) {
                         /* ECL_HANDLER_CASE_BEGIN(env, ecl_list1(error)) { */
                         /*         cl_object error_string; */
@@ -46,7 +47,6 @@ int shecl_boot(char *shecl_fasl_path, int argc, char **argv)
         } ECL_CATCH_ALL_END;
 
         /* TODO: load the lisp-side shecl system here (or use a system dll or something). */
-        return 0;
 }
 
 void shecl_shutdown(void)
