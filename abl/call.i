@@ -56,7 +56,7 @@ FUNCTION Call{&COUNT} RETURNS {&CLOBJECT}
         {&FUNC_PARAM_LIST}
 ):
         DEFINE VAR ret AS {&CLOBJECT} NO-UNDO.
-        RUN call{&COUNT}({&COUNT} + 2, pool, func, {&PLIST}{&MAYBE_COMMA} OUTPUT ret).
+        RUN ffi_Call{&COUNT}({&COUNT} + 2, pool, func, {&PLIST}{&MAYBE_COMMA} OUTPUT ret).
         RUN CheckForErrors.
         RETURN ret.
 END.
