@@ -79,7 +79,7 @@ END.
 
 FUNCTION ReleaseObjPool RETURNS LOGICAL (INPUT pool AS {&CLOBJECT}):
         DEFINE VAR releasePool AS {&CLOBJECT} NO-UNDO.
-        DEFINE VAR nil AS {&CLOBJECT NO-UNDO.
+        DEFINE VAR nil AS {&CLOBJECT} NO-UNDO.
 
         /* (shecl:release-pool pool) */
         /* Note: it's important to set nil first here, see note in
