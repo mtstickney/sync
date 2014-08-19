@@ -36,6 +36,7 @@ cl_object SHECL_API shecl_nth_value(cl_env_ptr env, int n);
 /* Type conversion functions. */
 cl_object SHECL_API lisp_string(cl_object pool, char *str);
 int SHECL_API string_p(cl_object obj);
+char SHECL_API *c_string(cl_object obj);
 
 cl_object SHECL_API lisp_double(cl_object pool, double d);
 int SHECL_API double_p(cl_object obj);
