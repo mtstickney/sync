@@ -34,22 +34,22 @@ cl_object SHECL_API shecl_nvalues(cl_env_ptr env);
 cl_object SHECL_API shecl_nth_value(cl_env_ptr env, int n);
 
 /* Type conversion functions. */
-cl_object SHECL_API lisp_string(char *str);
+cl_object SHECL_API lisp_string(cl_object pool, char *str);
 int SHECL_API string_p(cl_object obj);
 
-cl_object SHECL_API lisp_double(double d);
+cl_object SHECL_API lisp_double(cl_object pool, double d);
 int SHECL_API double_p(cl_object obj);
 int SHECL_API c_double(cl_object obj, double *d);
 
-cl_object SHECL_API lisp_int64(int64_t i);
+cl_object SHECL_API lisp_int64(cl_object pool, int64_t i);
 int SHECL_API int64_p(cl_object obj);
 int SHECL_API c_int64(cl_object obj, int64_t *i);
 
-cl_object SHECL_API lisp_int(int32_t i);
+cl_object SHECL_API lisp_int(cl_object pool, int32_t i);
 int SHECL_API int_p(cl_object obj);
 int SHECL_API c_int(cl_object obj, int32_t *i);
 
-cl_object SHECL_API lisp_bool(int32_t b);
+cl_object SHECL_API lisp_bool(cl_object pool, int32_t b);
 int SHECL_API bool_p(cl_object obj);
 int SHECL_API c_bool(cl_object obj, int *b);
 int SHECL_API c_generalized_bool(cl_object, int *b);

@@ -216,15 +216,17 @@ cl_object signed_byte_type(unsigned int nbits)
 }
 
 /* CHARACTER type */
-cl_object lisp_string(char *str)
+cl_object lisp_string(cl_object pool, char *str)
 {
         cl_env_ptr env = ecl_process_env();
         ECL_CATCH_ALL_BEGIN(env) {
                 cl_object serious_condition = ecl_make_symbol("SERIOUS-CONDITION", "CL");
                 ECL_HANDLER_CASE_BEGIN(env, ecl_list1(serious_condition)) {
+                        cl_object add_to_pool = ecl_make_symbol("ADD-TO-POOL", "SHECL");
                         cl_object string = ecl_cstring_to_base_string_or_nil(str);
                         if (string == ECL_NIL)
                                 cl_error(1, ecl_cstring_to_base_string_or_nil("String data was NULL."));
+                        ecl_return1(env, cl_funcall(3, add_to_pool, string, pool));
                 } ECL_HANDLER_CASE(1, condition) {
                         return report_error(env, condition, "Error constructing Lisp string.");
                 } ECL_HANDLER_CASE_END;
@@ -279,15 +281,25 @@ char *c_string(cl_object obj)
                 } ECL_HANDLER_CASE_END;
         } ECL_CATCH_ALL_IF_CAUGHT {
                 return NULL;
-        } ECL_CATCH_ALL_IF_CAUGHT;
+        } ECL_CATCH_ALL_END;
 }
 
 /* DECIMAL type */
-cl_object lisp_double(double d)
+cl_object lisp_double(cl_object pool, double d)
 {
         cl_env_ptr env = ecl_process_env();
         ECL_CATCH_ALL_BEGIN(env) {
-                ecl_return1(env, ecl_make_double_float(d));
+                cl_object serious_condition = ecl_make_symbol("SERIOUS-CONDITION", "CL");
+                ECL_HANDLER_CASE_BEGIN(env, ecl_list1(serious_condition)) {
+                        cl_object add_to_pool = ecl_make_symbol("ADD-TO-POOL", "SHECL");
+                        cl_object new_double = ecl_make_double_float(d);
+                        /* DOn't bother with the pool if it's an immediate type. */
+                        if (ECL_IMMEDIATE(new_double))
+                                ecl_return1(env, new_double);
+                        ecl_return1(env, cl_funcall(3, add_to_pool, new_double, pool));
+                } ECL_HANDLER_CASE(1, condition) {
+                        return report_error(env, condition, "Error creating lisp double object.");
+                } ECL_HANDLER_CASE_END;
         } ECL_CATCH_ALL_IF_CAUGHT {
                 ecl_return2(env, OBJNULL, OBJNULL);
         } ECL_CATCH_ALL_END;
@@ -317,11 +329,21 @@ int c_double(cl_object obj, double *d)
 
 /* INT64 type */
 
-cl_object lisp_int64(int64_t i)
+cl_object lisp_int64(cl_object pool, int64_t i)
 {
         cl_env_ptr env = ecl_process_env();
         ECL_CATCH_ALL_BEGIN(env) {
-                ecl_return1(env, ecl_make_int64_t(i));
+                cl_object serious_condition = ecl_make_symbol("SERIOUS-CONDITION", "CL");
+                ECL_HANDLER_CASE_BEGIN(env, ecl_list1(serious_condition)) {
+                        cl_object add_to_pool = ecl_make_symbol("ADD-TO-POOL", "CL");
+                        cl_object new_int64 = ecl_make_int64_t(i);
+                        /* Don't bother with the pool if it's an immediate type. */
+                        if (ECL_IMMEDIATE(new_int64))
+                                ecl_return1(env, new_int64);
+                        ecl_return1(env, cl_funcall(3, add_to_pool, new_int64, pool));
+                } ECL_HANDLER_CASE(1, condition) {
+                        return report_error(env, condition, "Error constructing lisp int64 object.");
+                } ECL_HANDLER_CASE_END;
         } ECL_CATCH_ALL_IF_CAUGHT {
                 ecl_return2(env, OBJNULL, OBJNULL);
         } ECL_CATCH_ALL_END;
@@ -355,11 +377,21 @@ int c_int64(cl_object obj, int64_t *i)
 }
 
 /* INTEGER type */
-cl_object lisp_int(int32_t i)
+cl_object lisp_int(cl_object pool, int32_t i)
 {
         cl_env_ptr env = ecl_process_env();
         ECL_CATCH_ALL_BEGIN(env) {
-                ecl_return1(env, ecl_make_int32_t(i));
+                cl_object serious_condition = ecl_make_symbol("SERIOUS-CONDITION", "CL");
+                ECL_HANDLER_CASE_BEGIN(env, ecl_list1(serious_condition)) {
+                        cl_object add_to_pool = ecl_make_symbol("ADD-TO-POOL", "SHECL");
+                        cl_object new_int = ecl_make_int32_t(i);
+                        /* Don't bother with the pool if it's an immediate type. */
+                        if (ECL_IMMEDIATE(new_int))
+                                ecl_return1(env, new_int);
+                        ecl_return1(env, cl_funcall(3, add_to_pool, new_int, pool));
+                } ECL_HANDLER_CASE(1, condition) {
+                        return report_error(env, condition, "Error constructing lisp int32 object.");
+                } ECL_HANDLER_CASE_END;
         } ECL_CATCH_ALL_IF_CAUGHT {
                 ecl_return2(env, OBJNULL, OBJNULL);
         } ECL_CATCH_ALL_END;
@@ -393,8 +425,10 @@ int c_int(cl_object obj, int32_t *i)
 }
 
 /* LOGICAL type (note that we're using int as an intermediary). */
-cl_object lisp_bool(int32_t b)
+cl_object lisp_bool(cl_object pool, int32_t b)
 {
+        /* Note: since T and NIL will never be collected, a pool is
+         * unecessary (and ignored) here. */
         cl_env_ptr env = ecl_process_env();
         ECL_CATCH_ALL_BEGIN(env) {
                 if (b)
