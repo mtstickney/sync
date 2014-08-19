@@ -184,6 +184,7 @@ cl_index shecl_nvalues(cl_env_ptr env)
 
 cl_object SHECL_API shecl_nth_value(cl_env_ptr env, int n)
 {
+        /* FIXME: might be bad that this doesn't set env properly (handy for looping, bad for calling this like the lisp function) */
         return ecl_nth_value(env, n);
 }
 
