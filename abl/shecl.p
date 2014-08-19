@@ -3,7 +3,7 @@
 &UNDEFINE EXCLUDE_SHECL_API
 
 /* Some basic functionality directly from ECL. */
-&SCOPED-DEFINE ECL_DLL "client/bin/ecl.dll"
+&SCOPED-DEFINE ECL_DLL "ecl.dll"
 &SCOPED-DEFINE ECL_API EXTERNAL {&ECL_DLL} CDECL PERSISTENT
 
 PROCEDURE ecl_process_env {&ECL_API}:
