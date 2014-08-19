@@ -17,7 +17,7 @@ FUNCTION SheclInit RETURNS LOGICAL():
         argv1 = ForeignString("ecl.dll").
         SET-SIZE(argv) = pointerBytes.
         PUT-INT64(argv, 1) = GET-POINTER-VALUE(argv1).
-        RUN shecl_boot(faslPath, 1, argv, OUTPUT ret).
+        RUN shecl_boot IN sheclApi (faslPath, 1, argv, OUTPUT ret).
 
         IF ret < 0 THEN DO:
                 Errors:Error("Error initializing Shecl system.").
@@ -27,7 +27,7 @@ FUNCTION SheclInit RETURNS LOGICAL():
 END.
 
 FUNCTION SheclShutdown RETURNS LOGICAL():
-        RUN shecl_shutdown.
+        RUN shecl_shutdown IN sheclApi.
         RETURN YES.
 END.
 
@@ -38,8 +38,8 @@ FUNCTION Eval RETURNS {&CLOBJECT} (INPUT pool AS {&CLOBJECT}, INPUT str AS CHARA
                 /* Pass NULL for no pool. */
                 pool = 0.
 
-        RUN eval(str, pool, OUTPUT obj).
-        RUN CheckForErrors.
+        RUN eval IN sheclApi (str, pool, OUTPUT obj).
+        RUN CheckForErrors IN sheclApi.
         RETURN obj.
 END.
 
@@ -49,10 +49,13 @@ FUNCTION Read RETURNS {&CLOBJECT} (INPUT pool AS {&CLOBJECT}, INPUT str AS CHARA
                 /* Pass NULL for no pool. */
                 pool = 0.
 
-        RUN read(str, pool, OUTPUT obj).
-        RUN CheckForErrors.
+        RUN read IN sheclApi (str, pool, OUTPUT obj).
+        RUN CheckForErrors IN sheclApi.
         RETURN obj.
 END.
+
+/* TODO: Add header for multi-value apply calls. */
+{client/include/shecl/call.i 1}
 
 FUNCTION Nil RETURNS {&CLOBJECT} ():
         RETURN Read("nil").
@@ -89,15 +92,15 @@ END.
 FUNCTION LispString RETURNS {&CLOBJECT} (INPUT pool AS {&CLOBJECT}, INPUT str AS CHARACTER):
         DEFINE VAR ret AS {&CLOBJECT} NO-UNDO.
 
-        RUN lisp_string(pool, str, OUTPUT ret).
-        RUN CheckForErrors.
+        RUN lisp_string IN sheclApi (pool, str, OUTPUT ret).
+        RUN CheckForErrors IN sheclApi.
         RETURN ret.
 END.
 
 FUNCTION IsCLString RETURNS LOGICAL (INPUT obj AS {&CLOBJECT}):
         DEFINE VAR ret AS INTEGER NO-UNDO.
 
-        RUN string_p(obj, OUTPUT ret).
+        RUN string_p IN sheclApi (obj, OUTPUT ret).
         IF ret < -1 THEN
                 Errors:Error("Error while checking the string-ness of an object.").
         ELSE IF ret = 0 THEN
@@ -112,7 +115,7 @@ FUNCTION ABLString RETURNS CHARACTER (INPUT obj AS {&CLOBJECT}
 
         IF NOT IsCLString(obj) THEN
                 Errors:Error("obj is not a lisp string, can't convert it to an ABL string.").
-        RUN c_string(obj, OUTPUT ret).
+        RUN c_string IN sheclApi (obj, OUTPUT ret).
         IF GET-POINTER-VALUE(ret) = 0 THEN
                 Errors:Error("Error converting object to C string.").
         str = GET-STRING(ret, 1).
@@ -123,15 +126,15 @@ END.
 FUNCTION LispDecimal RETURNS {&CLOBJECT} (INPUT pool AS {&CLOBJECT}, INPUT d AS DECIMAL):
         DEFINE VAR ret AS DECIMAL NO-UNDO.
 
-        RUN lisp_double(pool, d, OUTPUT ret).
-        RUN CheckForErrors.
+        RUN lisp_double IN sheclApi (pool, d, OUTPUT ret).
+        RUN CheckForErrors IN sheclApi.
         RETURN ret.
 END.
 
 FUNCTION IsCLDouble RETURNS LOGICAL (INPUT obj AS {&CLOBJECT}):
         DEFINE VAR ret AS INTEGER NO-UNDO.
 
-        RUN double_p(obj, OUTPUT ret).
+        RUN double_p IN sheclApi(obj, OUTPUT ret).
         IF ret < 0 THEN
                 Errors:Error("Error while checking the double-ness of an object.").
         ELSE IF ret = 0 THEN
@@ -146,7 +149,7 @@ FUNCTION ABLDecimal RETURNS DECIMAL (INPUT obj AS {&CLOBJECT}):
 
         IF NOT IsCLDouble(obj) THEN
                 Errors:Error("obj is not a double, can't convert it to a DECIMAL.").
-        RUN c_double(obj, OUTPUT d, OUTPUT ret).
+        RUN c_double IN sheclApi (obj, OUTPUT d, OUTPUT ret).
         IF ret <> 0 THEN
                 Errors:Error("Error converting object to C double.").
         RETURN d.
@@ -155,15 +158,15 @@ END.
 FUNCTION LispInt64 RETURNS {&CLOBJECT} (INPUT pool AS {&CLOBJECT}, INPUT i AS INT64):
         DEFINE VAR ret AS {&CLOBJECT} NO-UNDO.
 
-        RUN lisp_int64(pool, i, OUTPUT ret).
-        RUN CheckForErrors.
+        RUN lisp_int64 IN sheclApi (pool, i, OUTPUT ret).
+        RUN CheckForErrors IN sheclApi.
         RETURN ret.
 END.
 
 FUNCTION IsCLInt64 RETURNS LOGICAL (INPUT obj AS {&CLOBJECT}):
         DEFINE VAR ret AS INTEGER NO-UNDO.
 
-        RUN int64_p(obj, OUTPUT ret).
+        RUN int64_p IN sheclApi (obj, OUTPUT ret).
         IF ret < 0 THEN
                 Errors:Error("Error checking the int64-ness of an object.").
         ELSE IF ret = 0 THEN
@@ -178,7 +181,7 @@ FUNCTION ABLInt64 RETURNS INT64 (INPUT obj AS {&CLOBJECT}):
 
         IF NOT isCLInt64(obj) THEN
                 Errors:Error("obj is not a 64-bit int, can't convert it to INT64.").
-        RUN c_int64(obj, OUTPUT i, OUTPUT ret).
+        RUN c_int64 IN sheclApi (obj, OUTPUT i, OUTPUT ret).
         IF ret <> 0 THEN
                 Errors:Error("Error converting object to 64-bit int.").
         RETURN i.
@@ -190,17 +193,17 @@ FUNCTION LispBool RETURNS {&CLOBJECT} (INPUT pool AS {&CLOBJECT}, INPUT b AS LOG
         IF b = ? THEN
                 Errors:Error("Cannot convert the unknown value to a boolean.").
         IF b THEN
-                RUN lisp_bool(pool, 1, OUTPUT ret).
+                RUN lisp_bool IN sheclApi (pool, 1, OUTPUT ret).
         ELSE
-                RUN lisp_bool(pool, 0, OUTPUT ret).
-        RUN CheckForErrors.
+                RUN lisp_bool IN sheclApi (pool, 0, OUTPUT ret).
+        RUN CheckForErrors IN sheclApi.
         RETURN ret.
 END.
 
 FUNCTION IsCLBool RETURNS LOGICAL (INPUT obj AS {&CLOBJECT}):
         DEFINE VAR ret AS INTEGER NO-UNDO.
 
-        RUN bool_p(obj, OUTPUT ret).
+        RUN bool_p IN sheclApi (obj, OUTPUT ret).
         IF ret < 0 THEN
                 Errors:Error("Error checking boolean-ness of object.").
         ELSE IF ret = 0 THEN
@@ -215,7 +218,7 @@ FUNCTION ABLLogical RETURNS LOGICAL (INPUT obj AS {&CLOBJECT}):
 
         IF NOT IsCLBool(obj) THEN
                 Errors:Error("Can't convert non-boolean object to LOGICAL.").
-        RUN c_bool(obj, OUTPUT b, OUTPUT ret).
+        RUN c_bool IN sheclApi (obj, OUTPUT b, OUTPUT ret).
         IF ret <> 0 THEN
                 Errors:Error("Error converting object to LOGICAL.").
 
@@ -229,7 +232,7 @@ FUNCTION GeneralizedABLLogical RETURNS LOGICAL (INPUT obj AS {&CLOBJECT}):
         DEFINE VAR b AS INTEGER NO-UNDO.
         DEFINE VAR ret AS INTEGER NO-UNDO.
 
-        RUN c_generalized_bool(obj, OUTPUT b, OUTPUT ret).
+        RUN c_generalized_bool IN sheclApi (obj, OUTPUT b, OUTPUT ret).
         IF ret <> 0 THEN
                 Errors:Error("Error converting object to LOGICAL.").
 
