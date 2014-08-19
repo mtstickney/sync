@@ -128,7 +128,7 @@ FUNCTION ABLString RETURNS CHARACTER (INPUT obj AS {&CLOBJECT}):
 END.
 
 FUNCTION LispDecimal RETURNS {&CLOBJECT} (INPUT pool AS {&CLOBJECT}, INPUT d AS DECIMAL):
-        DEFINE VAR ret AS DECIMAL NO-UNDO.
+        DEFINE VAR ret AS {&CLOBJECT} NO-UNDO.
 
         RUN lisp_double IN sheclApi (pool, d, OUTPUT ret).
         RUN CheckForErrors IN sheclApi.
