@@ -58,7 +58,7 @@ END.
 {client/include/shecl/call.i 1}
 
 FUNCTION Nil RETURNS {&CLOBJECT} ():
-        RETURN Read("nil").
+        RETURN Read(0, "nil").
 END.
 
 FUNCTION MakeObjPool RETURNS {&CLOBJECT} ():
@@ -72,7 +72,7 @@ FUNCTION MakeObjPool RETURNS {&CLOBJECT} ():
          * reap the symbol before the funcall happens (NIL will
          * never be collected, so it's safe). */
         nil = Nil().
-        makePool = Read("shecl:make-pool").
+        makePool = Read(0, "shecl:make-pool").
         RETURN Call1(makePool, nil).
 END.
 
@@ -84,7 +84,7 @@ FUNCTION ReleaseObjPool RETURNS LOGICAL (INPUT pool AS {&CLOBJECT}):
         /* Note: it's important to set nil first here, see note in
          * MakeObjPool(). */
         nil = Nil().
-        releasePool = Read("shecl:release-pool").
+        releasePool = Read(0, "shecl:release-pool").
         RETURN Call2(releasePool, pool, nil).
 END.
 
