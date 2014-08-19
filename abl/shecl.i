@@ -200,6 +200,38 @@ FUNCTION ABLInt64 RETURNS INT64 (INPUT obj AS {&CLOBJECT}):
         RETURN i.
 END.
 
+FUNCTION LispInteger RETURNS {&CLOBJECT} (INPUT pool AS {&CLOBJECT}, INPUT i AS INTEGER):
+        DEFINE VAR ret AS {&CLOBJECT} NO-UNDO.
+
+        RUN lisp_int IN sheclApi (pool, i, OUTPUT ret).
+        RUN CheckForErrors IN sheclApi.
+        RETURN ret.
+END.
+
+FUNCTION IsCLInteger RETURNS LOGICAL (INPUT obj AS {&CLOBJECT}):
+        DEFINE VAR ret AS INTEGER NO-UNDO.
+
+        RUN int_p IN sheclApi (obj, OUTPUT ret).
+        IF ret < 0 THEN
+                Errors:Error("Error checking the int32-ness of an object.").
+        ELSE IF ret = 0 THEN
+                RETURN NO.
+        ELSE
+                RETURN YES.
+END.
+
+FUNCTION ABLInteger RETURNS INTEGER (INPUT obj AS {&CLOBJECT}):
+        DEFINE VAR i AS INTEGER NO-UNDO.
+        DEFINE VAR ret AS INTEGER NO-UNDO.
+
+        IF NOT IsCLInt(obj) THEN
+                Errors:Error("obj is not a 32-bit int, can't convert it to INTEGER.").
+        RUN c_int IN sheclApi (obj, OUTPUT i, OUTPUT ret).
+        IF ret <> 0 THEN
+                Errors:Error("Error converting object to 32-bit int.").
+        RETURN i.
+END.
+
 FUNCTION LispBool RETURNS {&CLOBJECT} (INPUT pool AS {&CLOBJECT}, INPUT b AS LOGICAL):
         DEFINE VAR ret AS {&CLOBJECT} NO-UNDO.
 
