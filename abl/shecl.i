@@ -87,7 +87,8 @@ FUNCTION ReleaseObjPool RETURNS LOGICAL (INPUT pool AS {&CLOBJECT}):
          * MakeObjPool(). */
         nil = Nil().
         releasePool = Read(0, "shecl:release-pool").
-        RETURN Call2(releasePool, pool, nil).
+        /* No return value, don't bother with a pool. */
+        RETURN Call2(0, releasePool, pool, nil).
 END.
 
 /* FIXME: type conversion stuff isn't using object pools. */
