@@ -5,6 +5,7 @@
 {client/include/system.i}
 {client/include/ffi.i}
 {client/include/errors.i}
+{client/include/shecl/call.i 2}
 
 FUNCTION SheclInit RETURNS LOGICAL():
         DEFINE VAR faslPath AS CHARACTER NO-UNDO.
