@@ -42,9 +42,10 @@ int shecl_boot(char *shecl_fasl_path, int argc, char **argv)
                         return -1;
                 } ECL_HANDLER_CASE_END;
         } ECL_CATCH_ALL_IF_CAUGHT {
-                cl_shutdown();
-                return -1;
         } ECL_CATCH_ALL_END;
+        /* We've already returned on success, so if we got here there must have been an error. */
+        cl_shutdown();
+        return -1;
 }
 
 void shecl_shutdown(void)
@@ -76,8 +77,8 @@ cl_object eval(const char *s, cl_object pool)
                  * This may cause problems if ecl_returnX() changes in the future. */
                 return val;
         } ECL_CATCH_ALL_IF_CAUGHT {
-                ecl_return2(env, OBJNULL, OBJNULL);
         } ECL_CATCH_ALL_END;
+        ecl_return2(env, OBJNULL, OBJNULL);
 }
 
 cl_object read(const char *s, cl_object pool)
@@ -103,8 +104,8 @@ cl_object read(const char *s, cl_object pool)
                  * the primary one out. Note that this may break if ecl_returnX() changes in the future. */
                 return val;
         } ECL_CATCH_ALL_IF_CAUGHT {
-                ecl_return2(env, OBJNULL, OBJNULL);
         } ECL_CATCH_ALL_END;
+        ecl_return2(env, OBJNULL, OBJNULL);
 }
 
 /* Poor man's substitute for (apply #'list arg1 arg2 ...) -- including spread behavior of the last arg. */
@@ -171,8 +172,8 @@ cl_object call(int nargs, cl_object pool, cl_object func, cl_object arg, ...)
                         ecl_return2(env, condition, ecl_cstring_to_base_string_or_nil("Error constructing function call"));
                 } ECL_HANDLER_CASE_END;
         } ECL_CATCH_ALL_IF_CAUGHT {
-                ecl_return2(env, OBJNULL, OBJNULL);
         } ECL_CATCH_ALL_END;
+        ecl_return2(env, OBJNULL, OBJNULL);
 }
 
 cl_index shecl_nvalues(cl_env_ptr env)
@@ -203,8 +204,8 @@ int shecl_typep(cl_object obj, cl_object type)
                         return -1;
                 } ECL_HANDLER_CASE_END;
         } ECL_CATCH_ALL_IF_CAUGHT {
-                return -1;
         } ECL_CATCH_ALL_END;
+        return -1;
 }
 
 cl_object signed_byte_type(unsigned int nbits)
@@ -230,8 +231,8 @@ cl_object lisp_string(cl_object pool, char *str)
                         return report_error(env, condition, "Error constructing Lisp string.");
                 } ECL_HANDLER_CASE_END;
         } ECL_CATCH_ALL_IF_CAUGHT {
-                ecl_return2(env, OBJNULL, OBJNULL);
         } ECL_CATCH_ALL_END;
+        ecl_return2(env, OBJNULL, OBJNULL);
 }
 
 int string_p(cl_object obj)
@@ -248,8 +249,8 @@ int string_p(cl_object obj)
                         return -1;
                 } ECL_HANDLER_CASE_END;
         } ECL_CATCH_ALL_IF_CAUGHT {
-                return -1;
         } ECL_CATCH_ALL_END;
+        return -1;
 }
 
 char *c_string(cl_object obj)
@@ -284,8 +285,8 @@ char *c_string(cl_object obj)
                         return NULL;
                 } ECL_HANDLER_CASE_END;
         } ECL_CATCH_ALL_IF_CAUGHT {
-                return NULL;
         } ECL_CATCH_ALL_END;
+        return NULL;
 }
 
 /* DECIMAL type */
@@ -305,8 +306,8 @@ cl_object lisp_double(cl_object pool, double d)
                         return report_error(env, condition, "Error creating lisp double object.");
                 } ECL_HANDLER_CASE_END;
         } ECL_CATCH_ALL_IF_CAUGHT {
-                ecl_return2(env, OBJNULL, OBJNULL);
         } ECL_CATCH_ALL_END;
+        ecl_return2(env, OBJNULL, OBJNULL);
 }
 
 int double_p(cl_object obj)
@@ -316,8 +317,8 @@ int double_p(cl_object obj)
                 cl_object type = ecl_make_symbol("DOUBLE-FLOAT", "CL");
                 return shecl_typep(obj, type);
         } ECL_CATCH_ALL_IF_CAUGHT {
-                return -1;
         } ECL_CATCH_ALL_END;
+        return -1;
 }
 
 int c_double(cl_object obj, double *d)
@@ -327,8 +328,8 @@ int c_double(cl_object obj, double *d)
                 *d = ecl_to_double(obj);
                 return 0;
         } ECL_CATCH_ALL_IF_CAUGHT {
-                return -1;
         } ECL_CATCH_ALL_END;
+        return -1;
 }
 
 /* INT64 type */
@@ -349,8 +350,8 @@ cl_object lisp_int64(cl_object pool, int64_t i)
                         return report_error(env, condition, "Error constructing lisp int64 object.");
                 } ECL_HANDLER_CASE_END;
         } ECL_CATCH_ALL_IF_CAUGHT {
-                ecl_return2(env, OBJNULL, OBJNULL);
         } ECL_CATCH_ALL_END;
+        ecl_return2(env, OBJNULL, OBJNULL);
 }
 
 int int64_p(cl_object obj)
@@ -360,8 +361,8 @@ int int64_p(cl_object obj)
                 cl_object type = signed_byte_type(64);
                 return shecl_typep(obj, type);
         } ECL_CATCH_ALL_IF_CAUGHT {
-                return -1;
         } ECL_CATCH_ALL_END;
+        return -1;
 }
 
 int c_int64(cl_object obj, int64_t *i)
@@ -376,8 +377,8 @@ int c_int64(cl_object obj, int64_t *i)
                         return -1;
                 } ECL_HANDLER_CASE_END;
         } ECL_CATCH_ALL_IF_CAUGHT {
-                return -1;
         } ECL_CATCH_ALL_END;
+        return -1;
 }
 
 /* INTEGER type */
@@ -397,8 +398,8 @@ cl_object lisp_int(cl_object pool, int32_t i)
                         return report_error(env, condition, "Error constructing lisp int32 object.");
                 } ECL_HANDLER_CASE_END;
         } ECL_CATCH_ALL_IF_CAUGHT {
-                ecl_return2(env, OBJNULL, OBJNULL);
         } ECL_CATCH_ALL_END;
+        ecl_return2(env, OBJNULL, OBJNULL);
 }
 
 int int_p(cl_object obj)
@@ -408,8 +409,8 @@ int int_p(cl_object obj)
                 cl_object type = signed_byte_type(32);
                 return shecl_typep(obj, type);
         } ECL_CATCH_ALL_IF_CAUGHT {
-                return -1;
         } ECL_CATCH_ALL_END;
+        return -1;
 }
 
 int c_int(cl_object obj, int32_t *i)
@@ -424,8 +425,8 @@ int c_int(cl_object obj, int32_t *i)
                         return -1;
                 } ECL_HANDLER_CASE_END;
         } ECL_CATCH_ALL_IF_CAUGHT {
-                return -1;
         } ECL_CATCH_ALL_END;
+        return -1;
 }
 
 /* LOGICAL type (note that we're using int as an intermediary). */
@@ -440,8 +441,8 @@ cl_object lisp_bool(cl_object pool, int32_t b)
                 else
                         ecl_return1(env, ECL_NIL);
         } ECL_CATCH_ALL_IF_CAUGHT {
-                ecl_return2(env, OBJNULL, OBJNULL);
         } ECL_CATCH_ALL_END;
+        ecl_return2(env, OBJNULL, OBJNULL);
 }
 
 int bool_p(cl_object obj)
@@ -453,8 +454,8 @@ int bool_p(cl_object obj)
                 else
                         return 0;
         } ECL_CATCH_ALL_IF_CAUGHT {
-                return -1;
         } ECL_CATCH_ALL_END;
+        return -1;
 }
 
 int c_bool(cl_object obj, int *b)
