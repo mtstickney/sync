@@ -36,10 +36,10 @@
                            (return-from safe-eval-string
                              (values c (write-to-string c :escape nil))))))
     (let* ((form (read-from-string str))
-             (obj (eval form)))
-        (if (boundp '*pool*)
-            (add-to-pool obj *pool*)
-            obj))))
+           (obj (eval form)))
+      (if (boundp '*pool*)
+          (add-to-pool obj *pool*)
+          obj))))
 
 @export
 (defun safe-read-from-string (str)
@@ -49,9 +49,9 @@
                            (return-from safe-read-from-string
                              (values c (write-to-string c :escape nil))))))
     (let ((form (read-from-string str)))
-        (if (boundp '*pool*)
-            (add-to-pool form *pool*)
-            form))))
+      (if (boundp '*pool*)
+          (add-to-pool form *pool*)
+          form))))
 
 @export
 (defun safe-apply (func args)
@@ -61,6 +61,6 @@
                            (return-from safe-apply
                              (values c (write-to-string c :escape nil))))))
     (let ((val (apply func args)))
-        (if (boundp '*pool*)
-            (add-to-pool val *pool*)
-            val))))
+      (if (boundp '*pool*)
+          (add-to-pool val *pool*)
+          val))))
