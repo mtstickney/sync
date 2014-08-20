@@ -14,7 +14,7 @@ cl_object report_error(cl_env_ptr env, cl_object condition, char *msg) {
 }
 
 /* At one time this function did something useful. It might again someday, so leave it here. */
-int shecl_boot(char *shecl_fasl_path, int argc, char **argv)
+int shecl_boot(char *bootstrap_fasl_path, int argc, char **argv)
 {
         cl_env_ptr env;
 
@@ -26,8 +26,13 @@ int shecl_boot(char *shecl_fasl_path, int argc, char **argv)
                 cl_object error = ecl_make_symbol("SERIOUS-CONDITION", "CL");
                 ECL_HANDLER_CASE_BEGIN(env, ecl_list1(error)) {
                         cl_object load = ecl_make_symbol("LOAD", "CL");
+                        cl_object fasl_path_str;
+                        cl_object bootstrap;
 
-                        cl_funcall(2, load, ecl_cstring_to_base_string_or_nil(shecl_fasl_path));
+                        fasl_path_str = ecl_cstring_to_base_string_or_nil(bootstrap_fasl_path);
+                        cl_funcall(2, load, fasl_path_str);
+                        bootstrap = ecl_make_symbol("BOOTSTRAP", "SHECL-BOOTSTRAP");
+                        cl_funcall(2, bootstrap, fasl_path_str);
                         return 0;
                 } ECL_HANDLER_CASE(1, condition) {
                         /* ECL_HANDLER_CASE_BEGIN(env, ecl_list1(error)) { */
