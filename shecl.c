@@ -9,8 +9,8 @@ cl_object report_error(cl_env_ptr env, cl_object condition, char *msg) {
                 error_string = cl_funcall(3, write_to_string, condition, escape, ECL_NIL);
                 ecl_return2(env, condition, error_string);
         } ECL_HANDLER_CASE(1, condition2) {
-                ecl_return2(env, condition, ecl_cstring_to_base_string_or_nil(msg));
         } ECL_HANDLER_CASE_END;
+        ecl_return2(env, condition, ecl_cstring_to_base_string_or_nil(msg));
 }
 
 /* At one time this function did something useful. It might again someday, so leave it here. */
