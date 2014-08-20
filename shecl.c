@@ -273,15 +273,13 @@ char *c_string(cl_object obj)
                                 data = (char*)ecl_to_unsigned_integer(ptr);
                                 len = strlen(data);
                                 str = malloc(len);
-                                if (!str)
-                                        return NULL;
-                                /* Hooray for overflows! */
-                                strcpy(str, data);
-                                cl_funcall(2, foreign_string_free, foreign_string);
-                                return str;
+                                if (str)
+                                        /* Hooray for overflows! */
+                                        strcpy(str, data);
                         } ECL_UNWIND_PROTECT_EXIT {
                                 cl_funcall(2, foreign_string_free, foreign_string);
                         } ECL_UNWIND_PROTECT_END;
+                        return str;
                 } ECL_HANDLER_CASE(1, condition) {
                         return NULL;
                 } ECL_HANDLER_CASE_END;
