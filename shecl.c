@@ -39,6 +39,7 @@ int shecl_boot(char *shecl_fasl_path, int argc, char **argv)
                         /* } ECL_HANDLER_CASE(1, condition2) { */
                         /*         ecl_return2(env, condition, ecl_cstring_to_base_string_or_nil("Error loading shecl system.")); */
                         /* } ECL_HANDLER_CASE_END; */
+                        cl_shutdown();
                         return -1;
                 } ECL_HANDLER_CASE_END;
         } ECL_CATCH_ALL_IF_CAUGHT {
