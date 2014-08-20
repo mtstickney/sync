@@ -265,7 +265,7 @@ char *c_string(cl_object obj)
                         cl_object encoding_kw = ecl_make_keyword("ENCODING");
                         cl_object encoding = ecl_make_keyword("UTF-8");
                         cl_object pointer_address = ecl_make_symbol("POINTER-ADDRESS", "CFFI");
-                        cl_object foreign_string = cl_funcall(2, foreign_string_alloc, obj);
+                        cl_object foreign_string = cl_funcall(2, foreign_string_alloc, obj, encoding_kw, encoding);
                         cl_object ptr;
                         size_t len;
                         ECL_UNWIND_PROTECT_BEGIN(env) {
