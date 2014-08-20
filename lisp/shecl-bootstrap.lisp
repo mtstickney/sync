@@ -5,5 +5,8 @@
 (in-package #:shecl-bootstrap)
 
 (defun bootstrap (load-path)
-  (load (merge-pathnames #P"asdf.fas" load-path))
-  (load (merge-pathnames #P"shecl.fasb" load-path)))
+  (let* ((load-pathname (parse-namestring load-path))
+         (load-directory (make-pathname :defaults load-pathname
+                                        :name nil :type nil)))
+    (load (merge-pathnames #P"asdf.fas" load-path))
+    (load (merge-pathnames #P"shecl.fasb" load-path))))
