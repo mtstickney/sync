@@ -261,21 +261,27 @@ char *c_string(cl_object obj)
                 cl_object serious_condition = ecl_make_symbol("SERIOUS-CONDITION", "CL");
                 ECL_HANDLER_CASE_BEGIN(env, ecl_list1(serious_condition)) {
                         cl_object foreign_string_alloc = ecl_make_symbol("FOREIGN-STRING-ALLOC", "CFFI");
+                        cl_object foreign_string_free = ecl_make_symbol("FOREIGN-STRING-FREE", "CFFI");
                         cl_object encoding_kw = ecl_make_keyword("ENCODING");
                         cl_object encoding = ecl_make_keyword("UTF-8");
                         cl_object pointer_address = ecl_make_symbol("POINTER-ADDRESS", "CFFI");
                         cl_object foreign_string = cl_funcall(2, foreign_string_alloc, obj);
-                        cl_object ptr = cl_funcall(2, pointer_address, foreign_string);
+                        cl_object ptr;
                         size_t len;
-                        data = (char*)ecl_to_unsigned_integer(ptr);
-                        len = strlen(data);
-                        str = malloc(len);
-                        if (!str)
-                                return NULL;
-                        /* Hooray for overflows! */
-                        strcpy(str, data);
-                        cl_funcall(2, free_foreign_object, foreign_string);
-                        return str;
+                        ECL_UNWIND_PROTECT_BEGIN(env) {
+                                ptr = cl_funcall(2, pointer_address, foreign_string);
+                                data = (char*)ecl_to_unsigned_integer(ptr);
+                                len = strlen(data);
+                                str = malloc(len);
+                                if (!str)
+                                        return NULL;
+                                /* Hooray for overflows! */
+                                strcpy(str, data);
+                                cl_funcall(2, foreign_string_free, foreign_string);
+                                return str;
+                        } ECL_UNWIND_PROTECT_EXIT {
+                                cl_funcall(2, foreign_string_free, foreign_string);
+                        } ECL_UNWIND_PROTECT_END;
                 } ECL_HANDLER_CASE(1, condition) {
                         return NULL;
                 } ECL_HANDLER_CASE_END;
