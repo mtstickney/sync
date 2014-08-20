@@ -28,7 +28,12 @@ int shecl_boot(char *bootstrap_fasl_path, int argc, char **argv)
                         cl_object load = ecl_make_symbol("LOAD", "CL");
                         cl_object fasl_path_str;
                         cl_object bootstrap;
+                        cl_object install_bytecodes_compiler;
 
+                        install_bytecodes_compiler = ecl_make_symbol("INSTALL-BYTECODES-COMPILER", "EXT");
+
+                        /* Make sure we're using the bytecode compiler. */
+                        cl_funcall(1, install_bytecodes_compiler);
                         fasl_path_str = ecl_cstring_to_base_string_or_nil(bootstrap_fasl_path);
                         cl_funcall(2, load, fasl_path_str);
                         bootstrap = ecl_make_symbol("BOOTSTRAP", "SHECL-BOOTSTRAP");
