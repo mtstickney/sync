@@ -9,6 +9,8 @@
       (let* ((load-pathname (parse-namestring load-path))
              (load-directory (make-pathname :defaults load-pathname
                                             :name nil :type nil)))
-        (load (merge-pathnames #P"asdf.fas" load-path))
+        (setf (logical-pathname-translations "SYS")
+              `(("**;*.*" ,(merge-pathnames "**/*.*" (truename (merge-pathnames #P"ecl/" load-directory))))))
+        (require 'asdf)
         (load (merge-pathnames #P"shecl.fasb" load-path)))
     (t (c) (values c (write-to-string c :escape nil)))))
