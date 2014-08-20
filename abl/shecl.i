@@ -8,25 +8,37 @@
 
 FUNCTION SheclInit RETURNS LOGICAL():
         DEFINE VAR faslPath AS CHARACTER NO-UNDO.
-        DEFINE VAR argv1 AS MEMPTR NO-UNDO.
+        DEFINE VAR numArgs AS INTEGER INITIAL 1 NO-UNDO.
+        DEFINE VAR argvs AS MEMPTR EXTENT NO-UNDO.
         DEFINE VAR argv AS MEMPTR NO-UNDO.
         DEFINE VAR argvPtr AS {&ABL_POINTER} NO-UNDO.
         DEFINE VAR ret AS INTEGER NO-UNDO.
+        DEFINE VAR i AS INTEGER NO-UNDO.
 
         faslPath = SEARCH("client/bin/shecl.fasb").
-        argv1 = ForeignString("ecl.dll").
-        SET-SIZE(argv) = {&POINTER_BYTES}.
 
+        EXTENT(argvs) = numArgs.
+        argvs[1] = ForeignString("ecl.dll").
+
+        SET-SIZE(argv) = {&POINTER_BYTES} * numArgs.
         argvPtr = GET-POINTER-VALUE(argv).
+
+        DO i = 1 TO numArgs:
 /* Note that we're not using PROCESS-ARCHITECTURE here, as it may not be available. */
 &IF {&POINTER_BYTES} = 8 &THEN
-        PUT-INT64(argv, 1) = GET-POINTER-VALUE(argv1).
+                PUT-INT64(argv, i) = GET-POINTER-VALUE(argvs[i]).
+                message "put int64 pointer in argv" view-as alert-box.
 &ELSE
-        PUT-LONG(argv, 1) = GET-POINTER-VALUE(argv1).
+                PUT-LONG(argv, i) = GET-POINTER-VALUE(argvs[i]).
+                message "put long pointer in argv" view-as alert-box.
 &ENDIF
+        END.
         argvPtr = GET-POINTER-VALUE(argv).
-        RUN shecl_boot IN sheclApi (faslPath, 1, argvPtr, OUTPUT ret).
-        SET-SIZE(argv1) = 0.
+        RUN shecl_boot IN sheclApi (faslPath, numArgs, argvPtr, OUTPUT ret).
+
+        DO i = 1 TO numArgs:
+                SET-SIZE(argvs[i]) = 0.
+        END.
         SET-SIZE(argv) = 0.
 
         IF ret < 0 THEN DO:
