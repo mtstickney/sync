@@ -21,7 +21,6 @@ FUNCTION SheclInit RETURNS LOGICAL():
         argvs[1] = ForeignString("ecl.dll").
 
         SET-SIZE(argv) = {&POINTER_BYTES} * numArgs.
-        argvPtr = GET-POINTER-VALUE(argv).
 
         DO i = 1 TO numArgs:
 /* Note that we're not using PROCESS-ARCHITECTURE here, as it may not be available. */
