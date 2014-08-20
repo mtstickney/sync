@@ -31,35 +31,36 @@
 @export
 (defun safe-eval-string (str)
   (declare (special *pool*))
-  ;; Consider handling stuff by binding *debugger-hook*, which handles
-  ;; the whole SIGNAL thing properly.
-  (handler-case
-      (let* ((form (read-from-string str))
+  (let ((*debugger-hook* (lambda (c old-hook)
+                           (declare (ignore old-hook))
+                           (return-from safe-eval-string
+                             (values c (write-to-string c :escape nil))))))
+    (let* ((form (read-from-string str))
              (obj (eval form)))
         (if (boundp '*pool*)
             (add-to-pool obj *pool*)
-            obj))
-    (serious-condition (c)
-      (values c (write-to-string c :escape nil)))))
+            obj))))
 
 @export
 (defun safe-read-from-string (str)
   (declare (special *pool*))
-  (handler-case
-      (let ((form (read-from-string str)))
+  (let ((*debugger-hook* (lambda (c old-hook)
+                           (declare (ignore old-hook))
+                           (return-from safe-read-from-string
+                             (values c (write-to-string c :escape nil))))))
+    (let ((form (read-from-string str)))
         (if (boundp '*pool*)
             (add-to-pool form *pool*)
-            form))
-    (serious-condition (c)
-      (values c (write-to-string c :escape nil)))))
+            form))))
 
 @export
 (defun safe-apply (func args)
   (declare (special *pool*))
-  (handler-case
-      (let ((val (apply func args)))
+  (let ((*debugger-hook* (lambda (c old-hook)
+                           (declare (ignore old-hook))
+                           (return-from safe-apply
+                             (values c (write-to-string c :escape nil))))))
+    (let ((val (apply func args)))
         (if (boundp '*pool*)
             (add-to-pool val *pool*)
-            val))
-    (serious-condition (c)
-      (values c (write-to-string c :escape nil)))))
+            val))))
