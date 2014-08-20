@@ -15,7 +15,7 @@ FUNCTION SheclInit RETURNS LOGICAL():
         DEFINE VAR ret AS INTEGER NO-UNDO.
         DEFINE VAR i AS INTEGER NO-UNDO.
 
-        faslPath = SEARCH("client/bin/shecl.fasb").
+        faslPath = SEARCH("client/bin/shecl-bootstrap.fasb").
 
         EXTENT(argvs) = numArgs.
         argvs[1] = ForeignString("ecl.dll").
