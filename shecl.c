@@ -244,15 +244,7 @@ int string_p(cl_object obj)
 {
         cl_env_ptr env = ecl_process_env();
         ECL_CATCH_ALL_BEGIN(env) {
-                cl_object serious_condition = ecl_make_symbol("SERIOUS-CONDITION", "CL");
-                ECL_HANDLER_CASE_BEGIN(env, ecl_list1(serious_condition)) {
-                        cl_object result = cl_stringp(obj);
-                        if (result == ECL_NIL)
-                                return 1;
-                        return 0;
-                } ECL_HANDLER_CASE(1, condition) {
-                        return -1;
-                } ECL_HANDLER_CASE_END;
+                return ecl_stringp(obj);
         } ECL_CATCH_ALL_END;
         return -1;
 }
