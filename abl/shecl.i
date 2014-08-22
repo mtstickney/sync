@@ -118,6 +118,9 @@ END.
 FUNCTION LispString RETURNS {&CLOBJECT} (INPUT pool AS {&CLOBJECT}, INPUT str AS CHARACTER):
         DEFINE VAR ret AS {&CLOBJECT} NO-UNDO.
 
+        IF pool = ? THEN
+                pool = {&CLNULL}.
+
         RUN lisp_string IN sheclApi (pool, str, OUTPUT ret).
         RUN CheckForErrors IN sheclApi NO-ERROR.
         RETURN ret.
@@ -158,6 +161,9 @@ END.
 FUNCTION LispDouble RETURNS {&CLOBJECT} (INPUT pool AS {&CLOBJECT}, INPUT d AS DECIMAL):
         DEFINE VAR ret AS {&CLOBJECT} NO-UNDO.
 
+        IF pool = ? THEN
+                pool = {&CLNULL}.
+
         RUN lisp_double IN sheclApi (pool, d, OUTPUT ret).
         RUN CheckForErrors IN sheclApi NO-ERROR.
         RETURN ret.
@@ -195,6 +201,9 @@ END.
 
 FUNCTION LispInt64 RETURNS {&CLOBJECT} (INPUT pool AS {&CLOBJECT}, INPUT i AS INT64):
         DEFINE VAR ret AS {&CLOBJECT} NO-UNDO.
+
+        IF pool = ? THEN
+                pool = {&CLNULL}.
 
         RUN lisp_int64 IN sheclApi (pool, i, OUTPUT ret).
         RUN CheckForErrors IN sheclApi NO-ERROR.
@@ -234,6 +243,9 @@ END.
 FUNCTION LispInteger RETURNS {&CLOBJECT} (INPUT pool AS {&CLOBJECT}, INPUT i AS INTEGER):
         DEFINE VAR ret AS {&CLOBJECT} NO-UNDO.
 
+        IF pool = ? THEN
+                pool = {&CLNULL}.
+
         RUN lisp_int IN sheclApi (pool, i, OUTPUT ret).
         RUN CheckForErrors IN sheclApi NO-ERROR.
         RETURN ret.
@@ -271,6 +283,9 @@ END.
 
 FUNCTION LispBool RETURNS {&CLOBJECT} (INPUT pool AS {&CLOBJECT}, INPUT b AS LOGICAL):
         DEFINE VAR ret AS {&CLOBJECT} NO-UNDO.
+
+        IF pool = ? THEN
+                pool = {&CLNULL}.
 
         IF b = ? THEN DO:
                 Errors:Error("Cannot convert the unknown value to a boolean.") NO-ERROR.
