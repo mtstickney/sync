@@ -6,6 +6,8 @@
 {client/include/errors.i}
 {client/include/shecl/call.i 2}
 
+&GLOBAL-DEFINE CLNULL 0
+
 FUNCTION SheclInit RETURNS LOGICAL():
         DEFINE VAR faslPath AS CHARACTER NO-UNDO.
         DEFINE VAR numArgs AS INTEGER INITIAL 1 NO-UNDO.
@@ -57,7 +59,7 @@ FUNCTION Eval RETURNS {&CLOBJECT} (INPUT pool AS {&CLOBJECT}, INPUT str AS CHARA
 
         IF pool = ? THEN
                 /* Pass NULL for no pool. */
-                pool = 0.
+                pool = {&CLNULL}.
 
         RUN eval IN sheclApi (str, pool, OUTPUT obj).
         RUN CheckForErrors IN sheclApi.
@@ -68,7 +70,7 @@ FUNCTION Read RETURNS {&CLOBJECT} (INPUT pool AS {&CLOBJECT}, INPUT str AS CHARA
         DEFINE VAR obj AS {&CLOBJECT} NO-UNDO.
         IF pool = ? THEN
                 /* Pass NULL for no pool. */
-                pool = 0.
+                pool = {&CLNULL}.
 
         RUN read IN sheclApi (str, pool, OUTPUT obj).
         RUN CheckForErrors IN sheclApi.
