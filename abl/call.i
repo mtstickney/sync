@@ -1,4 +1,4 @@
-&IF defined(COUNT_{1}_I)=0 &THEN
+&IF defined(COUNT{1}_I_)=0 &THEN
 &GLOBAL-DEFINE COUNT{1}_I_
 
 {client/include/shecl/shecl_ffi.i}
