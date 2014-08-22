@@ -342,7 +342,7 @@ cl_object lisp_int64(cl_object pool, int64_t i)
         ECL_CATCH_ALL_BEGIN(env) {
                 cl_object serious_condition = ecl_make_symbol("SERIOUS-CONDITION", "CL");
                 ECL_HANDLER_CASE_BEGIN(env, ecl_list1(serious_condition)) {
-                        cl_object add_to_pool = ecl_make_symbol("ADD-TO-POOL", "CL");
+                        cl_object add_to_pool = ecl_make_symbol("ADD-TO-POOL", "SHECL");
                         cl_object new_int64 = ecl_make_int64_t(i);
                         /* Don't bother with the pool if it's an immediate type. */
                         if (ECL_IMMEDIATE(new_int64) || pool == OBJNULL)
