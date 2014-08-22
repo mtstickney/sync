@@ -322,6 +322,10 @@ FUNCTION ABLGeneralizedLogical RETURNS LOGICAL (INPUT obj AS {&CLOBJECT}):
         DEFINE VAR b AS INTEGER NO-UNDO.
         DEFINE VAR ret AS INTEGER NO-UNDO.
 
+        IF obj = {&CLNULL} THEN DO:
+                Errors:Error("The NULL object is not a valid lisp object, cannot convert to a logical.") NO-ERROR.
+                RETURN ?.
+        END.
         RUN c_generalized_bool IN sheclApi (obj, OUTPUT b, OUTPUT ret).
         IF ret <> 0 THEN DO:
                 Errors:Error("Error converting object to LOGICAL.") NO-ERROR.
