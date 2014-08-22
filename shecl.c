@@ -238,7 +238,10 @@ cl_object lisp_string(cl_object pool, char *str)
                         cl_object string = ecl_cstring_to_base_string_or_nil(str);
                         if (string == ECL_NIL)
                                 cl_error(1, ecl_cstring_to_base_string_or_nil("String data was NULL."));
-                        ecl_return1(env, cl_funcall(3, add_to_pool, string, pool));
+                        if (pool == OBJNULL)
+                                ecl_return1(env, string);
+                        else
+                                ecl_return1(env, cl_funcall(3, add_to_pool, string, pool));
                 } ECL_HANDLER_CASE(1, condition) {
                         return report_error(env, condition, "Error constructing Lisp string.");
                 } ECL_HANDLER_CASE_END;
@@ -300,9 +303,10 @@ cl_object lisp_double(cl_object pool, double d)
                         cl_object add_to_pool = ecl_make_symbol("ADD-TO-POOL", "SHECL");
                         cl_object new_double = ecl_make_double_float(d);
                         /* DOn't bother with the pool if it's an immediate type. */
-                        if (ECL_IMMEDIATE(new_double))
+                        if (ECL_IMMEDIATE(new_double) || pool == OBJNULL)
                                 ecl_return1(env, new_double);
-                        ecl_return1(env, cl_funcall(3, add_to_pool, new_double, pool));
+                        else
+                                ecl_return1(env, cl_funcall(3, add_to_pool, new_double, pool));
                 } ECL_HANDLER_CASE(1, condition) {
                         return report_error(env, condition, "Error creating lisp double object.");
                 } ECL_HANDLER_CASE_END;
@@ -341,9 +345,10 @@ cl_object lisp_int64(cl_object pool, int64_t i)
                         cl_object add_to_pool = ecl_make_symbol("ADD-TO-POOL", "CL");
                         cl_object new_int64 = ecl_make_int64_t(i);
                         /* Don't bother with the pool if it's an immediate type. */
-                        if (ECL_IMMEDIATE(new_int64))
+                        if (ECL_IMMEDIATE(new_int64) || pool == OBJNULL)
                                 ecl_return1(env, new_int64);
-                        ecl_return1(env, cl_funcall(3, add_to_pool, new_int64, pool));
+                        else
+                                ecl_return1(env, cl_funcall(3, add_to_pool, new_int64, pool));
                 } ECL_HANDLER_CASE(1, condition) {
                         return report_error(env, condition, "Error constructing lisp int64 object.");
                 } ECL_HANDLER_CASE_END;
@@ -386,9 +391,10 @@ cl_object lisp_int(cl_object pool, int32_t i)
                         cl_object add_to_pool = ecl_make_symbol("ADD-TO-POOL", "SHECL");
                         cl_object new_int = ecl_make_int32_t(i);
                         /* Don't bother with the pool if it's an immediate type. */
-                        if (ECL_IMMEDIATE(new_int))
+                        if (ECL_IMMEDIATE(new_int) || pool == OBJNULL)
                                 ecl_return1(env, new_int);
-                        ecl_return1(env, cl_funcall(3, add_to_pool, new_int, pool));
+                        else
+                                ecl_return1(env, cl_funcall(3, add_to_pool, new_int, pool));
                 } ECL_HANDLER_CASE(1, condition) {
                         return report_error(env, condition, "Error constructing lisp int32 object.");
                 } ECL_HANDLER_CASE_END;
