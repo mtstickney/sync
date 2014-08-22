@@ -1,5 +1,5 @@
-&IF defined(COUNT{1}_I_)=0 &THEN
-&GLOBAL-DEFINE COUNT{1}_I_
+&IF defined(CALL{1}_I_)=0 &THEN
+&GLOBAL-DEFINE CALL{1}_I_
 
 {client/include/shecl/shecl_ffi.i}
 
