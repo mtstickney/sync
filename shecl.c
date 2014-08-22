@@ -203,7 +203,13 @@ int shecl_typep(cl_object obj, cl_object type)
                 cl_object serious_condition = ecl_make_symbol("SERIOUS-CONDITION", "CL");
                 ECL_HANDLER_CASE_BEGIN(env, ecl_list1(serious_condition)) {
                         cl_object typep = ecl_make_symbol("TYPEP", "CL");
-                        cl_object ret = cl_funcall(3, typep, obj, type);
+                        cl_object ret;
+
+                        /* Passing OBJNULL to CL functions might be problematic. Assume it is not of any type. */
+                        if (obj == OBJNULL)
+                                return 0;
+
+                        ret = cl_funcall(3, typep, obj, type);
                         if (ret == ECL_NIL)
                                 return 0;
                         return 1;
