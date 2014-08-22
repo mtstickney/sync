@@ -253,7 +253,7 @@ int string_p(cl_object obj)
 {
         cl_env_ptr env = ecl_process_env();
         ECL_CATCH_ALL_BEGIN(env) {
-                return ecl_stringp(obj);
+                return (obj != OBJNULL && cl_stringp(obj) == ECL_T);
         } ECL_CATCH_ALL_END;
         return -1;
 }
