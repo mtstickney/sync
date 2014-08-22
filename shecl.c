@@ -1,4 +1,11 @@
 #include "shecl.h"
+#include <stdio.h>
+
+#ifndef NDEBUG
+#define debug(M, ...) fprintf(stderr, "DEBUG %s:%d: " M "\n", __FILE__, __LINE__, ##__VA_ARGS__); fflush(stderr)
+#else
+#define debug(M, ...)
+#endif
 
 cl_object report_error(cl_env_ptr env, cl_object condition, char *msg) {
         cl_object error = ecl_make_symbol("SERIOUS-CONDITION", "CL");
