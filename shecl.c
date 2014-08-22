@@ -457,10 +457,10 @@ int bool_p(cl_object obj)
 int c_bool(cl_object obj, int *b)
 {
         if (obj == ECL_T) {
-                *b = 0;
+                *b = 1;
                 return 0;
         } else if (obj == ECL_NIL) {
-                *b = 1;
+                *b = 0;
                 return 0;
         }
         return -1;
