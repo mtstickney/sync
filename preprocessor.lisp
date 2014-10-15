@@ -272,6 +272,7 @@
       (:? (:rule whitespace?)))
   (make-list-box :list (nreverse params)))
 
+;; NOTE: includes expand to the file contents, plus a newline and a space.
 ;; TODO: ABL's quoting stuff for include file names is broken; do we
 ;; need to duplicate it?
 (meta-sexp:defrule preproc-include? (&aux match params) ()
@@ -282,3 +283,31 @@
     (:? (:rule whitespace?))
     #\})
   (cons :include (list-box-list params)))
+
+(meta-sexp:defrule preprocessor-block? (&aux match) ()
+  (:or (:rule preproc-symbol?)
+       (:rule preproc-include?)
+       (:and (:with-stored-match (match)
+               (:+ (:or (:rule match-comment)
+                        ;; preproc stuff starts with a #\{ (yeah, I
+                        ;; know, magic values, assumptions, etc.)
+                        (:and (:not #\{)
+                              (:type character)))))
+             (list :text match))))
+
+;; NOTE: according to the manual, this is only valid to use at the
+;; beginning of a new line.
+(meta-sexp:defrule preproc-command? (&aux (texts '()) text) ()
+  ;; initial whitespace and comments preserved
+  (:with-stored-match (text)
+    (:* (:or (:rule whitespace?)
+             (:rule match-comment))))
+  (:list-push text texts)
+  ;; The actual command (with possible abbreviations
+  (:or (:icase (:and "&scop" (:any-prefix "ed-define")))
+       (:icase "&undef" (:any-prefix "ine"))
+       (:icase "&globa" (:any-prefix "l-define"))
+       ;; AppBuilder magic
+       (:icase "&analyze-s" (:any-prefix "uspend"))
+       (:icase "&analyze-r" (:any-prefix "esume")))
+  texts)

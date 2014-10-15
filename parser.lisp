@@ -244,6 +244,16 @@
                                          (optima:match ,obj-var
                                            ,@args)))))))
 
+(defmethod meta-sexp:transform-grammar
+    (ret ctx (in-meta (eql t)) (directive (eql :any-prefix)) &optional args)
+  (let ((accum-var (gensym "ACCUM")))
+    `(let ((,accum-var (meta-sexp:make-char-accum)))
+       ,(meta-sexp:transform-grammar ret ctx t :and
+                                     `((:? ,@(loop for c across (first args)
+                                                collect c
+                                                collect `(:char-push ,c ,accum-var)))
+                                      ,accum-var)))))
+
 (deftype whitespace-char ()
   '(or (eql #\Tab)
     (eql #\Newline)
