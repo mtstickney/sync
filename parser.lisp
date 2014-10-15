@@ -43,8 +43,7 @@
            (match-save (meta-sexp:transform-grammar
                         ret ctx t :assign
                         (list place
-                              `(meta-sexp:context-data
-                                ,(meta-sexp:transform-grammar ret ctx t :subseq (list index-var '(:cursor))))))))
+                              (meta-sexp:transform-grammar ret ctx t :subseq (list index-var '(:cursor)))))))
       `(let ((,index-var ,(meta-sexp:transform-grammar ret ctx t :cursor))
              (,result-var ,(meta-sexp:transform-grammar ret ctx t :and body)))
          ;; (:and ,@body (:assign var (:matched-since index)))
