@@ -67,17 +67,17 @@
 (defmethod asdf:output-files ((op asdf:compile-op) (component abl-file))
   (let ((output-file (merge-pathnames (make-pathname :type "r")
                                       (asdf:component-pathname component))))
-    (values (list output-file) t)))
+    (values (list (asdf:apply-output-translations output-file)) t)))
 
 (defmethod asdf:output-files ((op asdf:compile-op) (component class-file))
   (let ((output-file (merge-pathnames (make-pathname :type "r")
                                       (asdf:component-pathname component))))
-    (values (list output-file) t)))
+    (values (list (asdf:apply-output-translations output-file)) t)))
 
 (defmethod asdf:output-files ((op asdf:compile-op) (component database-file))
   (let ((output-file (merge-pathnames (make-pathname :type "db")
                                       (asdf:component-pathname component))))
-    (values (list output-file t))))
+    (values (list (asdf:apply-output-translations output-file)) t)))
 
 (defgeneric component-databases (op component)
   (:documentation "Return a list of database specifications in effect when OP is applied to COMPONENT."))
