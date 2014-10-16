@@ -4,6 +4,10 @@
 
 (annot:enable-annot-syntax)
 
+@eval-always
+(defclass abl-system (asdf:system)
+  ())
+
 (defclass abl-file (asdf:source-file)
   ())
 
@@ -55,7 +59,8 @@
       (find-class 'asdf::window-file) (find-class 'window-file)
       (find-class 'asdf::class-file) (find-class 'class-file)
       (find-class 'asdf::database-file) (find-class 'database-file)
-      (find-class 'asdf::abl-module) (find-class 'abl-module))
+      (find-class 'asdf::abl-module) (find-class 'abl-module)
+      (find-class 'asdf::abl-system) (find-class 'abl-system))
 
 ;; TODO: set up proper output transformations rather than just
 ;; disabling them (want to be able to do an out-of-source build)

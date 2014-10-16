@@ -6,6 +6,7 @@
   :author "Your Name <your.name@example.com>"
   :license "Specify license here"
   :defsystem-depends-on (#:probuild)
+  :class :abl-system
   :components ((:abl-module "gui"
                             :databases (("compass" :singleuser :pathname "dbase/compass"))
                             :pathname "bar/baz"
