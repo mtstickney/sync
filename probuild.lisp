@@ -97,3 +97,16 @@
     (if (not (inherit-databases component))
         local-dbs
         (append (component-databases op parent) local-dbs))))
+
+(defmethod asdf:component-depends-on ((op asdf:compile-op) (component abl-system))
+  (cons (list 'asdf:prepare-op)
+        (mapcar (lambda (c) (list 'asdf:compile-op c))
+                (asdf:component-children component))))
+
+(defmethod asdf:component-depends-on ((op asdf:compile-op) (component abl-file))
+  '())
+
+(defmethod asdf:component-depends-on ((op asdf:compile-op) (component abl-module))
+  (cons (list 'asdf:prepare-op)
+        (mapcar (lambda (c) (list 'asdf:compile-op c))
+                (asdf:component-children component))))
