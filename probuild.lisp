@@ -98,6 +98,14 @@
         local-dbs
         (append (component-databases op parent) local-dbs))))
 
+(defun set-output-dir (path)
+  (check-type path pathname)
+  (asdf:clear-output-translations)
+  (asdf:initialize-output-translations
+   `(:output-translations (,(merge-pathnames #P"**/*.*")
+                            ,(merge-pathnames (merge-pathnames #P"**/*.*" path)))
+                          :ignore-inherited-configuration)))
+
 (defmethod asdf:component-depends-on ((op asdf:compile-op) (component abl-system))
   (cons (list 'asdf:prepare-op)
         (mapcar (lambda (c) (list 'asdf:compile-op c))
