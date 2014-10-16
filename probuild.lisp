@@ -9,15 +9,15 @@
 
 @eval-always
 (defclass procedure-file (abl-file)
-  ())
+  ((type :initform "p")))
 
 @eval-always
 (defclass window-file (abl-file)
-  ())
+  ((type :initform "w")))
 
 @eval-always
 (defclass class-file (abl-file)
-  ())
+  ((type :initform "cls")))
 
 ;; .st files
 @eval-always
