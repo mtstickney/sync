@@ -32,19 +32,19 @@
     :data nil))
 
 @eval-always
-(defclass db-unit (asdf:module)
+(defclass abl-module (asdf:module)
   ((databases :initarg :databases :accessor databases)
    (inherit-databases :initarg :inherit-databases :accessor inherit-databases))
   (:default-initargs
    :databases nil
     :inherit-databases t))
 
-(defmethod initialize-instance :around ((obj db-unit) &rest rest &key (pathname nil) &allow-other-keys)
+(defmethod initialize-instance :around ((obj abl-module) &rest rest &key (pathname nil) &allow-other-keys)
   (if pathname
       (apply #'call-next-method obj rest)
       (apply #'call-next-method obj :pathname "" rest)))
 
-;; (defmethod initialize-instance :after ((obj db-unit) &key (pathname nil path-p) &allow-other-keys)
+;; (defmethod initialize-instance :after ((obj abl-module) &key (pathname nil path-p) &allow-other-keys)
 ;;   (unless path-p
 ;;     (format *debug-io* "Setting~%")
 ;;     (setf (asdf:component-pathname obj) "")))
@@ -55,7 +55,7 @@
       (find-class 'asdf::window-file) (find-class 'window-file)
       (find-class 'asdf::class-file) (find-class 'class-file)
       (find-class 'asdf::database-file) (find-class 'database-file)
-      (find-class 'asdf::db-unit) (find-class 'db-unit))
+      (find-class 'asdf::abl-module) (find-class 'abl-module))
 
 ;; TODO: set up proper output transformations rather than just
 ;; disabling them (want to be able to do an out-of-source build)
@@ -86,7 +86,7 @@
   (let ((parent (asdf:component-parent component)))
     (component-databases op parent)))
 
-(defmethod component-databases (op (component db-unit))
+(defmethod component-databases (op (component abl-module))
   (let ((local-dbs (databases component))
         (parent (asdf:component-parent component)))
     (if (not (inherit-databases component))
