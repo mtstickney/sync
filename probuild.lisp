@@ -71,7 +71,7 @@
 
 (defmethod asdf:output-files ((op asdf:compile-op) (component class-file))
   (let ((output-file (merge-pathnames (make-pathname :type "r")
-                                      (error "NOT IMPLEMENTED BROSKI"))))
+                                      (asdf:component-pathname component))))
     (values (list output-file) t)))
 
 (defmethod asdf:output-files ((op asdf:compile-op) (component database-file))
