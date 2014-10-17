@@ -50,7 +50,7 @@
     (unless (probe-file source-file)
       (error 'missing-source :source source-file))
     (ensure-directories-exist output-dir)
-    (setf output (run-abl-procedure *build-proc* code-dir source-file output-file))
+    (setf output (run-abl-procedure *build-proc* code-dir source-file output-dir))
     (unless (probe-file output-file)
       (error 'build-failure :source source-file :output output-file :msgs (or output "")))
     (values)))
