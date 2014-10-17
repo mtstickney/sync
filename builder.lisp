@@ -1,0 +1,56 @@
+(in-package #:probuild)
+
+(defvar *prowin-path* #P"C:\\Progress\\OpenEdge\\bin\\_progres.exe")
+(defvar *prowin-args* '("-b"))
+(defvar *build-proc* "compile-file.p")
+
+(defun proc-params (args)
+  (check-type args list)
+  (flet ((check-arg (arg)
+           (let ((strarg (format nil "~A" arg)))
+             (when (find #\, strarg :test #'eql)
+               (error "Procedure parameter ~S contains a comma" arg))
+             strarg)))
+    (format nil "~{~A~^,~}" (mapcar #'check-arg args))))
+
+(defun run-abl-procedure (proc &rest args)
+  (check-type proc string)
+  (let ((args (append (list "-p" proc
+                            "-param" (proc-params args))
+                      *prowin-args*)))
+    (uiop:run-program (cons *prowin-path* args) :output :string)))
+
+(define-condition build-error (error) ())
+
+(define-condition build-failure (build-error)
+  ((source-file :initarg :source :accessor source-file)
+   (output-file :initarg :output :accessor output-file)
+   (msgs :initarg :msgs :accessor compiler-output))
+  (:default-initargs
+   :msgs "")
+  (:report (lambda (c s)
+             (format s "Output file ~A does not exist, build of ~A failed.~&Compiler messages:~%~A"
+                     (output-file c)
+                     (source-file c)
+                     (compiler-output c)))))
+
+(define-condition missing-source (build-error)
+  ((source-file :initarg :source :accessor source-file))
+  (:report (lambda (c s)
+             (format s "Source file ~A does not exist." (source-file c)))))
+
+(defun build-file (code-dir source-file output-file)
+  (check-type code-dir pathname)
+  (check-type source-file pathname)
+  (check-type output-file pathname)
+  (let* ((source-file (cl-fad:pathname-as-file source-file))
+         (code-dir (cl-fad:pathname-as-directory code-dir))
+         (output-dir (cl-fad:pathname-directory-pathname output-file))
+         output)
+    (unless (probe-file source-file)
+      (error 'missing-source :source source-file))
+    (ensure-directories-exist output-dir)
+    (setf output (run-abl-procedure *build-proc* code-dir source-file output-file))
+    (unless (probe-file output-file)
+      (error 'build-failure :source source-file :output output-file :msgs (or output "")))
+    (values)))

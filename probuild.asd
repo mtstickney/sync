@@ -7,4 +7,5 @@
   :license "Specify license here"
   :depends-on (#:asdf #:cl-annot #:uiop #:cl-fad)
   :components ((:file "package")
+               (:file "builder")
                (:file "probuild")))
