@@ -121,7 +121,8 @@
 
 (defun db-connection-info (logical-name &rest opts &key singleuser (pathname (concatenate 'string logical-name ".db")) host port username password (alias nil aliasp))
   (cond
-    ((and aliasp (second opts))
+    ;; Can have the :alias keyword and one argument
+    ((and aliasp (third opts))
      (error "Cannot specify other options for an :ALIAS db."))
     (aliasp (list :alias logical-name alias))
     (t (list :db (format nil "~{~A~^ ~}"
