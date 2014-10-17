@@ -5,6 +5,6 @@
   :description "Describe probuild here"
   :author "Your Name <your.name@example.com>"
   :license "Specify license here"
-  :depends-on (#:asdf #:cl-annot)
+  :depends-on (#:asdf #:cl-annot #:uiop #:cl-fad)
   :components ((:file "package")
                (:file "probuild")))
