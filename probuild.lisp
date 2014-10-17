@@ -125,13 +125,11 @@
     ((and aliasp (third opts))
      (error "Cannot specify other options for an :ALIAS db."))
     (aliasp (list :alias logical-name alias))
-    (t (list :db (format nil "~{~A~^ ~}"
-                         (remove nil
-                                 (list
-                                  (format nil "-db ~S" pathname)
-                                  (format nil "-ld ~S" logical-name)
-                                  (and singleuser "-1")
-                                  (and host (format nil "-H ~A" host))
-                                  (and port (format nil "-S ~A" port))
-                                  (and username (format nil "-U ~S" username))
-                                  (and password (format nil "-P ~S" password)))))))))
+    (t (cons :db (append
+                  (list "-db" (format nil "~S" pathname))
+                  (list "-ld" (format nil "~S" logical-name))
+                  (and singleuser (list "-1"))
+                  (and host (list "-H" (format nil "~A" host)))
+                  (and port (list "-S" (format nil "~A" port)))
+                  (and username (list "-U" (format nil "~S" username)))
+                  (and password (list "-P" (format nil "~S" password))))))))
