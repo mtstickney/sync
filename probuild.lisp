@@ -118,3 +118,19 @@
   (cons (list 'asdf:prepare-op)
         (mapcar (lambda (c) (list 'asdf:compile-op c))
                 (asdf:component-children component))))
+
+(defun db-connection-info (logical-name &rest opts &key singleuser (pathname (concatenate 'string logical-name ".db")) host port username password (alias nil aliasp))
+  (cond
+    ((and aliasp (second opts))
+     (error "Cannot specify other options for an :ALIAS db."))
+    (aliasp (list :alias logical-name alias))
+    (t (list :db (format nil "~{~A~^ ~}"
+                         (remove nil
+                                 (list
+                                  (format nil "-db ~S" pathname)
+                                  (format nil "-ld ~S" logical-name)
+                                  (and singleuser "-1")
+                                  (and host (format nil "-H ~A" host))
+                                  (and port (format nil "-S ~A" port))
+                                  (and username (format nil "-U ~S" username))
+                                  (and password (format nil "-P ~S" password)))))))))
