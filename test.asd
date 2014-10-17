@@ -8,7 +8,7 @@
   :defsystem-depends-on (#:probuild)
   :class :abl-system
   :components ((:abl-module "gui"
-                            :databases (("compass" :singleuser :pathname "dbase/compass"))
+                            :databases (("compass" :singleuser t :pathname "dbase/compass"))
                             :pathname "bar/baz"
                             :components ((:abl-module "history"
                                                       :databases (("history" :alias "compass"))
