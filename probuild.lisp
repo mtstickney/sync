@@ -126,13 +126,13 @@
      (error "Cannot specify other options for an :ALIAS db."))
     (aliasp (list :alias logical-name alias))
     (t (cons :db (append
-                  (list "-db" (format nil "~S" pathname))
-                  (list "-ld" (format nil "~S" logical-name))
+                  (list "-db" (format nil "~A" pathname))
+                  (list "-ld" (format nil "~A" logical-name))
                   (and singleuser (list "-1"))
                   (and host (list "-H" (format nil "~A" host)))
                   (and port (list "-S" (format nil "~A" port)))
-                  (and username (list "-U" (format nil "~S" username)))
-                  (and password (list "-P" (format nil "~S" password))))))))
+                  (and username (list "-U" (format nil "~A" username)))
+                  (and password (list "-P" (format nil "~A" password))))))))
 
 (defmethod asdf:perform ((op asdf:compile-op) (component abl-file))
   (let* ((dbs (component-databases op component))
