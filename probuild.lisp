@@ -133,3 +133,14 @@
                   (and port (list "-S" (format nil "~A" port)))
                   (and username (list "-U" (format nil "~S" username)))
                   (and password (list "-P" (format nil "~S" password))))))))
+
+(defmethod asdf:perform ((op asdf:compile-op) (component abl-file))
+  (let* ((dbs (component-databases op component))
+         (connect-args (apply #'append (mapcar (lambda (db-spec)
+                                                 (cdr (apply #'db-connection-info db-spec)))
+                                               dbs)))
+         (*prowin-args* (cons "-b" connect-args))
+         (code-dir (asdf:component-pathname (asdf:component-system component))))
+    (build-file code-dir
+                (asdf:component-pathname component)
+                (first (asdf:output-files op component)))))
