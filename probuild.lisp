@@ -43,11 +43,6 @@
    :databases nil
     :inherit-databases t))
 
-(defmethod initialize-instance :around ((obj abl-module) &rest rest &key (pathname nil) &allow-other-keys)
-  (if pathname
-      (apply #'call-next-method obj rest)
-      (apply #'call-next-method obj :pathname "" rest)))
-
 ;; (defmethod initialize-instance :after ((obj abl-module) &key (pathname nil path-p) &allow-other-keys)
 ;;   (unless path-p
 ;;     (format *debug-io* "Setting~%")
