@@ -129,6 +129,9 @@
                   (and username (list "-U" (format nil "~A" username)))
                   (and password (list "-P" (format nil "~A" password))))))))
 
+(defun output-directory ()
+  (asdf:apply-output-translations #P"."))
+
 (defmethod asdf:perform ((op asdf:compile-op) (component abl-file))
   (let* ((dbs (component-databases op component))
          (connect-args (apply #'append (mapcar (lambda (db-spec)
