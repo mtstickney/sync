@@ -138,7 +138,11 @@
                                                  (cdr (apply #'db-connection-info db-spec)))
                                                dbs)))
          (*prowin-args* (cons "-b" connect-args))
-         (code-dir (asdf:component-pathname (asdf:component-system component))))
+         (code-dir (asdf:component-pathname (asdf:component-system component)))
+         (output-file (first (asdf:output-files op component))))
     (build-file code-dir
                 (asdf:component-pathname component)
-                (first (asdf:output-files op component)))))
+                output-file
+                :save-into (if (typep component 'class-file)
+                               (output-directory)
+                               (cl-fad:pathname-directory-pathname output-file)))))

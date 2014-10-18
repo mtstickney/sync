@@ -3,6 +3,7 @@
 (defvar *prowin-path* #P"C:\\Progress\\OpenEdge\\bin\\_progres.exe")
 (defvar *prowin-args* '("-b"))
 (defvar *build-proc* "compile-file.p")
+(defvar *progress-ini* nil)
 
 (defun proc-params (args)
   (check-type args list)
