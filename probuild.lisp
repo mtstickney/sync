@@ -137,7 +137,12 @@
          (connect-args (apply #'append (mapcar (lambda (db-spec)
                                                  (cdr (apply #'db-connection-info db-spec)))
                                                dbs)))
-         (*prowin-args* (cons "-b" connect-args))
+         (*prowin-args* (append '("-b")
+                                (if *progress-ini*
+                                    (list "-basekey" "INI" "-ininame"
+                                          (namestring *progress-ini*))
+                                    '())
+                               connect-args))
          (code-dir (asdf:component-pathname (asdf:component-system component)))
          (output-file (first (asdf:output-files op component))))
     (build-file code-dir
