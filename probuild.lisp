@@ -99,7 +99,8 @@
   (asdf:initialize-output-translations
    `(:output-translations (,(merge-pathnames #P"**/*.*")
                             ,(merge-pathnames (merge-pathnames #P"**/*.*" path)))
-                          :ignore-inherited-configuration)))
+                          :ignore-inherited-configuration
+                          :disable-cache)))
 
 (defmethod asdf:component-depends-on ((op asdf:compile-op) (component abl-system))
   (cons (list 'asdf:prepare-op)
