@@ -6,7 +6,7 @@
 
 @eval-always
 (defclass abl-system (asdf:system)
-  ())
+  ((progress-args :initarg :progress-args :accessor progress-args)))
 
 (defclass abl-file (asdf:source-file)
   ())
@@ -138,6 +138,7 @@
                                                  (cdr (apply #'db-connection-info db-spec)))
                                                dbs)))
          (*prowin-args* (append '("-b")
+                                (progress-args (asdf:component-system component))
                                 (if *progress-ini*
                                     (list "-basekey" "INI" "-ininame"
                                           (namestring *progress-ini*))
