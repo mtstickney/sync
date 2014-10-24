@@ -14,12 +14,12 @@
              strarg)))
     (format nil "~{~A~^,~}" (mapcar #'check-arg args))))
 
-(defun run-abl-procedure (proc &rest args)
+(defun run-abl-procedure (proc args &key input (output :string))
   (check-type proc string)
   (let ((args (append (list "-p" proc
                             "-param" (proc-params args))
                       *prowin-args*)))
-    (uiop:run-program (cons *prowin-path* args) :output :string)))
+    (uiop:run-program (cons *prowin-path* args) :output output :input input)))
 
 (define-condition build-error (error) ())
 
@@ -50,7 +50,7 @@
     (unless (probe-file source-file)
       (error 'missing-source :source source-file))
     (ensure-directories-exist save-into)
-    (setf output (run-abl-procedure *build-proc* code-dir source-file save-into))
+    (setf output (run-abl-procedure *build-proc* (list code-dir source-file save-into)))
     (unless (probe-file output-file)
       (error 'build-failure :source source-file :output output-file :msgs (or output "")))
     (values)))
