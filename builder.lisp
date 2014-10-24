@@ -1,6 +1,6 @@
 (in-package #:probuild)
 
-(defvar *prowin-path* #P"C:\\Progress\\OpenEdge\\bin\\_progres.exe")
+(defvar *prowin-path* #P"C:\\Progress\\OpenEdge\\bin\\prowin32.exe")
 (defvar *prowin-args* '("-b"))
 (defvar *build-proc* "compile-file.p")
 (defvar *progress-ini* nil)
