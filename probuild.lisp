@@ -4,10 +4,6 @@
 
 (annot:enable-annot-syntax)
 
-@eval-always
-(defclass abl-system (asdf:system)
-  ((progress-args :initarg :progress-args :accessor progress-args)))
-
 (defclass abl-file (asdf:source-file)
   ())
 
@@ -43,6 +39,9 @@
    :databases nil
     :inherit-databases t))
 
+@eval-always
+(defclass abl-system (asdf:system abl-module)
+  ((progress-args :initarg :progress-args :accessor progress-args)))
 
 ;; Allow the use of bare keyword class names in system defs
 @eval-always
@@ -98,7 +97,7 @@
                           :ignore-inherited-configuration
                           :disable-cache)))
 
-(defmethod asdf:component-depends-on ((op asdf:compile-op) (component abl-system))
+(defmethod asdf:component-depends-on ((op asdf:compile-op) (component abl-module))
   (cons (list 'asdf:prepare-op)
         (mapcar (lambda (c) (list 'asdf:compile-op c))
                 (asdf:component-children component))))
@@ -106,10 +105,6 @@
 (defmethod asdf:component-depends-on ((op asdf:compile-op) (component abl-file))
   '())
 
-(defmethod asdf:component-depends-on ((op asdf:compile-op) (component abl-module))
-  (cons (list 'asdf:prepare-op)
-        (mapcar (lambda (c) (list 'asdf:compile-op c))
-                (asdf:component-children component))))
 
 (defun db-connection-info (logical-name &rest opts &key singleuser (pathname (concatenate 'string logical-name ".db")) host port username password (alias nil aliasp))
   (cond
