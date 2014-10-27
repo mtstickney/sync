@@ -43,10 +43,6 @@
    :databases nil
     :inherit-databases t))
 
-;; (defmethod initialize-instance :after ((obj abl-module) &key (pathname nil path-p) &allow-other-keys)
-;;   (unless path-p
-;;     (format *debug-io* "Setting~%")
-;;     (setf (asdf:component-pathname obj) "")))
 
 ;; Allow the use of bare keyword class names in system defs
 @eval-always
