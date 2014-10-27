@@ -52,8 +52,6 @@
       (find-class 'asdf::abl-module) (find-class 'abl-module)
       (find-class 'asdf::abl-system) (find-class 'abl-system))
 
-;; TODO: set up proper output transformations rather than just
-;; disabling them (want to be able to do an out-of-source build)
 (defmethod asdf:output-files ((op asdf:compile-op) (component abl-file))
   (let ((output-file (merge-pathnames (make-pathname :type "r")
                                       (asdf:component-pathname component))))
