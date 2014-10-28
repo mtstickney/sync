@@ -1,5 +1,11 @@
 ;;;; probuild.asd
 
+(defpackage #:app-config
+  (:export #:*base-directory*))
+
+(defparameter app-config:*base-directory*
+  (make-pathname :name nil :type nil :defaults *load-truename*))
+
 (asdf:defsystem #:probuild
   :serial t
   :description "Describe probuild here"
