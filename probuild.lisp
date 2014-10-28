@@ -37,7 +37,7 @@
    (inherit-databases :initarg :inherit-databases :accessor inherit-databases)
    (builder :accessor builder :initform nil))
   (:default-initargs
-   :databases nil
+   :databases '()
     :inherit-databases t))
 
 @eval-always
