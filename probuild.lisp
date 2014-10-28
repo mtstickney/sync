@@ -42,6 +42,7 @@
 @eval-always
 (defclass abl-system (asdf:system abl-module)
   ((progress-args :initarg :progress-args :accessor progress-args)
+   (builder-class :initarg :builder-class :accessor builder-class)
    ;; Note: ASDF bypasses initialize-instance (it uses some
    ;; change-class magic), so :default-initargs won't work here.
    (databases :initarg :databases :accessor databases :initform '())
