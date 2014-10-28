@@ -86,15 +86,6 @@
         local-dbs
         (append (component-databases op parent) local-dbs))))
 
-(defun set-output-dir (path)
-  (check-type path pathname)
-  (asdf:clear-output-translations)
-  (asdf:initialize-output-translations
-   `(:output-translations (,(merge-pathnames #P"**/*.*")
-                            ,(merge-pathnames (merge-pathnames #P"**/*.*" path)))
-                          :ignore-inherited-configuration
-                          :disable-cache)))
-
 (defmethod asdf:component-depends-on ((op asdf:compile-op) (component abl-module))
   (cons (list 'asdf:prepare-op)
         (mapcar (lambda (c) (list 'asdf:compile-op c))
@@ -142,3 +133,12 @@
                 :save-into (if (typep component 'class-file)
                                (output-directory)
                                (cl-fad:pathname-directory-pathname output-file)))))
+
+(defun set-output-dir (path)
+  (check-type path pathname)
+  (asdf:clear-output-translations)
+  (asdf:initialize-output-translations
+   `(:output-translations (,(merge-pathnames #P"**/*.*")
+                            ,(merge-pathnames (merge-pathnames #P"**/*.*" path)))
+                          :ignore-inherited-configuration
+                          :disable-cache)))
