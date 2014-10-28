@@ -175,6 +175,16 @@
                                (output-directory)
                                (cl-fad:pathname-directory-pathname output-file)))))
 
+;; After all the children have been compiled, shut down the builder if
+;; necessary.
+(defmethod asdf:perform :after ((op asdf:compile-op) (component abl-module))
+  (let ((system (asdf:component-system component))
+        (builder (builder component)))
+    (when (and (eq (builder-class system) 'server-builder)
+               builder)
+      (shutdown-server builder)
+      (setf (builder component) nil))))
+
 (defun set-output-dir (path)
   (check-type path pathname)
   (asdf:clear-output-translations)
