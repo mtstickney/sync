@@ -100,6 +100,22 @@
 (defmethod asdf:component-depends-on ((op asdf:compile-op) (component abl-file))
   '())
 
+(defun changes-dbs-p (component)
+  (and (typep component 'abl-module)
+       ;; If it has a non-NIL db list or dis-inherits dbs, it changes
+       ;; the db set.
+       (or (and (slot-boundp component 'databases)
+                (databases component))
+           (null (inherit-databases component)))))
+
+(defun db-module (component)
+  (check-type component asdf:component)
+  (loop with c = component
+     while (and (asdf:component-parent c)
+                (not (changes-dbs-p c)))
+     do (setf c (asdf:component-parent c))
+     finally (return c)))
+
 
 (defun db-connection-info (logical-name &rest opts &key singleuser (pathname (concatenate 'string logical-name ".db")) host port username password (alias nil aliasp))
   (cond
@@ -119,22 +135,39 @@
 (defun output-directory ()
   (asdf:apply-output-translations #P"."))
 
-(defmethod asdf:perform ((op asdf:compile-op) (component abl-file))
-  (let* ((dbs (component-databases op component))
+;; Component building protocol
+(defgeneric get-builder (component builder-class)
+  (:method (component (builder-class symbol))
+    (get-builder component (find-class builder-class))))
+
+(defun component-builder-args (component)
+  (let* ((dbs (component-databases 'asdf:compile-op component))
          (connect-args (apply #'append (mapcar (lambda (db-spec)
                                                  (cdr (apply #'db-connection-info db-spec)))
-                                               dbs)))
-         (*prowin-args* (append '("-b")
-                                (progress-args (asdf:component-system component))
-                                (if *progress-ini*
-                                    (list "-basekey" "INI" "-ininame"
-                                          (namestring *progress-ini*))
-                                    '())
-                               connect-args))
+                                               dbs))))
+    (append (progress-args (asdf:component-system component))
+            connect-args)))
+
+;; Exec-builder stuff
+(defmethod get-builder ((component abl-file) (builder-class (eql (find-class 'exec-builder))))
+  (make-instance builder-class :pro-args (component-builder-args component)))
+
+
+;; Server-builder stuff
+(defmethod get-builder ((component abl-file) (builder-class (eql (find-class 'server-builder))))
+  (let* ((db-module (db-module component))
+         (builder (or (builder db-module)
+                      (make-instance 'server-builder
+                                     :pro-args (component-builder-args component)))))
+    ;; Remember, it returns the value
+    (setf (builder db-module) builder)))
+
+(defmethod asdf:perform ((op asdf:compile-op) (component abl-file))
+  (let* ((builder-class (builder-class (asdf:component-system component)))
+         (builder (get-builder component builder-class))
          (code-dir (asdf:component-pathname (asdf:component-system component)))
-         (output-file (first (asdf:output-files op component))))
-    (build-file code-dir
-                (asdf:component-pathname component)
+         (output-file (first (asdf:output-files 'asdf:compile-op component))))
+    (build-file builder code-dir (asdf:component-pathname component)
                 output-file
                 :save-into (if (typep component 'class-file)
                                (output-directory)
