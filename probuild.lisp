@@ -34,7 +34,8 @@
 @eval-always
 (defclass abl-module (asdf:module)
   ((databases :initarg :databases :accessor databases)
-   (inherit-databases :initarg :inherit-databases :accessor inherit-databases))
+   (inherit-databases :initarg :inherit-databases :accessor inherit-databases)
+   (builder :accessor builder :initform nil))
   (:default-initargs
    :databases nil
     :inherit-databases t))
