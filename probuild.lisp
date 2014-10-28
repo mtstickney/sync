@@ -170,6 +170,8 @@
     (build-file builder code-dir (asdf:component-pathname component)
                 output-file
                 :save-into (if (typep component 'class-file)
+                               ;; COMPILE does funny things with
+                               ;; SAVE-INTO for classes.
                                (output-directory)
                                (cl-fad:pathname-directory-pathname output-file)))))
 
