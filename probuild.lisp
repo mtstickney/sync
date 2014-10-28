@@ -41,7 +41,11 @@
 
 @eval-always
 (defclass abl-system (asdf:system abl-module)
-  ((progress-args :initarg :progress-args :accessor progress-args)))
+  ((progress-args :initarg :progress-args :accessor progress-args)
+   ;; Note: ASDF bypasses initialize-instance (it uses some
+   ;; change-class magic), so :default-initargs won't work here.
+   (databases :initarg :databases :accessor databases :initform '())
+   (inherit-databases :initarg :inherit-databases :accessor inherit-databases :initform t)))
 
 ;; Allow the use of bare keyword class names in system defs
 @eval-always
