@@ -261,6 +261,10 @@
                   do (shutdown-component child)))))
     (shutdown-component system)))
 
+(defun dbg (msg &rest args)
+  (format *debug-io* "~A~%" (apply #'format nil msg args))
+  (finish-output *debug-io*))
+
 (defun quietly-oos (op system)
   (let ((*load-verbose* nil)
         (*compile-verbose* nil)
