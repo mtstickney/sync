@@ -117,10 +117,10 @@
           (unless success
             ;; Workaround for race condition on
             ;; nn_close()/nn_shutdown()
-            (sleep .100)
-            (when eid
-              (nn:shutdown socket eid))
             (when socket
+              (sleep .100)
+              (when eid
+                (nn:shutdown socket eid))
               (nn:close socket))))
 
         ;; Now that we have our elements, store them in the class
