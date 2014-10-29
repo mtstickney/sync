@@ -232,10 +232,12 @@
     (list (first args) (second args))))
 
 (defun print-usage (&optional (stream *standard-output*))
-  (format stream "Usage: doozer <operation> <system> [--output-dir output]~%~%~
+  (format stream "This is doozer v~A~%~
+Usage: doozer <operation> <system> [--output-dir output]~%~%~
 ~4T<operation> -- currently just 'compile'.
 ~4T<system> -- the name of the system to operate on.
-~4Toutput -- the directory to use for output files."))
+~4Toutput -- the directory to use for output files."
+          app-config:*version*))
 
 (defun get-asdf-op (op)
   (check-type op string)
