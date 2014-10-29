@@ -167,7 +167,8 @@
       (nn:close (server-socket builder)))
 
     ;; Close the now defunct process
-    (sb-ext:process-close (server-proc builder))
+    (when (server-proc builder)
+      (sb-ext:process-close (server-proc builder)))
 
     ;; Set all the elements back to nil
     (setf (server-proc builder) nil
