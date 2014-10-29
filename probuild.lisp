@@ -280,7 +280,7 @@
         (let ((args (process-args (rest argv))))
           (setf op (first args)
                 system (second args)))
-      ((invalid-args invalid-option) (c)
+      ((or invalid-args invalid-option) (c)
         (format t "~A~%" c)
        (print-usage)
        (return-from run-app -1)))
