@@ -189,6 +189,7 @@
     (unless (probe-file source-file)
       (error 'missing-source :source source-file))
     (setf output (submit-job builder (delimited-list (list base-dir source-file save-into))))
-    (unless (probe-file output-file)
+    (when (or (not (probe-file output-file))
+              (> (length output) 0))
       (error 'build-failure :source source-file :output output-file :msgs (or output "")))
     (values)))
