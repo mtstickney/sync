@@ -293,7 +293,7 @@
           (asdf-op (get-asdf-op op)))
       (unwind-protect
            (asdf:oos asdf-op system)
-        (shutdown-builders (asdf:find-system system))))
+        (shutdown-builders system)))
     ;; Success error code
     0))
 
