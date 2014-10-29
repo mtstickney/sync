@@ -315,7 +315,7 @@
     (serious-condition (c)
       ;; It's not paranoia if they're actually out to get you.
       (handler-case
-          (progn (format t "Error: ~A" c)
+          (progn (format t "~&Error: ~A" c)
                  (sb-ext:exit :code -1))
         (t ()
           (sb-ext:exit :code -1))))))
