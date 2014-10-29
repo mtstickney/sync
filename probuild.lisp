@@ -261,8 +261,6 @@
                   do (shutdown-component child)))))
     (shutdown-component system)))
 
-;; doozer <op> <system> --output-dir ../output/ --lib-dir foo/ --lib-dir
-;; blarg/baz/ --eval '(ql-setup:init-quicklisp)'
 (defun quietly-oos (op system)
   (let ((*load-verbose* nil)
         (*compile-verbose* nil)
