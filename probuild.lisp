@@ -263,6 +263,14 @@
 
 ;; doozer <op> <system> --output-dir ../output/ --lib-dir foo/ --lib-dir
 ;; blarg/baz/ --eval '(ql-setup:init-quicklisp)'
+(defun quietly-oos (op system)
+  (let ((*load-verbose* nil)
+        (*compile-verbose* nil)
+        (*load-print* nil)
+        (*compile-print* nil))
+    (handler-bind ((warning #'muffle-warning))
+      (asdf:oos op system))))
+
 (defun run-app (argv)
   (let* (;; This is SBCL, so *d-p-d* will be the current directory
          ;; (also (truename ".") has a bug)
@@ -270,6 +278,9 @@
          (asdf:*central-registry* (cons *default-pathname-defaults* asdf:*central-registry*))
          (*print-status* t)
          (app-config:*base-directory* (cl-fad:pathname-directory-pathname (cl-fad:pathname-as-file (first argv))))
+         ;; ASDF sometimes prints compilation info to
+         ;; *error-output*, so swallow it
+         (*error-output* (make-broadcast-stream))
          op
          system)
     (declare (special *print-status*))
@@ -292,7 +303,7 @@
     (let ((system (asdf:find-system system))
           (asdf-op (get-asdf-op op)))
       (unwind-protect
-           (asdf:oos asdf-op system)
+           (quietly-oos asdf-op system)
         (shutdown-builders system)))
     ;; Success error code
     0))
