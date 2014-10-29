@@ -11,7 +11,11 @@
                             :databases (("compass" :singleuser t :pathname "dbase/compass"))
                             :pathname "bar/baz"
                             :components ((:abl-module "history"
-                                                      :databases (("history" :alias "compass"))
+                                                      :databases (("history" :pathname "compass.db"
+                                                                             :port 4000
+                                                                             :host "127.0.0.1"
+                                                                             :username "sysprogress"
+                                                                             :password "sysprogress"))
                                                       :pathname "blargl"
                                                       :inherit-databases nil
                                                       :components ((:procedure-file "foo")))))))
