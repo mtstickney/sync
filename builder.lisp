@@ -1,7 +1,6 @@
 (in-package #:probuild)
 
 (defvar *progress-cmd* #P"C:\\Progress\\OpenEdge\\bin\\prowin32.exe")
-(defvar *compile-proc* "compile-file.p")
 
 (defun delimited-list (args &optional (char #\,))
   (check-type args list)
