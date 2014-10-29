@@ -160,10 +160,11 @@
                 (make-sequence '(vector (unsigned-byte 8)) 0)))
 
     ;; Shutdown the message queue
-    (sleep .100) ; workaround for race condition in
-                 ; nn_shutdown()/nn_close()
-    (nn:shutdown (server-socket builder) (server-eid builder))
-    (nn:close (server-socket builder))
+    (when (server-socket builder)
+      (sleep .100) ; workaround for race condition in nn_shutdown()/nn_close()
+      (when (server-eid builder)
+        (nn:shutdown (server-socket builder) (server-eid builder)))
+      (nn:close (server-socket builder)))
 
     ;; Close the now defunct process
     (sb-ext:process-close (server-proc builder))
