@@ -192,6 +192,8 @@
 ;;        do (push var shared-vars))
 ;;     shared-vars))
 
+;; FIXME: use of set functions can alter the order of arguments (this
+;; is actually ok in practice, because the order is altered consistently).
 (defun shared-vars (form1 form2)
   (intersection (remove-duplicates (form-vars form1) :test #'eq)
                 (remove-duplicates (form-vars form2) :test #'eq)))
