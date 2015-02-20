@@ -277,3 +277,6 @@
                                               (get-binding-set ,rule1-map-var (list ,@shared-vars)))
                                 nil
                                 (cons (list ,@shared-vars) (list ,@(unshared-vars second-rule first-rule)))))))))))))
+
+(defun rule-func (rule)
+  (compile nil (process-fact-form rule)))
