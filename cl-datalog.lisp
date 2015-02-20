@@ -224,3 +224,56 @@
                             p))
                 else
                 collect p))))
+
+(defun process-fact-form (rule)
+  (let* ((conclusion (rule-conclusion rule))
+         (hypotheses (rule-hypotheses rule))
+         (first-rule (first hypotheses))
+         (second-rule (second hypotheses))
+         (shared-vars (shared-vars first-rule second-rule))
+         (x2s-var (gensym "X2S-"))
+         (x1s-var (gensym "X1S-"))
+         (rule1-map-var (gensym "P1YSX1S-"))
+         (rule2-map-var (gensym "P2YSX2S-"))
+         (fact-var (gensym "FACT")))
+    `(lambda (,fact-var ,rule1-map-var ,rule2-map-var)
+       ,@(cond
+         ;; Just one hypothesis
+         ((endp (cdr hypotheses))
+          `((declare (ignore ,rule1-map-var ,rule2-map-var))
+            (optima:match ,fact-var
+              ((list ,@(unifying-match-form (first hypotheses) conclusion))
+               (values (list (list ,@conclusion)) nil nil)))))
+         ;; Two hypotheses (see rule normalization)
+         (t `((optima:match ,fact-var
+                ((list ,@(unifying-match-form first-rule)) ;; we may need
+                 ;; wildcards for unification
+                 ,(let ((p2-unshared-vars (unshared-vars second-rule first-rule))
+                        (conclusion-form `(list ,@conclusion)))
+                       `(values (map-fact-set 'list
+                                              (lambda (,x2s-var )
+                                                ,@(if (endp p2-unshared-vars)
+                                                      (list `(declare (ignore ,x2s-var))
+                                                            conclusion-form)
+                                                      `((optima:match ,x2s-var
+                                                          ((list ,@p2-unshared-vars)
+                                                           ,conclusion-form)))))
+                                              (get-binding-set ,rule2-map-var (list ,@shared-vars)))
+                                (cons (list ,@shared-vars) (list ,@(unshared-vars first-rule second-rule)))
+                                nil)))
+                ;; Second rule match
+                ((list ,@(unifying-match-form second-rule)) ;; may need
+                 ;; wildcards for unification.
+                 ,(let ((p1-unshared-vars (unshared-vars first-rule second-rule))
+                        (conclusion-form `(list ,@conclusion)))
+                       `(values (map-fact-set 'list
+                                              (lambda (,x1s-var)
+                                                ,@(if (endp p1-unshared-vars)
+                                                      (list `(declare (ignore ,x1s-var))
+                                                            conclusion-form)
+                                                      `((optima:match ,x1s-var
+                                                          ((list ,@p1-unshared-vars)
+                                                           ,conclusion-form)))))
+                                              (get-binding-set ,rule1-map-var (list ,@shared-vars)))
+                                nil
+                                (cons (list ,@shared-vars) (list ,@(unshared-vars second-rule first-rule)))))))))))))
