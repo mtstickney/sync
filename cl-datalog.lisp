@@ -334,3 +334,29 @@
                       (setf (gethash ys binding-map) m)))
       (t (setf (gethash xs vals) t))))
   (values))
+
+(defun processor (rules)
+  (let ((rule-funcs (mapcar #'rule-func rules)))
+    (lambda (facts)
+      (let ((rule-maps (mapcar (lambda (rule)
+                                 (if (endp (cdr (rule-hypotheses rule)))
+                                     ;; Single-hypothesis rule
+                                     '(nil . nil)
+                                     (cons (make-binding-map)
+                                           (make-binding-map))))
+                               rules))
+            (results '()))
+        (loop while (not (empty-fact-set-p facts))
+           do (let ((fact (pop-entry! facts)))
+                (loop for thunk in rule-funcs
+                   for (p1-map . p2-map) in rule-maps
+                   do (multiple-value-bind (new-facts p1-binding p2-binding)
+                          (funcall thunk fact p1-map p2-map)
+                        (when p1-binding
+                          (insert-rule-binding! p1-map (car p1-binding) (cdr p1-binding)))
+                        (when p2-binding
+                          (insert-rule-binding! p2-map (car p2-binding) (cdr p2-binding)))
+                        (dolist (f new-facts)
+                          (insert-entry! facts f))))
+                (push fact results)))
+        results))))
