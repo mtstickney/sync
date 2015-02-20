@@ -198,6 +198,11 @@
   (intersection (remove-duplicates (form-vars form1) :test #'eq)
                 (remove-duplicates (form-vars form2) :test #'eq)))
 
+(defun unshared-vars (form1 form2)
+  "Return the list of variables that FORM1 does not share with FORM2."
+  (set-difference (remove-duplicates (form-vars form1) :test #'eq)
+                  (remove-duplicates (form-vars form2) :test #'eq)))
+
 (defun wildcard-vars (conclusion hypothesis)
   (set-difference (remove-duplicates (form-vars hypothesis))
                   (shared-vars conclusion hypothesis)))
