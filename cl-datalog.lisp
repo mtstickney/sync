@@ -280,3 +280,57 @@
 
 (defun rule-func (rule)
   (compile nil (process-fact-form rule)))
+
+(defun make-binding-map ()
+  (make-hash-table :test 'equalp))
+
+(defun make-fact-set ()
+  (make-hash-table :test 'equalp))
+
+(defun empty-fact-set-p (set)
+  (= (hash-table-count set) 0))
+
+(defun insert-entry! (set val)
+  (setf (gethash val set) t))
+
+(defun memberp (set val)
+  (nth-value 1 (gethash val set)))
+
+(defun pop-entry! (set)
+  (with-hash-table-iterator (entry set)
+    (multiple-value-bind (entryp key val) (entry)
+      (declare (ignore val))
+      (if entryp
+          (progn
+            (remhash key set)
+            (values key t))
+        (values nil nil)))))
+
+(defun fact-set (&rest facts)
+  (let ((set (make-fact-set)))
+    (dolist (f facts)
+      (insert-entry! set f))
+    set))
+
+(defun get-binding-set (map vals)
+  (multiple-value-bind (set foundp) (gethash vals map)
+    (if foundp
+        set
+        (make-fact-set))))
+
+(defun map-fact-set (result-type thunk set)
+  (map result-type thunk
+       (alexandria:hash-table-keys set)))
+
+(defun make-binding-map ()
+  (make-hash-table :test 'equalp))
+
+(defun insert-rule-binding! (binding-map ys xs)
+  (multiple-value-bind (vals foundp) (gethash ys binding-map)
+    ;; VALS is a set (hash-table).
+    (cond
+      ((not foundp) (let ((m (make-hash-table :test 'equalp)))
+                      (setf (gethash xs m) t)
+                      (setf (gethash ys binding-map) m)))
+      (t (setf (gethash xs vals) t))))
+  (values))
