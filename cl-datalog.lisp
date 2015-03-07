@@ -223,7 +223,26 @@
                          (t (push p vars)
                             p))
                 else
-                collect p))))
+             collect p))))
+
+(defun satisfiesp (fact query)
+  (let ((vars '()))
+    (when (not (= (length fact) (length query)))
+      (return-from satisfiesp nil))
+    (loop for a1 in fact
+       for a2 in query
+       do (cond
+            ((varp a2) (let ((prev (assoc a2 vars)))
+                         (cond
+                           ;; TODO: element check, will need
+                           ;; modification for custom equality checks.
+                           ((and prev (not (equalp (cdr prev) a1)))
+                            (return nil))
+                           ((null prev) (push (cons a2 a1) vars)))))
+            ;; TODO: another element check
+            (t (when (not (equalp a1 a2))
+                 (return nil))))
+       finally (return t))))
 
 (defun process-fact-form (rule)
   (let* ((conclusion (rule-conclusion rule))
@@ -335,6 +354,25 @@
       (t (setf (gethash xs vals) t))))
   (values))
 
+;; This is really only useful for debugging purposes.
+(defun process-facts! (rule-func facts)
+  (let ((p1 (make-hash-table :test 'equalp))
+        (p2 (make-hash-table :test 'equalp))
+        (results '()))
+    ;; TODO: Could save some space by popping from facts instead of just iterating.
+    (loop while (not (empty-fact-set-p facts))
+       do (let ((fact (pop-entry! facts)))
+            (multiple-value-bind (new-facts p1-binding p2-binding)
+                (funcall rule-func fact p1 p2)
+              (when p1-binding
+                (insert-rule-binding! p1 (car p1-binding) (cdr p1-binding)))
+              (when p2-binding
+                (insert-rule-binding! p2 (car p2-binding) (cdr p2-binding)))
+              (dolist (f new-facts)
+                (insert-entry! facts f)))
+            (push fact results)))
+    results))
+
 (defun processor (rules)
   (let ((rule-funcs (mapcar #'rule-func rules)))
     (lambda (facts)
@@ -360,3 +398,299 @@
                           (insert-entry! facts f))))
                 (push fact results)))
         results))))
+
+;;;; Stuff for subsumptive demand transformation.
+
+;;; Rule annotation
+(defun exemplar-fact (query)
+  "Return a fact that satisfies QUERY, and which will only satisfy
+another query q2 if q2 is a superset of QUERY."
+  (let ((map '()))
+    (cons (car query)
+          ;; We need to use unique numbers for the vars, so start past
+          ;; the biggest number we've got.
+          (loop with i = (1+ (loop for i in query
+                                when (numberp i)
+                                maximizing (ceiling i)))
+             for a in (cdr query)
+             collect (cond
+                       ((not (varp a)) a)
+                       (t (let ((prev (assoc a map)))
+                            (if prev
+                                (cdr prev)
+                                (prog2
+                                    (push (cons a i) map)
+                                    i
+                                  (incf i))))))))))
+
+(defun variantp (q1 q2)
+  "Returns T is Q1 is a variant of Q2, that is if all facts that satisfy Q1 also satisfy Q2."
+  (satisfiesp (exemplar-fact q1) q2))
+
+(defun defining-rules (query rules)
+  "Return the subset of RULES that define QUERY."
+  ;; Note: VARIANTP is too strict here.
+  ;; TODO: We should rule out definite mismatches based on
+  ;; e.g. constants, too.
+  (remove-if-not (lambda (r)
+                   (let ((conclusion (rule-conclusion r)))
+                     ;; TODO: element check, may need to be customized.
+                     (and (equalp (first conclusion) (first query))
+                          (= (length conclusion) (length query)))))
+                 rules))
+
+;; subsumptive-demand patterns used for rule annotation
+(defstruct pattern
+  (query)
+  (position)
+  (rule)
+  (guaranteedp)
+  (bind-pattern))
+
+(defun subsumesp (p1 p2)
+  "Returns T if the s-demand pattern P1 subsumes the s-demand-pattern P2, NIL otherwise."
+  (check-type p1 pattern)
+  (check-type p2 pattern)
+  (flet ((mismatchp (bp1 bp2)
+           ;; Find an element that is bound in p1 and not bound in p2.
+           (loop for b1 in bp1
+              for b2 in bp2
+              when (and (eq b1 :bound)
+                        (not (eq b2 :bound)))
+              return nil
+              finally (return t))))
+    (let ((p1-hypotheses (rule-hypotheses (pattern-rule p1)))
+          (p2-hypotheses (rule-hypotheses (pattern-rule p2))))
+      (and (pattern-guaranteedp p1)
+           (not (mismatchp (pattern-bind-pattern p1)
+                           (pattern-bind-pattern p2)))
+           ;; Make sure the hypotheses to the left of the n1th
+           ;; hypothesis in p1 is a subset of the hypotheses to the
+           ;; left of the n2th hypothesis in p2.
+           (subsetp (subseq p1-hypotheses 0 (1+ (pattern-position p1)))
+                    (subseq p2-hypotheses 0 (1+ (pattern-position p2)))
+                    ;; TODO: Needs to be changed for custom equality checks.
+                    :test #'equalp)))))
+
+(defun arg-binding (arg left-hypotheses conclusion conclusion-bind-pattern)
+  (let ((boundp (or (not (varp arg)) ; constants are bound
+                    ;; ARG is bound if it appears in a hypothesis to its left...
+                    (position-if (lambda (h)
+                                   (position arg (cdr h)))
+                                 left-hypotheses)
+                    ;; ... or if it is bound in the conclusion ARG.
+                    (loop for item in (cdr conclusion)
+                       for bound in conclusion-bind-pattern
+                       when (and (eq item arg)
+                                 (eq bound :bound))
+                       return t))))
+    (if boundp
+        :bound
+        :free)))
+
+(defun bind-pattern (query rule rule-binding-pattern)
+  "Return the binding pattern (not the demand-pattern) for the hypothesis QUERY in RULE, where RULE-BINDING-PATTERN is the binding pattern for RULE."
+  (let* ((hypotheses (rule-hypotheses rule))
+         (tail (member query hypotheses))
+         (left-hypotheses (if (endp tail) nil (ldiff hypotheses tail)))
+         (conclusion (rule-conclusion rule)))
+    (mapcar (lambda (a)
+              (arg-binding a left-hypotheses conclusion rule-binding-pattern))
+            (cdr query))))
+
+(defun sub-patterns (pattern computed-patterns rules)
+  (check-type pattern pattern)
+  (dolist (rule (defining-rules (pattern-query pattern) rules))
+    (loop for hypothesis in (rule-hypotheses rule)
+          for i from 0
+          ;; We only care about IDB predicates.
+          when (defining-rules hypothesis rules)
+          ;; TODO: the way we determine new-guaranteed determines the
+          ;; type of scheduling this simulates. Use a policy to
+          ;; determine this.
+          do (let* ((new-pattern (make-pattern :query hypothesis
+                                               :position i
+                                               :rule rule
+                                               :guaranteedp (and (pattern-guaranteedp pattern)
+                                                                 (= i 0))
+                                               :bind-pattern (bind-pattern hypothesis
+                                                                           rule
+                                                                           (pattern-bind-pattern pattern)))))
+               ;; TODO: this seems correct (if the current pattern
+               ;; subsumes other ones, remove them), but it's not in
+               ;; the original paper (actually it might be: this
+               ;; sounds like it accomplishes the same thing as the
+               ;; Subsumptive-Optimization transformation).
+               (setf computed-patterns
+                     ;; REMOVE-IF does not necessarily return the
+                     ;; original list, which affects the termination
+                     ;; in DEMAND-PATTERNS.
+                     (if (find-if (lambda (p) (subsumesp new-pattern p))
+                                  computed-patterns)
+                         (remove-if (lambda (p)
+                                      (subsumesp new-pattern p))
+                                    computed-patterns)
+                         computed-patterns))
+
+               ;; Add it, unless it's subsumed by an existing query
+               (pushnew new-pattern
+                        computed-patterns
+                        :test (lambda (new old)
+                                (or (equalp new old)
+                                    (subsumesp old new)))))))
+  computed-patterns)
+
+(defun demand-patterns (query rules)
+  (flet ((new-patterns (patterns)
+           (loop for p in patterns
+              do (setf patterns (sub-patterns p patterns rules)))
+           patterns))
+    (let* ((bind-pattern (mapcar (lambda (a)
+                                   (if (varp a)
+                                       :free
+                                       :bound))
+                                 (cdr query)))
+           (initial-pattern (make-pattern :query query
+                                          :position 0
+                                          :rule (make-rule nil)
+                                          :guaranteedp t
+                                          :bind-pattern bind-pattern)))
+      ;; Compute new sub-patterns until we don't get any new ones.
+      ;; FIXME: that seems like an awfully expensive termination test.
+      (loop with patterns = (list initial-pattern)
+         for new-patterns = (new-patterns patterns)
+         for i below 2 ; FIXME: for debugging purposes
+         until (eq new-patterns patterns)
+         do (setf patterns new-patterns)
+         finally (return patterns)))))
+
+(defun subsuming-bind-patterns (pattern)
+  "Return a list of bind-patterns that properly subsume PATTERN."
+  (let ((results '())
+        ;; Number of properly subsuming patterns is the number of
+        ;; permutations that can be made by flipping one or more
+        ;; :BOUND elements to :FREE, which is 1- the number of values
+        ;; that can be represented by an n-bit number, where n is the
+        ;; number of :BOUND elements in PATTERN (note that the "0"
+        ;; value is just PATTERN, which does not properly subsume
+        ;; itself).
+        (count (1- (expt 2 (count :bound pattern))))
+        (state (copy-list pattern)))
+    (dotimes (i count)
+      ;; Note: this is the same algorithm as binary counting, but
+      ;; ignoring "digits" that are :FREE in PATTERN.
+      (loop for c on state
+         for e in pattern
+         do (cond
+              ;; Flip the first :BOUND we find that's :BOUND in the
+              ;; original and save the result.
+              ((and (eq e :bound)
+                    (eq (car c) :bound))
+               (setf (car c) :free)
+               (push (copy-list state) results)
+               (return))
+              ;; Flip any :FREE arguments we find along the way, if
+              ;; they're eligible for flipping.
+              ((and (eq e :bound)
+                    (eq (car c) :free))
+               (setf (car c) :bound)))))
+    results))
+
+(defun bind-string (bind-pattern)
+  "Return a string representing the bind-pattern BIND-PATTERN."
+  (map 'string (lambda (b)
+                 (ecase b
+                   (:bound #\B)
+                   (:free #\F)))
+       bind-pattern))
+
+(defun demand-predicate-symbol (predicate bind-pattern)
+  (let ((bind-string (bind-string bind-pattern)))
+    (intern (format nil "DEMAND-~A-~A" predicate bind-string)
+            *aux-rules-package*)))
+
+(defun demand-pattern-predicate-symbol (demand-pattern)
+  (check-type demand-pattern pattern)
+  (let ((predicate (first (pattern-query demand-pattern))))
+    (demand-predicate-symbol predicate (pattern-bind-pattern demand-pattern))))
+
+(defun pattern-subsumption-rules (demand-pattern rules)
+  (flet ((bound-arguments (conclusion bind-pattern)
+           (loop for c in (rest conclusion)
+              for b in bind-pattern
+              when (eq b :bound)
+              collect c)))
+    (let* ((query (pattern-query demand-pattern))
+           (bind-pattern (pattern-bind-pattern demand-pattern))
+           (rules (defining-rules query rules))
+           ;; Toplevel predicates.
+           (new-rules (mapcar (lambda (r)
+                                (let ((demand-hypothesis (cons (demand-pattern-predicate-symbol demand-pattern)
+                                                               (bound-arguments (rule-conclusion r)
+                                                                                bind-pattern))))
+                                  (cons (rule-conclusion r)
+                                        (cons demand-hypothesis
+                                              (rule-hypotheses r)))))
+                              rules)))
+      ;; New demand predicates.
+      (values new-rules
+              (loop for rule in new-rules
+                 for hypotheses = (rule-hypotheses rule)
+                 appending (loop for h-cell on (rest hypotheses) ; ignore the demand hypothesis
+                              for h = (car h-cell)
+                              ;; We only care about hypotheses for IDB predicates here.
+                              when (defining-rules h new-rules)
+                              collect (let* ((initial-hypotheses (ldiff hypotheses h-cell))
+                                             ;; This hypothesis' bind pattern.
+                                             (h-bind-pattern (bind-pattern h rule bind-pattern))
+                                             (h-bound-args (bound-arguments h h-bind-pattern))
+                                             (h-predicate (first h))
+                                             (conclusion (cons (demand-predicate-symbol h-predicate h-bind-pattern)
+                                                               h-bound-args))
+                                             (subsuming-hypotheses (mapcar (lambda (p)
+                                                                             (cons (demand-predicate-symbol h-predicate
+                                                                                                            p)
+                                                                                   h-bound-args))
+                                                                           (subsuming-bind-patterns h-bind-pattern))))
+                                        (make-rule conclusion
+                                                   (append initial-hypotheses
+                                                           (mapcar (lambda (h)
+                                                                     (list :not h))
+                                                                   subsuming-hypotheses))))))))))
+
+
+(defun subsumption-rules (demand-patterns)
+  (dolist (p demand-patterns)
+
+    )
+  )
+
+;;; Test Data
+;; rel(?x, ?y) :- imm(?x, ?y).
+;; rel(?x, ?y) :- imm(?u, ?v), rel(?u, ?x), rel(?v, ?y).
+
+;; '(((:rel ?x ?y) (:imm ?x ?y))
+;;   ((:rel ?x ?y) (:imm ?u ?v)
+;;                 (:rel ?u ?x)
+;;                 (:rel ?v ?y)))
+
+;; '(:rel c ?y)
+
+
+  ;; (defun annotated-rules (query rules)
+  ;;   (let ((patterns (demand-patterns query rules))
+  ;;         (predicate-map (make-hash-table :test 'equalp)))
+  ;;     ;; Assign an annotated predicate for each pattern
+  ;;     (dolist (p patterns)
+  ;;       (let ((key (cons (pattern-query p) (pattern-bind-pattern p))))
+  ;;         (unless (gethash key predicate-map)
+  ;;           (setf (gethash key predicate-map) (gensym ""))
+  ;;           )
+  ;;         )
+  ;;       (setf (gethash (cons (pattern-query p) (pattern-bind-pattern p)) predicate-map))
+  ;;       )
+  ;;     (dolist (p patterns)
+
+  ;;       )
+  ;;     )
+  ;;   )
