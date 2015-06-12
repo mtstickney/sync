@@ -76,7 +76,10 @@ namespace NetstringPlus
 
         public static byte[] NetstringData(byte[] nstring)
         {
-            return ReadNetstringData(new System.IO.MemoryStream(nstring));
+            using (System.IO.MemoryStream stream = new System.IO.MemoryStream(nstring))
+            {
+                return ReadNetstringData(new System.IO.MemoryStream(nstring));
+            }
         }
 
         public static byte[] NetstringFromString(String str) {
