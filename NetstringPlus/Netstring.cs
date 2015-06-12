@@ -1,21 +1,58 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Linq;
 
 namespace NetstringPlus
 {
     public class NetstringPlusAPI
     {
+        protected static byte[] NetstringHeader(uint size)
+        {
+            String len = String.Format("{0:X}:", size);
+            return System.Text.UTF8Encoding.UTF8.GetBytes(len);
+        }
+
         public static void WriteNetstringBytes(System.IO.Stream stream, byte[] data)
         {
             byte[] bytes = NetstringBytes(data);
             stream.Write(bytes, 0, bytes.Length);
         }
 
-        public static byte[] ReadNetstring(System.IO.Stream stream)
+        public static void WriteNetstringBytesMulti(System.IO.Stream stream, IEnumerable<byte[]> datae)
         {
-            NetstringDecoder decoder = new NetstringDecoder(stream);
-            return decoder.PumpMessage(); 
+            // This kind of negates the performance benefits of having a *Multi method, maybe don't use an IEnumerable?
+            List<byte[]> dataeList = new List<byte[]>();
+            uint size;
+            byte[] headerBytes;
+            byte[] termBytes;
+
+            foreach (byte[] data in datae)
+            {
+                dataeList.Add(data);
+            }
+
+            size = (uint)dataeList.Sum<byte[]>(x => x.Length);
+            headerBytes = NetstringPlus.NetstringPlusAPI.NetstringHeader(size);
+            termBytes = System.Text.UTF8Encoding.UTF8.GetBytes("\n");
+            stream.Write(headerBytes, 0, headerBytes.Length);
+            foreach (byte[] data in dataeList)
+            {
+                stream.Write(data, 0, data.Length);
+            }
+            stream.Write(termBytes, 0, termBytes.Length);
+            return;
+        }
+
+        public static byte[] ReadNetstringData(System.IO.Stream stream)
+        {
+            NetstringDecoder decoder = new NetstringDecoder();
+            List<byte[]> messages = decoder.PumpStream(stream, count: 1);
+            if (messages.Count() < 1)
+            {
+                throw new System.IO.EndOfStreamException();
+            }
+            return messages[0];
         }
 
         public static byte[] NetstringBytes(byte[] data)
@@ -39,7 +76,7 @@ namespace NetstringPlus
 
         public static byte[] NetstringData(byte[] nstring)
         {
-            return ReadNetstring(new System.IO.MemoryStream(nstring));
+            return ReadNetstringData(new System.IO.MemoryStream(nstring));
         }
 
         public static byte[] NetstringFromString(String str) {

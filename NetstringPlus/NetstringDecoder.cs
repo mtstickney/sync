@@ -10,25 +10,38 @@ namespace NetstringPlus
         public DecoderState state { get; set; }
         public int dataSize { get; set; }
         public byte[] data { get; set; }
-        private System.IO.Stream byteStream;
-        private System.IO.BinaryReader charStream;
+        public int dataPos { get; set; }
 
-        public static NetstringDecoder NewDecoderForStream(System.IO.Stream stream) {
-            return new NetstringDecoder(stream);
+        public NetstringDecoder() {
+            this.Reset();
         }
 
-        public NetstringDecoder(System.IO.Stream stream) {
+        public void Reset()
+        {
             this.state = DecoderState.INITIAL;
-            this.byteStream = stream;
-            this.charStream = new System.IO.BinaryReader(stream, System.Text.Encoding.UTF8);
+            this.dataSize = 0;
+            this.dataPos = 0;
+            this.data = null;
         }
 
-        public static int HexDigit(char c) {
-            int i = "0123456789ABCDEFabcdef".IndexOf(c);
-            if (i > 15) {
-                return i - 6;
+        public static int AsciiHexDigit(byte c)
+        {
+            if ('0' <= c && c <= '9')
+            {
+                return c - '0';
             }
-            return i;
+            else if ('A' <= c && c <= 'F')
+            {
+                return c - 'A';
+            }
+            else if ('a' <= c && c <= 'f')
+            {
+                return c - 'a';
+            }
+            else
+            {
+                return -1;
+            }
         }
 
         public void AddHeaderDigit(int digit) {
@@ -64,37 +77,51 @@ namespace NetstringPlus
             this.state = toState;
         }
 
-        public void PumpElement() {
+        public uint NextReadSize() {
+            switch (this.state)
+            {
+                case DecoderState.INITIAL:
+                case DecoderState.HEADER:
+                    return 1;
+                case DecoderState.ENDOFDATA:
+                    return 1;
+                case DecoderState.DATA:
+                    // dataSize and dataPos will always be positive, and dataPos <= dataSize.
+                    return (uint)(this.dataSize - this.dataPos);
+                case DecoderState.COMPLETE:
+                    return 0;
+                default:
+                    throw new Exception(String.Format("Invalid decoder state {}", this.state));
+            }
+        }
+
+        public void PumpByte(byte b) {
             switch(this.state) {
                 case DecoderState.INITIAL:
                 case DecoderState.HEADER:
                     {
-                        int c = this.charStream.ReadChar();
-                        if (c < 0)
-                        {
-                            throw new System.IO.EndOfStreamException();
-                        }
-
-                        int n = NetstringDecoder.HexDigit((char)c);
-                        if (c == ':')
+                        int n = NetstringDecoder.AsciiHexDigit((byte)b);
+                        if (b == ':')
                         {
                             if (this.state == DecoderState.INITIAL)
                             {
-                                // FIXME: throw empty-header error here
+                                throw new Exception("Netstring header is empty");
                             }
                             else if (this.dataSize == 0)
                             {
+                                this.dataPos = 0;
                                 this.TransitionState(DecoderState.ENDOFDATA);
                             }
                             else
                             {
+                                this.dataPos = 0;
                                 this.data = new byte[this.dataSize];
                                 this.TransitionState(DecoderState.DATA);
                             }
                         }
                         else if (n < 0)
                         {
-                            // FIXME: throw invalid header character error
+                            throw new Exception(String.Format("Invalid header character '{0}'", n));
                         }
                         else
                         {
@@ -108,25 +135,18 @@ namespace NetstringPlus
                     }
                 case DecoderState.DATA:
                     {
-                        int count = this.byteStream.Read(this.data, 0, this.dataSize);
-                        if (count < this.dataSize)
+                        this.data[this.dataPos++] = b;
+                        if (this.dataPos == this.dataSize)
                         {
-                            String msg = String.Format("Only able to read {0} bytes of data (wanted {1})", count, this.dataSize);
-                            throw new System.IO.EndOfStreamException(msg);
+                            this.TransitionState(DecoderState.ENDOFDATA);
                         }
-                        this.TransitionState(DecoderState.ENDOFDATA);
                         break;
                     }
                 case DecoderState.ENDOFDATA:
                     {
-                        int c = this.charStream.ReadChar();
-                        if (c < 0)
+                        if (b != '\n')
                         {
-                            throw new System.IO.EndOfStreamException();
-                        }
-                        else if (c != '\n')
-                        {
-                            // FIXME: throw extra-data exception
+                            throw new Exception("Too much data in netstring");
                         }
                         else
                         {
@@ -135,39 +155,83 @@ namespace NetstringPlus
                         break;
                     }
                 case DecoderState.COMPLETE:
-                    // FIXME: throw error because we're already done
-                    break;
+                    {
+                        throw new Exception("Decoder is already complete");
+                    }
             }
         }
 
-        public byte[] PumpMessage() {
-            while (this.state != DecoderState.COMPLETE) {
-                this.PumpElement();
+        public List<byte[]> PumpStream(System.IO.Stream stream, uint? count = null, uint? bytes = null) {
+            List<byte[]> messages = new List<Byte[]>();
+            int i = 0;
+            int byteCount = 0;
+
+            // If the current decoder is already complete, reset the state.
+            if (this.state == DecoderState.COMPLETE)
+            {
+                this.Reset();
             }
-            return this.data;
+
+            try
+            {
+                while ((bytes == null || byteCount < bytes) && (count == null || i < count))
+                {
+                    int b = stream.ReadByte();
+                    if (b < 0)
+                    {
+                        // End of stream, return the messages we've read so far.
+                        return messages;
+                    }
+
+                    this.PumpByte((byte)b);
+                    byteCount++;
+
+                    if (this.state == DecoderState.COMPLETE)
+                    {
+                        messages.Add(this.data);
+                        i++;
+                        this.Reset();
+                    }
+                }
+            }
+            catch (System.IO.EndOfStreamException)
+            {
+                // Just swallow it.
+            }
+            return messages;
         }
 
-        // TODO: Add a PumpMessages(count) method, or replace this one (count == -1 => pump all).
-        public List<byte[]> PumpAllMessages() {
+        public List<byte[]> PumpArray(byte[] array, uint start = 0, uint? end = null, uint? count = null)
+        {
             List<byte[]> messages = new List<byte[]>();
-            while (true) {
-                try {
-                    byte[] message = this.PumpMessage();
-                    messages.Add(message);
-                } catch (System.IO.EndOfStreamException e) {
-                    return messages;
-                }
-            }
-        }
+            uint i = 0;
 
-        public void Resynchronize() {
-            // Attempt to resynchronize after error by discarding data until we read a newline.
-            while (true) {
-                int c = this.charStream.ReadChar();
-                if (c == '\n') {
-                    return;
+            // If the decoder is already complete, get a fresh state.
+            if (this.state == DecoderState.COMPLETE)
+            {
+                this.Reset();
+            }
+
+            if (end == null)
+            {
+                end = (uint)array.Length;
+            }
+
+            while (start < end && (count == null || i < count))
+            {
+                byte b = array[start];
+
+                this.PumpByte(b);
+                start++;
+
+                if (this.state == DecoderState.COMPLETE)
+                {
+                    messages.Add(this.data);
+                    i++;
+                    this.Reset();
                 }
             }
+            return messages;
         }
     }
 }
