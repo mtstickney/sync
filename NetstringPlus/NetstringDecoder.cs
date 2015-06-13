@@ -24,6 +24,11 @@ namespace NetstringPlus
             this.data = null;
         }
 
+        public byte[] GetData()
+        {
+            return this.data;
+        }
+
         public static int AsciiHexDigit(byte c)
         {
             if ('0' <= c && c <= '9')
