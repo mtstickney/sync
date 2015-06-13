@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 
 namespace MtgDotNet.Sys
 {
-    interface Framer
+    interface IFramer
     {
         public byte[] FrameData(byte[] data);
         public byte[] FrameDataMulti(IEnumerable<byte[]> datae);
         public byte[] UnframeData(byte[] frame);
-        public async Task WriteFrame(Transport t, IEnumerable<byte[]> datae);
-        public async Task<byte[]> ReadFrame(Transport t);
+        public async Task WriteFrame(ITransport t, IEnumerable<byte[]> datae);
+        public async Task<byte[]> ReadFrame(ITransport t);
     }
 }
