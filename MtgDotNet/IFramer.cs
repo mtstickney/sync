@@ -8,10 +8,10 @@ namespace MtgDotNet.Sys
 {
     interface IFramer
     {
-        public byte[] FrameData(byte[] data);
-        public byte[] FrameDataMulti(IEnumerable<byte[]> datae);
-        public byte[] UnframeData(byte[] frame);
-        public async Task WriteFrame(ITransport t, IEnumerable<byte[]> datae);
-        public async Task<byte[]> ReadFrame(ITransport t);
+        byte[] FrameData(byte[] data);
+        byte[] FrameDataMulti(IEnumerable<byte[]> datae);
+        byte[] UnframeData(byte[] frame);
+        Task WriteFrame(ITransport t, IEnumerable<byte[]> datae);
+        Task<byte[]> ReadFrame(ITransport t);
     }
 }

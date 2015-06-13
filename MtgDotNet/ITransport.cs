@@ -9,11 +9,11 @@ namespace MtgDotNet.Sys
 {
     interface ITransport
     {
-        public async Task Connect();
-        public async Task Disconnect();
-        public async Task<byte[]> Read(uint size);
-        public async Task ReadIntoArray(byte[] array, uint offset, [Optional] uint? size);
-        public async Task Write(byte[] data);
-        public async Task Flush();
+        Task Connect();
+        Task Disconnect();
+        Task<byte[]> Read(uint size);
+        Task ReadIntoArray(byte[] array, uint offset, [Optional] uint? size);
+        Task Write(byte[] data);
+        Task Flush();
     }
 }
