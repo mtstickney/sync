@@ -96,7 +96,7 @@ namespace NetstringPlus
                 case DecoderState.COMPLETE:
                     return 0;
                 default:
-                    throw new Exception(String.Format("Invalid decoder state {}", this.state));
+                    throw new Exception(String.Format("Invalid decoder state {0}", this.state));
             }
         }
 
