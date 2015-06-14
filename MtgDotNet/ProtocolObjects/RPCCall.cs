@@ -10,6 +10,6 @@ namespace MtgDotNet.ProtocolObjects
         public string service { get; set; }
         public string method { get; set; }
         public dynamic[] args { get; set; }
-        public dynamic id { get; set; }
+        public int? id { get; set; }
     }
 }

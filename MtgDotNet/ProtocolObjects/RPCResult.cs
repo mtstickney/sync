@@ -10,6 +10,6 @@ namespace MtgDotNet.ProtocolObjects
         public dynamic data { get; set; }
         public RPCError error { get; set; }
         public RPCError[] warnings { get; set; }
-        public dynamic id { get; set; }
+        public int id { get; set; }
     }
 }
