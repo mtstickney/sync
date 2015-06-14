@@ -211,12 +211,6 @@ namespace NetstringPlus
             List<byte[]> messages = new List<byte[]>();
             uint i = 0;
 
-            // If the decoder is already complete, get a fresh state.
-            if (this.state == DecoderState.COMPLETE)
-            {
-                this.Reset();
-            }
-
             if (end == null)
             {
                 end = (uint)array.Length;
@@ -226,6 +220,12 @@ namespace NetstringPlus
             {
                 byte b = array[start];
 
+                // If the decoder is already complete, get a fresh state.
+                if (this.state == DecoderState.COMPLETE)
+                {
+                    this.Reset();
+                }
+
                 this.PumpByte(b);
                 start++;
 
@@ -233,7 +233,6 @@ namespace NetstringPlus
                 {
                     messages.Add(this.data);
                     i++;
-                    this.Reset();
                 }
             }
             return messages;
