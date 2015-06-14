@@ -74,6 +74,7 @@
     <Compile Include="AsynchronousTransport.cs" />
     <Compile Include="IFramer.cs" />
     <Compile Include="Framers\NetstringPlusFramer.cs" />
+    <Compile Include="IRPCConnection.cs" />
     <Compile Include="MtgDotNet.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ProtocolObjects\RPCCall.cs" />
