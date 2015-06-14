@@ -82,6 +82,7 @@
     <Compile Include="ProtocolObjects\RPCRequest.cs" />
     <Compile Include="ProtocolObjects\RPCResponse.cs" />
     <Compile Include="ProtocolObjects\RPCResult.cs" />
+    <Compile Include="RemoteError.cs" />
     <Compile Include="SynchronousTransport.cs" />
     <Compile Include="ITransport.cs" />
     <Compile Include="Transports\AsynchronousTcpTransport.cs" />
