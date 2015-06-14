@@ -49,8 +49,8 @@ namespace MtgDotNet.Transports
                 await this.Disconnect();
             }
 
-            socket.Connect(this.address, this.port);
-            return;
+            this.socket = new TcpClient();
+            this.socket.Connect(this.address, this.port);
         }
 
         public async override Task Disconnect()
