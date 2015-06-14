@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 
 namespace MtgDotNet.Sys
 {
-    interface ITransport
+    public interface ITransport
     {
         Task Connect();
         Task Disconnect();

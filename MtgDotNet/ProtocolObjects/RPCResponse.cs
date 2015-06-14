@@ -5,7 +5,7 @@ using System.Text;
 
 namespace MtgDotNet.ProtocolObjects
 {
-    class RPCResponse : List<RPCResult>
+    public class RPCResponse : List<RPCResult>
     {
     }
 }

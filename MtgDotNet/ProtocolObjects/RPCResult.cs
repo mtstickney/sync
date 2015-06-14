@@ -5,7 +5,7 @@ using System.Text;
 
 namespace MtgDotNet.ProtocolObjects
 {
-    class RPCResult
+    public class RPCResult
     {
         public dynamic data { get; set; }
         public RPCError error { get; set; }

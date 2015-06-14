@@ -8,7 +8,7 @@ using System.Net;
 
 namespace MtgDotNet.Transports
 {
-    class SynchronousTcpTransport : MtgDotNet.Sys.SynchronousTransport, IDisposable
+    public class SynchronousTcpTransport : MtgDotNet.Sys.SynchronousTransport, IDisposable
     {
         protected string address;
         protected int port;

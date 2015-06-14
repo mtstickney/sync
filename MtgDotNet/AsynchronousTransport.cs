@@ -5,7 +5,7 @@ using System.Text;
 
 namespace MtgDotNet.Sys
 {
-    abstract class AsynchronousTransport
+    public abstract class AsynchronousTransport
     {
     }
 }

@@ -5,7 +5,7 @@ using System.Text;
 
 namespace MtgDotNet.ProtocolObjects
 {
-    class RPCError
+    public class RPCError
     {
         public string message { get; set; }
         public int code { get; set; }

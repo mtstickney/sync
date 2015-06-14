@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace MtgDotNet.Sys
 {
-    interface IFramer
+    public interface IFramer
     {
         byte[] FrameData(byte[] data);
         byte[] FrameDataMulti(IEnumerable<byte[]> datae);

@@ -8,7 +8,7 @@ using System.Net.Sockets;
 
 namespace MtgDotNet.Transports
 {
-    class AsynchronousTcpTransport : MtgDotNet.Sys.AsynchronousTransport, IDisposable
+    public class AsynchronousTcpTransport : MtgDotNet.Sys.AsynchronousTransport, IDisposable
     {
         protected string address;
         protected int port;

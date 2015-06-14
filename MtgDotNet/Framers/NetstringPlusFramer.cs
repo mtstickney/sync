@@ -7,7 +7,7 @@ using NetstringPlus;
 
 namespace MtgDotNet.Framers
 {
-    class NetstringPlusFramer : MtgDotNet.Sys.IFramer
+    public class NetstringPlusFramer : MtgDotNet.Sys.IFramer
     {
         public byte[] FrameData(byte[] data)
         {

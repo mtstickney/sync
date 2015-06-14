@@ -5,7 +5,7 @@ using System.Text;
 
 namespace MtgDotNet.ProtocolObjects
 {
-    class RPCCall
+    public class RPCCall
     {
         public string service { get; set; }
         public string method { get; set; }
