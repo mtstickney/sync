@@ -41,7 +41,7 @@ namespace MtgDotNet.Transports
             }
         }
 
-        public async Task Connect()
+        public async override Task Connect()
         {
             if (this.socket != null)
             {
@@ -50,7 +50,7 @@ namespace MtgDotNet.Transports
             return;
         }
 
-        public async Task Disconnect()
+        public async override Task Disconnect()
         {
             if (this.socket != null && this.socket.Connected)
             {
@@ -63,7 +63,7 @@ namespace MtgDotNet.Transports
             }
         }
 
-        public async Task ReadIntoArray(byte[] array, uint offset, uint? size = null)
+        public async override Task ReadIntoArray(byte[] array, uint offset, uint? size = null)
         {
             int bytes;
 
@@ -83,21 +83,21 @@ namespace MtgDotNet.Transports
             return;
         }
 
-        public async Task<byte[]> Read(uint size)
+        public async override Task<byte[]> Read(uint size)
         {
             byte[] buf = new byte[size];
             await this.ReadIntoArray(buf, 0, size);
             return buf;
         }
 
-        public async Task Write(byte[] data)
+        public async override Task Write(byte[] data)
         {
             NetworkStream stream = this.socket.GetStream();
             await stream.WriteAsync(data, 0, data.Length);
             return;
         }
 
-        public async Task Flush()
+        public async override Task Flush()
         {
             NetworkStream stream = this.socket.GetStream();
             await stream.FlushAsync();
