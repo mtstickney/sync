@@ -37,11 +37,11 @@ namespace NetstringPlus
             }
             else if ('A' <= c && c <= 'F')
             {
-                return c - 'A';
+                return c - 'A' + 10;
             }
             else if ('a' <= c && c <= 'f')
             {
-                return c - 'a';
+                return c - 'a' + 10;
             }
             else
             {
