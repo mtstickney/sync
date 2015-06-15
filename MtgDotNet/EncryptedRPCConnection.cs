@@ -16,6 +16,7 @@ namespace MtgDotNet
         protected byte[] publicKey;
         protected byte[] sessionKey;
         protected byte[][] authorizedKeys;
+        protected const int paddingBytes = 16;
 
         public EncryptedRPCConnection(MtgDotNet.Sys.IFramer framer, MtgDotNet.Sys.ITransport transport, byte[] secret, byte[][] authorizedKeys) : base(framer, transport)
         {
@@ -94,10 +95,14 @@ namespace MtgDotNet
             }
 
             byte[] encrypted = Sodium.SecretBox.Create(data, sharedNonce, this.sessionKey);
+
             // Ugghhh, just expose the size constants already libsodium-net. Jeez. I'm not made of array copies here.
-            byte[] message = new byte[encrypted.Length + sharedNonce.Length];
+            byte[] message = new byte[encrypted.Length - EncryptedRPCConnection.paddingBytes + sharedNonce.Length];
             this.localNonce.CopyTo(message, 0);
-            encrypted.CopyTo(message, this.localNonce.Length);
+
+            // This fun little dance is because the libsodium-net author didn't use the *_easy API, so messages come out
+            // with paddingBytes of zero padding on the front, and need it added back on before decryption. Le sigh.
+            Array.Copy(encrypted, EncryptedRPCConnection.paddingBytes, message, this.localNonce.Length, encrypted.Length - EncryptedRPCConnection.paddingBytes);
 
             return message;
         }
@@ -105,16 +110,29 @@ namespace MtgDotNet
         public byte[] DecryptData(byte[] message, out byte[] remoteNonce)
         {
             byte[] sharedNonce = new byte[this.localNonce.Length];
+            byte[] cipherText = new byte[message.Length - sharedNonce.Length + EncryptedRPCConnection.paddingBytes];
+            byte[] data;
 
             for (int i = 0; i < sharedNonce.Length; i++)
             {
                 sharedNonce[i] = (byte)(this.localNonce[i] ^ message[i]);
             }
 
-            byte[] cipherText = Sodium.SecretBox.Open(message, sharedNonce, this.sessionKey);
+            // Ciphertext needs to start with zero-padding.
+            for (int i = 0; i < EncryptedRPCConnection.paddingBytes; i++)
+            {
+                cipherText[i] = 0;
+            }
+
+            Array.Copy(message, sharedNonce.Length, cipherText, EncryptedRPCConnection.paddingBytes, cipherText.Length - EncryptedRPCConnection.paddingBytes);
+
+            data = Sodium.SecretBox.Open(cipherText, sharedNonce, this.sessionKey);
+
+            // Copy the remote nonce into the nonce buffer so we can return it.
             Array.Copy(message, sharedNonce, sharedNonce.Length);
             remoteNonce = sharedNonce;
-            return cipherText;
+
+            return data;
         }
 
         public async override Task Connect()
