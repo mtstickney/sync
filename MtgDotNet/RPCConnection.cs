@@ -92,7 +92,6 @@ namespace MtgDotNet
                         {
                             throw new Exception(String.Format("Duplicate result with id {0}", result.id));
                         }
-                        System.Diagnostics.Debug.WriteLine(String.Format("Adding result with id {0}", result.id));
                         this.resultBucket[result.id] = result;
                     }
                 });
