@@ -26,53 +26,53 @@ namespace MtgDotNet
             this.transport.Disconnect();
         }
 
-        public async Task Connect()
+        public virtual async Task Connect()
         {
             await this.transport.Connect();
         }
 
-        public async Task Disconnect()
+        public virtual async Task Disconnect()
         {
             await this.transport.Disconnect();
         }
 
-        public async Task SendFrame(byte[] data)
+        public virtual async Task SendFrame(byte[] data)
         {
             await this.SendFrameMulti(data);
         }
 
-        public async Task SendFrameMulti(params byte[][] datae)
+        public virtual async Task SendFrameMulti(params byte[][] datae)
         {
             await this.framer.WriteFrame(this.transport, datae);
         }
 
-        public async Task<byte[]> ReceiveFrame()
+        public virtual async Task<byte[]> ReceiveFrame()
         {
             return await this.framer.ReadFrame(this.transport);
         }
 
-        public async Task SendResponse(RPCResponse response)
+        public virtual async Task SendResponse(RPCResponse response)
         {
             string message = JsonConvert.SerializeObject(response);
             byte[] data = System.Text.UTF8Encoding.UTF8.GetBytes(message);
             await this.SendFrame(data);
         }
 
-        public async Task<RPCResponse> ReceiveResponse()
+        public virtual async Task<RPCResponse> ReceiveResponse()
         {
             byte[] data = await this.ReceiveFrame();
             string message = System.Text.UTF8Encoding.UTF8.GetString(data);
             return JsonConvert.DeserializeObject<RPCResponse>(message);
         }
 
-        public async Task SendRequest(RPCRequest request)
+        public virtual async Task SendRequest(RPCRequest request)
         {
             string message = JsonConvert.SerializeObject(request);
             byte[] data = System.Text.UTF8Encoding.UTF8.GetBytes(message);
             await this.SendFrame(data);
         }
 
-        public async Task<RPCRequest> ReceiveRequest()
+        public virtual async Task<RPCRequest> ReceiveRequest()
         {
             byte[] data = await this.ReceiveFrame();
             string message = System.Text.UTF8Encoding.UTF8.GetString(data);
@@ -114,7 +114,7 @@ namespace MtgDotNet
             return result;
         }
 
-        public async Task<dynamic> InvokeRPCMethod(string service, string method, dynamic[] args, bool isNotification = false)
+        public virtual async Task<dynamic> InvokeRPCMethod(string service, string method, dynamic[] args, bool isNotification = false)
         {
             Random rnd = new Random();
             int callId = rnd.Next();
