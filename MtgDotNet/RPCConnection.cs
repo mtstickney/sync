@@ -38,10 +38,10 @@ namespace MtgDotNet
 
         public async Task SendFrame(byte[] data)
         {
-            await this.SendFrameMulti(new[] { data });
+            await this.SendFrameMulti(data);
         }
 
-        public async Task SendFrameMulti(IEnumerable<byte[]> datae)
+        public async Task SendFrameMulti(params byte[][] datae)
         {
             await this.framer.WriteFrame(this.transport, datae);
         }

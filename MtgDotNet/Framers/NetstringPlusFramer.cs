@@ -14,7 +14,7 @@ namespace MtgDotNet.Framers
             return NetstringPlusAPI.NetstringBytes(data);
         }
 
-        public byte[] FrameDataMulti(IEnumerable<byte[]> datae)
+        public byte[] FrameDataMulti(params byte[][] datae)
         {
             using (System.IO.MemoryStream stream = new System.IO.MemoryStream())
             {
@@ -28,7 +28,7 @@ namespace MtgDotNet.Framers
             return NetstringPlusAPI.NetstringData(frame);
         }
 
-        public async Task WriteFrame(MtgDotNet.Sys.ITransport t, IEnumerable<byte[]> datae)
+        public async Task WriteFrame(MtgDotNet.Sys.ITransport t, params byte[][] datae)
         {
             byte[] frame = this.FrameDataMulti(datae);
             await t.Write(frame);

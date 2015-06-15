@@ -9,9 +9,9 @@ namespace MtgDotNet.Sys
     public interface IFramer
     {
         byte[] FrameData(byte[] data);
-        byte[] FrameDataMulti(IEnumerable<byte[]> datae);
+        byte[] FrameDataMulti(params byte[][] datae);
         byte[] UnframeData(byte[] frame);
-        Task WriteFrame(ITransport t, IEnumerable<byte[]> datae);
+        Task WriteFrame(ITransport t, params byte[][] datae);
         Task<byte[]> ReadFrame(ITransport t);
     }
 }
