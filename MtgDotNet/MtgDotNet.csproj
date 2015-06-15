@@ -76,6 +76,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AsynchronousTransport.cs" />
+    <Compile Include="ClientNotAuthorizedException.cs" />
     <Compile Include="IFramer.cs" />
     <Compile Include="Framers\NetstringPlusFramer.cs" />
     <Compile Include="IRPCConnection.cs" />
