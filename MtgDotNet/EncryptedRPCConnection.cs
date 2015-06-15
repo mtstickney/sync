@@ -163,7 +163,7 @@ namespace MtgDotNet
             frame = await this.ReceiveFrame();
             data = this.DecryptData(frame, out remoteNonce);
             this.remoteNonce = remoteNonce;
-            message = System.Text.UTF8Encoding.UTF8.GetString(data, remoteNonce.Length, data.Length - remoteNonce.Length);
+            message = System.Text.UTF8Encoding.UTF8.GetString(data);
 
             return JsonConvert.DeserializeObject<RPCResponse>(message);
         }
