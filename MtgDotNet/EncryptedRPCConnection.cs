@@ -64,6 +64,7 @@ namespace MtgDotNet
 
             // Send the nonce and public key
             this.SendFrameMulti(this.localNonce, this.publicKey);
+
             frame = await this.ReceiveFrame();
             if (frame.Length != (this.publicKey.Length + this.localNonce.Length))
             {
@@ -89,7 +90,7 @@ namespace MtgDotNet
         {
             byte[] sharedNonce = new byte[this.localNonce.Length];
 
-            for (int i = 0; i< sharedNonce.Length; i++)
+            for (int i = 0; i < sharedNonce.Length; i++)
             {
                 sharedNonce[i] = (byte)(this.localNonce[i] ^ this.remoteNonce[i]);
             }
