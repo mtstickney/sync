@@ -39,7 +39,7 @@ namespace MtgDotNet
         {
             byte[] dhSecret = Sodium.ScalarMult.Mult(this.secretKey, remotePublicKey);
             byte[] sharedNonce = this.SharedNonce(this.localNonce, this.remoteNonce);
-            return Sodium.GenericHash.Hash(dhSecret, sharedNonce, dhSecret.Length);
+            return Sodium.GenericHash.Hash(sharedNonce, dhSecret, dhSecret.Length);
         }
 
         protected bool KeyEqual(byte[] key1, byte[]key2)
