@@ -32,6 +32,7 @@ namespace MtgDotNet.Framers
         {
             byte[] frame = this.FrameDataMulti(datae);
             await t.Write(frame);
+            await t.Flush();
             return;
         }
 
