@@ -151,7 +151,7 @@ namespace NetstringPlus
                     {
                         if (b != '\n')
                         {
-                            throw new Exception("Too much data in netstring");
+                            throw new Exception(String.Format("Too much data in netstring, character is {0}", b));
                         }
                         else
                         {
