@@ -45,7 +45,7 @@ namespace MtgDotNet.Transports
         {
             if (this.socket != null)
             {
-                await this.Disconnect();
+                await this.Disconnect().ConfigureAwait(false);
             }
             this.socket = new TcpClient();
             this.socket.Connect(this.address, this.port);
@@ -75,7 +75,7 @@ namespace MtgDotNet.Transports
             }
 
             // FIXME: these casts can go bad, do it in multiple parts if necessary.
-            bytes = await stream.ReadAsync(array, (int)offset, (int)size);
+            bytes = await stream.ReadAsync(array, (int)offset, (int)size).ConfigureAwait(false);
             if (bytes < size)
             {
                 throw new System.IO.EndOfStreamException();
@@ -87,21 +87,21 @@ namespace MtgDotNet.Transports
         public async override Task<byte[]> Read(uint size)
         {
             byte[] buf = new byte[size];
-            await this.ReadIntoArray(buf, 0, size);
+            await this.ReadIntoArray(buf, 0, size).ConfigureAwait(false);
             return buf;
         }
 
         public async override Task Write(byte[] data)
         {
             NetworkStream stream = this.socket.GetStream();
-            await stream.WriteAsync(data, 0, data.Length);
+            await stream.WriteAsync(data, 0, data.Length).ConfigureAwait(false);
             return;
         }
 
         public async override Task Flush()
         {
             NetworkStream stream = this.socket.GetStream();
-            await stream.FlushAsync();
+            await stream.FlushAsync().ConfigureAwait(false);
             return;
         }
     }

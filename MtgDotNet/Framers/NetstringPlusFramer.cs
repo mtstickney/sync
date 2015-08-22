@@ -31,8 +31,8 @@ namespace MtgDotNet.Framers
         public async Task WriteFrame(MtgDotNet.Sys.ITransport t, params byte[][] datae)
         {
             byte[] frame = this.FrameDataMulti(datae);
-            await t.Write(frame);
-            await t.Flush();
+            await t.Write(frame).ConfigureAwait(false);
+            await t.Flush().ConfigureAwait(false);
             return;
         }
 
@@ -42,7 +42,7 @@ namespace MtgDotNet.Framers
             while (decoder.state != NetstringPlus.NetstringDecoder.DecoderState.COMPLETE)
             {
                 // TODO: it would be more efficient to re-use the same array for e.g. the header digits, but that would violate encapsulation.
-                byte[] data = await t.Read(decoder.NextReadSize());
+                byte[] data = await t.Read(decoder.NextReadSize()).ConfigureAwait(false);
                 decoder.PumpArray(data, count: 1);
             }
             return decoder.GetData();

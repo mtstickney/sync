@@ -66,7 +66,7 @@ namespace MtgDotNet
             // Send the nonce and public key
             sendTask = this.SendFrameMulti(this.localNonce, this.publicKey);
 
-            frame = await this.ReceiveFrame();
+            frame = await this.ReceiveFrame().ConfigureAwait(false);
             if (frame.Length != (this.publicKey.Length + this.localNonce.Length))
             {
                 throw new Exception("Handshake error: handshake data is the wrong length");
@@ -86,7 +86,7 @@ namespace MtgDotNet
             this.remoteNonce = remoteNonce;
             this.sessionKey = this.GenerateSessionKey(remotePublicKey);
 
-            await sendTask;
+            await sendTask.ConfigureAwait(false);
         }
 
         public byte[] EncryptData(byte[] data)
@@ -142,8 +142,8 @@ namespace MtgDotNet
         public async override Task Connect()
         {
             this.localNonce = Sodium.SecretBox.GenerateNonce();
-            await base.Connect();
-            await this.PerformHandshake();
+            await base.Connect().ConfigureAwait(false);
+            await this.PerformHandshake().ConfigureAwait(false);
         }
 
         public async override Task SendResponse(RPCResponse response)
@@ -153,7 +153,7 @@ namespace MtgDotNet
             string message = JsonConvert.SerializeObject(response);
             byte[] data = System.Text.UTF8Encoding.UTF8.GetBytes(message);
             byte[] cipherText = this.EncryptData(data);
-            await this.SendFrame(cipherText);
+            await this.SendFrame(cipherText).ConfigureAwait(false);
         }
 
         public async override Task<RPCResponse> ReceiveResponse()
@@ -163,7 +163,7 @@ namespace MtgDotNet
             byte[] data;
             string message;
             
-            frame = await this.ReceiveFrame();
+            frame = await this.ReceiveFrame().ConfigureAwait(false);
             data = this.DecryptData(frame, out remoteNonce);
             this.remoteNonce = remoteNonce;
             message = System.Text.UTF8Encoding.UTF8.GetString(data);
@@ -178,7 +178,7 @@ namespace MtgDotNet
             string message = JsonConvert.SerializeObject(request);
             byte[] data = System.Text.UTF8Encoding.UTF8.GetBytes(message);
             byte[] cipherText = this.EncryptData(data);
-            await this.SendFrame(cipherText);
+            await this.SendFrame(cipherText).ConfigureAwait(false);
         }
 
         public async override Task<RPCRequest> ReceiveRequest()
@@ -188,7 +188,7 @@ namespace MtgDotNet
             byte[] data;
             string message;
 
-            frame = await this.ReceiveFrame();
+            frame = await this.ReceiveFrame().ConfigureAwait(false);
             data = this.DecryptData(frame, out sharedNonce);
             message = System.Text.UTF8Encoding.UTF8.GetString(data);
             return JsonConvert.DeserializeObject<RPCRequest>(message);

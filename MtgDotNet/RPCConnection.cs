@@ -28,39 +28,39 @@ namespace MtgDotNet
 
         public virtual async Task Connect()
         {
-            await this.transport.Connect();
+            await this.transport.Connect().ConfigureAwait(false);
         }
 
         public virtual async Task Disconnect()
         {
-            await this.transport.Disconnect();
+            await this.transport.Disconnect().ConfigureAwait(false);
         }
 
         public virtual async Task SendFrame(byte[] data)
         {
-            await this.SendFrameMulti(data);
+            await this.SendFrameMulti(data).ConfigureAwait(false);
         }
 
         public virtual async Task SendFrameMulti(params byte[][] datae)
         {
-            await this.framer.WriteFrame(this.transport, datae);
+            await this.framer.WriteFrame(this.transport, datae).ConfigureAwait(false);
         }
 
         public virtual async Task<byte[]> ReceiveFrame()
         {
-            return await this.framer.ReadFrame(this.transport);
+            return await this.framer.ReadFrame(this.transport).ConfigureAwait(false);
         }
 
         public virtual async Task SendResponse(RPCResponse response)
         {
             string message = JsonConvert.SerializeObject(response);
             byte[] data = System.Text.UTF8Encoding.UTF8.GetBytes(message);
-            await this.SendFrame(data);
+            await this.SendFrame(data).ConfigureAwait(false);
         }
 
         public virtual async Task<RPCResponse> ReceiveResponse()
         {
-            byte[] data = await this.ReceiveFrame();
+            byte[] data = await this.ReceiveFrame().ConfigureAwait(false);
             string message = System.Text.UTF8Encoding.UTF8.GetString(data);
             return JsonConvert.DeserializeObject<RPCResponse>(message);
         }
@@ -69,12 +69,12 @@ namespace MtgDotNet
         {
             string message = JsonConvert.SerializeObject(request);
             byte[] data = System.Text.UTF8Encoding.UTF8.GetBytes(message);
-            await this.SendFrame(data);
+            await this.SendFrame(data).ConfigureAwait(false);
         }
 
         public virtual async Task<RPCRequest> ReceiveRequest()
         {
-            byte[] data = await this.ReceiveFrame();
+            byte[] data = await this.ReceiveFrame().ConfigureAwait(false);
             string message = System.Text.UTF8Encoding.UTF8.GetString(data);
             return JsonConvert.DeserializeObject<RPCRequest>(message);
         }
@@ -106,7 +106,7 @@ namespace MtgDotNet
 
             while (!this.resultBucket.ContainsKey(id))
             {
-                await this.ProcessNextResponse();
+                await this.ProcessNextResponse().ConfigureAwait(false);
             }
             result = this.resultBucket[id];
             this.resultBucket.Remove(id);
@@ -121,14 +121,14 @@ namespace MtgDotNet
             RPCRequest req = new RPCRequest { call };
             RPCResult result;
 
-            await this.SendRequest(req);
+            await this.SendRequest(req).ConfigureAwait(false);
 
             if (isNotification)
             {
                 return null;
             }
 
-            result = await this.ReadResultWithId(callId);
+            result = await this.ReadResultWithId(callId).ConfigureAwait(false);
             if (result.error != null)
             {
                 RPCError error = result.error;
