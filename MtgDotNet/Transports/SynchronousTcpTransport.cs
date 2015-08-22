@@ -42,18 +42,22 @@ namespace MtgDotNet.Transports
             }
         }
 
-        public async override Task Connect()
+        public override Task Connect()
         {
             if (this.socket != null)
             {
-                await this.Disconnect();
+                this.Disconnect();
             }
 
             this.socket = new TcpClient();
             this.socket.Connect(this.address, this.port);
+
+            var tcs = new TaskCompletionSource<bool>();
+            tcs.SetResult(true);
+            return tcs.Task;
         }
 
-        public async override Task Disconnect()
+        public override Task Disconnect()
         {
             if (this.socket != null && this.socket.Connected)
             {
@@ -64,9 +68,12 @@ namespace MtgDotNet.Transports
             {
                 this.socket = null;
             }
+            var tcs = new TaskCompletionSource<bool>();
+            tcs.SetResult(true);
+            return tcs.Task;
         }
 
-        public async override Task ReadIntoArray(byte[] array, uint offset, uint? size = null)
+        public override Task ReadIntoArray(byte[] array, uint offset, uint? size = null)
         {
             NetworkStream stream = this.socket.GetStream();
             int bytes;
@@ -83,27 +90,37 @@ namespace MtgDotNet.Transports
                 throw new System.IO.EndOfStreamException();
             }
 
-            return;
+            var tcs = new TaskCompletionSource<bool>();
+            tcs.SetResult(true);
+            return tcs.Task;
         }
 
-        public async override Task<byte[]> Read(uint size)
+        public override Task<byte[]> Read(uint size)
         {
             byte[] buf = new byte[size];
 
-            await this.ReadIntoArray(buf, 0, (uint)buf.Length);
-            return buf;
+            this.ReadIntoArray(buf, 0, (uint)buf.Length);
+            var tcs = new TaskCompletionSource<byte[]>();
+            tcs.SetResult(buf);
+            return tcs.Task;
         }
 
-        public async override Task Write(byte[] data)
+        public override Task Write(byte[] data)
         {
             NetworkStream stream = this.socket.GetStream();
             stream.Write(data, 0, data.Length);
-            return;
+
+            var tcs = new TaskCompletionSource<bool>();
+            tcs.SetResult(true);
+            return tcs.Task;
         }
 
-        public async override Task Flush()
+        public override Task Flush()
         {
             this.socket.GetStream().Flush();
+            var tcs = new TaskCompletionSource<bool>();
+            tcs.SetResult(true);
+            return tcs.Task;
         }
 
         void IDisposable.Dispose()
