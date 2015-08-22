@@ -61,9 +61,10 @@ namespace MtgDotNet
             byte[] remoteNonce = new byte[this.localNonce.Length];
             byte[] remotePublicKey = new byte[this.publicKey.Length];
             byte[] frame;
+            Task sendTask;
 
             // Send the nonce and public key
-            this.SendFrameMulti(this.localNonce, this.publicKey);
+            sendTask = this.SendFrameMulti(this.localNonce, this.publicKey);
 
             frame = await this.ReceiveFrame();
             if (frame.Length != (this.publicKey.Length + this.localNonce.Length))
@@ -84,6 +85,8 @@ namespace MtgDotNet
 
             this.remoteNonce = remoteNonce;
             this.sessionKey = this.GenerateSessionKey(remotePublicKey);
+
+            await sendTask;
         }
 
         public byte[] EncryptData(byte[] data)
