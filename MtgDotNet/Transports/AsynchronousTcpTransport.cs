@@ -66,7 +66,7 @@ namespace MtgDotNet.Transports
 
         public async override Task ReadIntoArray(byte[] array, uint offset, uint? size = null)
         {
-            int bytes;
+            int bytes = 0;
 
             NetworkStream stream = this.socket.GetStream();
             if (size == null)
@@ -74,11 +74,10 @@ namespace MtgDotNet.Transports
                 size = (uint)array.Length;
             }
 
-            // FIXME: these casts can go bad, do it in multiple parts if necessary.
-            bytes = await stream.ReadAsync(array, (int)offset, (int)size).ConfigureAwait(false);
-            if (bytes < size)
+            while (bytes < size)
             {
-                throw new System.IO.EndOfStreamException();
+                // FIXME: these casts can go bad, do it in multiple parts if necessary.
+                bytes += await stream.ReadAsync(array, (int)offset + bytes, (int)size - bytes).ConfigureAwait(false);
             }
 
             return;

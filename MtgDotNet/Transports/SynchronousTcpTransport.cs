@@ -76,18 +76,17 @@ namespace MtgDotNet.Transports
         public override Task ReadIntoArray(byte[] array, uint offset, uint? size = null)
         {
             NetworkStream stream = this.socket.GetStream();
-            int bytes;
+            int bytes = 0;
 
             if (size == null)
             {
                 size = (uint)array.Length;
             }
 
-            // FIXME: this cast can go bad, do it in multiple parts if necessary.
-            bytes = stream.Read(array, (int)offset, (int)size);
-            if (bytes < size)
+            while (bytes < size)
             {
-                throw new System.IO.EndOfStreamException();
+                // FIXME: this cast can go bad, do it in multiple parts if necessary.
+                bytes += stream.Read(array, (int)offset + bytes, (int)size - bytes);
             }
 
             var tcs = new TaskCompletionSource<bool>();
