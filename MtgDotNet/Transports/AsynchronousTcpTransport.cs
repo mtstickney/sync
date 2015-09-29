@@ -51,7 +51,7 @@ namespace MtgDotNet.Transports
             this.socket.Connect(this.address, this.port);
         }
 
-        public async override Task Disconnect()
+        public override Task Disconnect()
         {
             if (this.socket != null && this.socket.Connected)
             {
@@ -62,6 +62,10 @@ namespace MtgDotNet.Transports
             {
                 this.socket = null;
             }
+
+            var tcs = new TaskCompletionSource<bool>();
+            tcs.SetResult(true);
+            return tcs.Task;
         }
 
         public async override Task ReadIntoArray(byte[] array, uint offset, uint? size = null)
