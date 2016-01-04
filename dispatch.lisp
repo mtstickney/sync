@@ -1,5 +1,7 @@
 (defpackage #:clomp.dispatch
-  (:use #:cl #:clomp.types #:clomp))
+  (:use #:cl #:clomp.types #:clomp)
+  (:export #:idispatch
+           #:dispatchable-com-object))
 
 (in-package #:clomp.dispatch)
 
