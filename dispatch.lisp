@@ -194,15 +194,14 @@
         (return-from invoke (cffi:foreign-enum-value 'dispid-constant :dispid-no-named-args)))
       (ecase invoke-type
         ((:member :property-get)
-         (let ((val (apply method (cons obj (param-list params)))))
+         (multiple-value-bind (val inner-type)
+             (apply method (cons obj (param-list params)))
            (unless (cffi:null-pointer-p result)
-             (setf (cffi:mem-aref result )
-              )
-             )
-           
-           )
-
-         )
-        (t (error "Only method calls are supported."))))
-    )
-  )
+             (when (null inner-type)
+               (error "Variant type for value ~S was not reported, cannot convert to return object."
+                      val))
+             (let ((type  `(clomp.types:variant ,(if (keywordp inner-type)
+                                                     (list inner-type)
+                                                     inner-type))))
+               (cffi:convert-into-foreign-memory val type result)))))
+        (t (error "Only method calls and property retrieval are supported."))))))
