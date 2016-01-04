@@ -496,7 +496,7 @@ union {
 
 (defclass variant-ref ()
   ((variant :initarg :variant :reader variant-ptr)
-   (type :initarg :type :reader variant-type)))
+   (type :initarg :type :accessor variant-type)))
 
 (defun make-variant-ref (ptr)
   (check-type ptr cffi:foreign-pointer)
@@ -513,9 +513,14 @@ union {
     (let ((*in-ref-p* t))
       (cffi:convert-from-foreign (variant-ptr ref) 'variant))))
 
-(defgeneric (setf deref) (val ref)
-  (:method (val (ref variant-ref))
-    (cffi:convert-into-foreign-memory val (variant-type ref) (variant-ptr ref))
+(defgeneric (setf deref) (val ref type)
+  (:method (val (ref variant-ref) type)
+    (check-type type (or keyword list))
+    (let ((inner-type (if (keywordp type)
+                          (list type)
+                          type)))
+      (setf (variant-type ref) `(variant ,inner-type))
+      (cffi:convert-into-foreign-memory val (variant-type ref) (variant-ptr ref)))
     val))
 
 (defun variant-slot-pointer (ptr slot)
