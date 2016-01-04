@@ -1,5 +1,5 @@
 (defpackage #:clomp.ffi
-  (:use #:cl #:clomp.types)
+  (:use #:cl #:clomp.types #:clomp)
   (:export #:com-error
            #:register-class-object
            #:revoke-class-object
@@ -32,8 +32,8 @@
 (defun register-class-object (obj &optional (context :local-server) (flags :multiple-use))
   (check-type obj com-object)
   (cffi:with-foreign-object (atom-ptr 'dword)
-    (let ((result (%register-class-object (class-id obj)
-                                          (%com-instance-pointer obj)
+    (let ((result (%register-class-object (client-class-id obj)
+                                          (clomp::%com-instance-pointer obj)
                                           context
                                           flags
                                           atom-ptr)))
