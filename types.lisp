@@ -628,7 +628,7 @@ union {
                                (cffi:mem-aref (variant-data-pointer value) :pointer)
                                (variant-data-pointer value)))
              (foreign-type (variant-foreign-type value)))
-         (cffi:convert-from-foreign data-pointer foreign-type)))))
+         (cffi:mem-aref data-pointer foreign-type)))))
 
 (cffi:defcstruct disp-params
   (args (:pointer variant))
