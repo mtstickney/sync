@@ -549,7 +549,7 @@ union {
 (defun variant-data-pointer (variant)
   (check-type variant cffi:foreign-pointer)
   (cond
-    ((variant-ref-p variant) (cffi:mem-aref (variant-slot-pointer variant 'pointer) :pointer))
+    ((variant-ref-p variant) (cffi:mem-aref (variant-slot-pointer variant 'pointer)))
     (t (ecase (variant-data-type variant)
          (:empty (error "Variant is uninitialized, cannot retrieve data."))
          ;; :null will be handled elsewhere.
