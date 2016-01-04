@@ -4,7 +4,9 @@
   (:use #:cl #:clomp.types)
   (:export #:com-interface
            #:define-interface
-           #:com-object)
+           #:com-object
+           #:class-id
+           #:client-class-id)
   (:export #:iunknown
            #:add-ref
            #:release
