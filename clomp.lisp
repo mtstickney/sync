@@ -203,9 +203,13 @@
                (lock bool)))
 
 (defclass class-factory (com-object)
-  ((server-atom :initform nil :accessor server-atom))
+  ((server-atom :initform nil :accessor server-atom)
+   (client-clsid :initarg :client-clsid :accessor client-class-id))
   (:default-initargs
    :interfaces '(iclassfactory)))
+
+(defmethod initialize-instance :after ((obj class-factory) &key &allow-other-keys)
+  (setf (class-id obj) (%internal-class-id (class-id obJ))))
 
 (defgeneric unregister-factory (obj)
   (:method ((obj class-factory))
