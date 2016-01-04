@@ -178,17 +178,18 @@
   (check-type exception-info cffi:foreign-pointer)
   (check-type bad-arg-index cffi:foreign-pointer)
   (unless (cffi:null-pointer-p riid)
-    (return-from invoke (cffi:foreign-enum-value :dispid-unknown-interface)))
+    (return-from invoke (cffi:foreign-enum-value 'dispid-constant :dispid-unknown-interface)))
 
   (with-com-error-handlers (exception-info)
     ;; TODO: do the rest of the stuff with the things.
     (let* ((interface (clomp::get-com-interface (first (clomp::com-interfaces obj))))
            (method (progn (when (> (1- member) (length (clomp::dispatch-table interface)))
-                            (return-from invoke (cffi:foreign-enum-value :dispid-member-not-found)))
+                            (return-from invoke (cffi:foreign-enum-value 'dispid-constant
+                                                                         :dispid-member-not-found)))
                           (aref (clomp::dispatch-table interface) member))))
       (when (> (cffi:foreign-slot-value params clomp.types:disp-params 'clomp.types:named-arg-count)
                0)
-        (return-from invoke (cffi:foreign-enum-value :dispid-no-named-args)))
+        (return-from invoke (cffi:foreign-enum-value 'dispid-constant :dispid-no-named-args)))
       (ecase invoke-type
         ((:member :property-get)
          (let ((val (apply method (cons obj (param-list params)))))
