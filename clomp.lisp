@@ -134,8 +134,7 @@
 (defun %internal-class-id (clsid)
   (cond
     ((null clsid) (uuid:uuid-to-byte-array (uuid:make-v4-uuid)))
-    ((stringp clsid)
-     (uuid:uuid-to-byte-array (uuid:make-uuid-from-string clsid)))
+    ((stringp clsid) (parse-uuid clsid))
     ((typep clsid '(vector (unsigned-byte 8) 16))
      clsid)
     (t (error "Don't know how to process class id value ~S." clsid))))
