@@ -550,6 +550,8 @@ union {
   (check-type variant cffi:foreign-pointer)
   (cond
     ((variant-ref-p variant) (cffi:mem-aref (variant-slot-pointer variant 'pointer)))
+    ;; SAFEARRAY of the inner type.
+    ((variant-array-p variant) (variant-slot-pointer variant 'pointer))
     (t (ecase (variant-data-type variant)
          (:empty (error "Variant is uninitialized, cannot retrieve data."))
          ;; :null will be handled elsewhere.
