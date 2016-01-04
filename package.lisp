@@ -5,13 +5,13 @@
   (:export #:com-interface
            #:define-interface
            #:com-object
-           #:class-id
-           #:client-class-id)
+           #:class-id)
   (:export #:iunknown
            #:add-ref
            #:release
            #:query-interface)
   (:export #:iclassfactory
+           #:client-class-id
            #:create-instance
            #:lock-server
            #:class-factory
