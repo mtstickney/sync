@@ -131,6 +131,15 @@
    :interfaces '(iunknown)
     :clsid nil))
 
+(defun %internal-class-id (clsid)
+  (cond
+    ((null clsid) (uuid:uuid-to-byte-array (uuid:make-v4-uuid)))
+    ((stringp clsid)
+     (uuid:uuid-to-byte-array (uuid:make-uuid-from-string clsid)))
+    ((typep clsid '(vector (unsigned-byte 8) 16))
+     clsid)
+    (t (error "Don't know how to process class id value ~S." clsid))))
+
 (defmethod initialize-instance :after ((obj com-object) &key &allow-other-keys)
   (when (> (length (com-interfaces obj)) 1)
     (error "Multiple-interface objects are not yet supported."))
@@ -142,12 +151,7 @@
                                                :initial-contents `((interface-pointer
                                                                     ,interface-pointer)))))
     (setf (%com-instance-pointer obj) instance-pointer
-          (class-id obj) (cond
-                           ((null (class-id obj)) (uuid:uuid-to-byte-array (uuid:make-v4-uuid)))
-                           ((stringp (class-id obj))
-                            (uuid:uuid-to-byte-array (uuid:make-uuid-from-string (class-id obj))))
-                           ((typep (class-id obj) '(vector (unsigned-byte 8) 16))
-                            (class-id obj))))
+          (class-id obj) (%internal-class-id (class-id obj)))
     (register-instance obj)
     (trivial-garbage:finalize obj (lambda ()
                                     (format *debug-io* "Finalizing instance.~%")
