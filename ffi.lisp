@@ -1,5 +1,5 @@
 (defpackage #:clomp.ffi
-  (:use #:cl #:clomp.types #:clomp)
+  (:use #:cl #:clomp.types)
   (:export #:com-error
            #:register-class-object
            #:revoke-class-object
@@ -29,11 +29,12 @@
   (flags register-flags)
   (atom (:pointer dword)))
 
-(defun register-class-object (obj &optional (context :local-server) (flags :multiple-use))
-  (check-type obj com-object)
+(defun register-class-object (clsid instance context  flags)
+  (check-type clsid (vector (unsigned-byte 8)))
+  (check-type instance cffi:foreign-pointer)
   (cffi:with-foreign-object (atom-ptr 'dword)
-    (let ((result (%register-class-object (client-class-id obj)
-                                          (clomp::%com-instance-pointer obj)
+    (let ((result (%register-class-object clsid
+                                          instance
                                           context
                                           flags
                                           atom-ptr)))
@@ -65,16 +66,14 @@
   (iid guid)
   (out (:pointer :pointer)))
 
-(defun get-class-object (clsid iid &optional (context :inproc-server))
-  (check-type clsid (or string (vector (unsigned-byte 8))))
-  (check-type iid (or string (vector (unsigned-byte 8))))
-  (let ((clsid (if (stringp clsid) (clomp::parse-uuid clsid) clsid))
-        (iid (if (stringp iid) (clomp::parse-uuid iid) iid)))
-    (cffi:with-foreign-object (out-ptr :pointer)
-      (let ((result (%get-class-object clsid context (cffi:null-pointer) iid out-ptr)))
-        (unless (zerop result)
-          (error 'com-error :code result))
-        (cffi:mem-aref out-ptr :pointer)))))
+(defun get-class-object (clsid iid context)
+  (check-type clsid (vector (unsigned-byte 8)))
+  (check-type iid (vector (unsigned-byte 8)))
+  (cffi:with-foreign-object (out-ptr :pointer)
+    (let ((result (%get-class-object clsid context (cffi:null-pointer) iid out-ptr)))
+      (unless (zerop result)
+        (error 'com-error :code result))
+      (cffi:mem-aref out-ptr :pointer))))
 
 (cffi:defcfun (%initialize-com "CoInitialize" :convention :stdcall)
     hresult

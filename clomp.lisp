@@ -211,6 +211,22 @@
 (defmethod initialize-instance :after ((obj class-factory) &key &allow-other-keys)
   (setf (class-id obj) (%internal-class-id (class-id obJ))))
 
+(defun register-class-object (obj &optional (context :local-server) (flags :multiple-use))
+  (check-type obj class-factory)
+  (clomp.ffi:register-class-object (client-class-id obj)
+                                   (%com-instance-pointer obj)
+                                   context
+                                   flags))
+
+(defun get-class-object (clsid iid st &optional (context :inproc-server))
+  (let ((clsid (etypecase clsid
+                 (string (parse-uuid clsid))
+                 ((vector (unsigned-byte 8)) clsid)))
+        (iid (etypecase iid
+               (string (parse-uuid iid))
+               ((vector (unsigned-byte 8)) iid))))
+    (clomp.ffi:get-class-object clsid iid context)))
+
 (defgeneric unregister-factory (obj)
   (:method ((obj class-factory))
     (when (server-atom obj)
