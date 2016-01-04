@@ -494,14 +494,14 @@ union {
   ((variant :initarg :variant :reader variant-ptr)
    (type :initarg :type :reader variant-type)))
 
-(defun make-variant-ref (ptr type)
+(defun make-variant-ref (ptr)
   (check-type ptr cffi:foreign-pointer)
   (unless (variant-ref-p ptr)
     (error "Variant ~S is not a by-ref variant." ptr))
 
   (make-instance 'variant-ref
                  :variant ptr
-                 :type type))
+                 :type (make-instance 'variant :val-type (variant-inner-type ptr))))
 
 (defgeneric deref (ref)
   (:method ((ref variant-ref))
