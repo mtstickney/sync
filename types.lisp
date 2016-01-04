@@ -476,13 +476,17 @@ union {
   (check-type variant cffi:foreign-pointer)
   (cffi:foreign-slot-value variant '(:struct variant-struct) 'type))
 
+(defun variant-flags (variant)
+  (check-type variant cffi:foreign-pointer)
+  (rest (cffi:foreign-slot-value variant '(:struct variant-struct) 'type)))
+
 (defun variant-ref-p (variant)
   (check-type variant cffi:foreign-pointer)
-  (member :byref (rest (variant-inner-type variant))))
+  (member :byref (variant-flags variant)))
 
 (defun variant-array-p (variant)
   (check-type variant cffi:foreign-pointer)
-  (member :array (rest (variant-inner-type variant))))
+  (member :array (variant-flags variant)))
 
 (defun variant-data-type (variant)
   (check-type variant cffi:foreign-pointer)
