@@ -630,6 +630,51 @@ union {
              (foreign-type (variant-foreign-type value)))
          (cffi:mem-aref data-pointer foreign-type)))))
 
+;; TODO: should have some extension point for providing foreign types
+;; for conversion.
+
+(defun initialize-variant! (variant &key (type :empty) flags)
+  (check-type variant cffi:foreign-pointer)
+  (let ((reserved-ptr (cffi:foreign-slot-value variant '(:struct variant-struct) 'reserved))
+        (record-pointer (cffi:foreign-slot-pointer
+                         (cffi:foreign-slot-pointer variant '(:struct variant-struct) 'element)
+                         '(:union variant-element)
+                         'record))
+        (variant-type (cons type flags)))
+    (setf (cffi:foreign-slot-value variant '(:struct variant-struct) 'type) variant-type)
+    (dotimes (i 3)
+      (setf (cffi:mem-aref reserved-ptr 'dword i) 0))
+    ;; We're making assumptions about the record-struct being the
+    ;; largest element type here.
+    (dolist (slot '(record record-info))
+      (setf (cffi:foreign-slot-value record-pointer '(:struct record-struct) slot)
+            (cffi:null-pointer)))))
+
+(defmethod cffi:translate-into-foreign-memory (value (type variant) pointer)
+  (let ((inner-type (variant-value-type type)))
+    (initialize-variant! pointer)
+    (setf (cffi:foreign-slot-value pointer '(:struct variant-struct) 'type) inner-type)
+    (let* ((slot-pointer (variant-data-pointer pointer))
+           (foreign-type (variant-foreign-type pointer))
+           (val-ptr (if (variant-ref-p pointer)
+                        (cffi:foreign-alloc foreign-type)
+                        slot-pointer)))
+      (if (variant-ref-p pointer)
+          (progn
+            (setf (cffi:mem-aref val-ptr foreign-type) value)
+            (format *debug-io* "set val~%")
+            ;; (cffi:convert-into-foreign-memory value foreign-type val-ptr)
+            (setf (cffi:mem-aref slot-pointer :pointer) val-ptr))
+          (setf (cffi:mem-aref slot-pointer foreign-type) value))
+      (values))))
+
+(defmethod cffi:translate-to-foreign (value (type variant))
+  (let ((obj (cffi:foreign-alloc type)))
+    (cffi:translate-into-foreign-memory value type obj)
+    obj))
+
+;; TODO: add free-translated-object to free non-pointer variants.
+
 (cffi:defcstruct disp-params
   (args (:pointer variant))
   ;; array of DISPIDs for named arguments.
