@@ -187,7 +187,7 @@
                             (return-from invoke (cffi:foreign-enum-value 'dispid-constant
                                                                          :dispid-member-not-found)))
                           (aref (clomp::dispatch-table interface) member))))
-      (when (> (cffi:foreign-slot-value params clomp.types:disp-params 'clomp.types:named-arg-count)
+      (when (> (cffi:foreign-slot-value params '(:struct clomp.types:disp-params) 'clomp.types:named-arg-count)
                0)
         (return-from invoke (cffi:foreign-enum-value 'dispid-constant :dispid-no-named-args)))
       (ecase invoke-type
