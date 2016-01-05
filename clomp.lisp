@@ -248,6 +248,8 @@
 (defmethod lock-server ((obj class-factory) lock)
   (if lock
       (clomp.ffi:add-ref-server-process)
-      (when (zerop (clomp.ffi:release-server-process))
-        ;; FIXME: do something legit here.
-        (format *debug-io* "Should shut down now.~%"))))
+      (let ((result (clomp.ffi:release-server-process)))
+        (when (zerop result)
+          ;; FIXME: do something legit here.
+          (format *debug-io* "Should shut down now.~%"))
+        result)))
