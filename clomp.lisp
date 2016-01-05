@@ -58,15 +58,16 @@
       (error "There is no COM instance object for pointer ~S." pointer)))
 
 (defmacro define-interface (name (iid &optional parent) &body methods)
-  (let* ((method-forms (loop for (name return-type . args) in methods
-                          collect `(defgeneric ,name (obj ,@(mapcar #'first args)))))
+  (let* ((this-var (gensym "THIS"))
+         (method-forms (loop for (name return-type . args) in methods
+                          collect `(defgeneric ,name (,this-var ,@(mapcar #'first args)))))
          (method-names (map 'vector #'second method-forms))
          (callback-names (loop for (name . rest) in methods
                             collect (gensym (symbol-name name))))
          (callback-forms (loop for (method-name return-type . args) in methods
                             for callback-name in callback-names
                             for arg-names = (mapcar #'first args)
-                            for this-arg = (gensym "THIS")
+                            for this-arg = this-var
                             collect `(cffi:defcallback (,callback-name :convention :stdcall) ,return-type
                                          ,(cons `(,this-arg :pointer) args)
                                        (format *debug-io* "In callback ~S~%" ',callback-name)
