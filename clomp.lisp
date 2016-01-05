@@ -209,7 +209,7 @@
    :interfaces '(iclassfactory)))
 
 (defmethod initialize-instance :after ((obj class-factory) &key &allow-other-keys)
-  (setf (class-id obj) (%internal-class-id (class-id obJ))))
+  (setf (client-class-id obj) (%internal-class-id (client-class-id obj))))
 
 (defun register-class-object (obj &optional (context :local-server) (flags :multiple-use))
   (check-type obj class-factory)
