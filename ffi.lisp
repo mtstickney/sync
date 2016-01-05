@@ -5,6 +5,8 @@
            #:revoke-class-object
            #:add-ref-server-process
            #:release-server-process
+           #:suspend-class-objects
+           #:resume-class-objects
            #:get-class-object
            #:initialize-com
            #:uninitialize-com))
@@ -57,6 +59,22 @@
 
 (cffi:defcfun (release-server-process "CoReleaseServerProcess" :convention :stdcall)
     :ulong)
+
+(cffi:defcfun (%suspend-class-objects "CoSuspendClassObjects" :convention :stdcall)
+    hresult)
+(defun suspend-class-objects ()
+  (let ((result (%suspend-class-objects)))
+    (unless (zerop result)
+      (error 'com-error :code result))
+    (values)))
+
+(cffi:defcfun (%resume-class-objects "CoResumeClassObjects" :convention :stdcall)
+    hresult)
+(defun resume-class-objects ()
+  (let ((result (%resume-class-objects)))
+    (unless (zerop result)
+      (error 'com-error :code result))
+    (values)))
 
 (cffi:defcfun (%get-class-object "CoGetClassObject" :convention :stdcall)
     hresult
