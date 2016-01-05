@@ -218,6 +218,10 @@
                                    context
                                    flags))
 
+(defun revoke-class-object (obj)
+  (check-type obj class-factory)
+  (clomp.ffi:revoke-class-object (server-atom obj)))
+
 (defun get-class-object (clsid iid st &optional (context :inproc-server))
   (let ((clsid (etypecase clsid
                  (string (parse-uuid clsid))
@@ -231,7 +235,7 @@
   (:method ((obj class-factory))
     (when (server-atom obj)
       ;; SBCL has an FFI-related bug here, so ignore-errors it.
-      (ignore-errors (clomp.ffi:revoke-class-object (server-atom obj)))
+      (ignore-errors (revoke-class-object obj))
       (setf (server-atom obj) nil))))
 
 (defgeneric register-factory (obj)
@@ -239,7 +243,7 @@
     (when (server-atom obj)
       (unregister-factory obj))
     ;; FIXME: should allow setting the context and flags.
-    (setf (server-atom obj) (clomp.ffi:register-class-object obj))))
+    (setf (server-atom obj) (register-class-object obj))))
 
 (defmethod lock-server ((obj class-factory) lock)
   (if lock
