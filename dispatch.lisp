@@ -12,7 +12,7 @@
   (:property-put-ref #x08))
 
 (define-interface idispatch
-    ("{00020400-0000-0000-C000-000000000046}" iunknown)
+    ("{00040200-0000-0000-C000-000000000046}" iunknown)
   (get-type-info-count hresult
                        (count (:pointer :uint)))
   (get-type-info hresult
