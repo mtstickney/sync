@@ -1,0 +1,8 @@
+{
+    "listen_addr": "0.0.0.0",
+    "listen_port": 8080,
+    "server_host": "localhost",
+    "server_port": 9000,
+    "secret": "8oir8zIL26LJq/YZBSeTed1+0Fm2qJFOFcmxwvJDF+o=",
+    "authorized_keys": [true]
+}
