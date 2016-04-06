@@ -118,7 +118,8 @@
 (defun run-app (argv)
   (clack:clackup (build-app)
                  :server :wookie
-                 :port (config :listen-port)))
+                 :port (config :listen-port)
+                 :use-thread nil))
 
 (defun main (argv)
   (let ((rpc-http-proxy-config:*config-dir*)))

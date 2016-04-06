@@ -14,6 +14,7 @@
                #:cl-mtgnet-async
                #:clack
                #:clack-handler-wookie
+               #:lack-request
                #:mtgnet-encryption
                #:uiop
                #:cl-json)
