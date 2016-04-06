@@ -1,0 +1,4 @@
+ql :all :latest
+github mtgnet-encryption mtstickney/mtgnet-encryption
+github cl-mtgnet mtstickney/cl-mtgnet
+github cl-sodium orthecreedence/cl-sodium

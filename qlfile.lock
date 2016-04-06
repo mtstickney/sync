@@ -1,0 +1,25 @@
+("quicklisp" .
+ (:class qlot.source.ql:source-ql-all
+  :initargs (:project-name "quicklisp" :%version :latest)
+  :version "2016-03-18"))
+("mtgnet-encryption" .
+ (:class qlot.source.github:source-github
+  :initargs (:project-name "mtgnet-encryption" :repos "mtstickney/mtgnet-encryption" :ref nil :branch nil :tag nil)
+  :version "github-9a999da6fa3a767dd2b8e5b108c5304a19fa5c2e"
+  :repos "mtstickney/mtgnet-encryption"
+  :url "https://github.com/mtstickney/mtgnet-encryption/archive/9a999da6fa3a767dd2b8e5b108c5304a19fa5c2e.tar.gz"
+  :ref "9a999da6fa3a767dd2b8e5b108c5304a19fa5c2e"))
+("cl-mtgnet" .
+ (:class qlot.source.github:source-github
+  :initargs (:project-name "cl-mtgnet" :repos "mtstickney/cl-mtgnet" :ref nil :branch nil :tag nil)
+  :version "github-db423bcbfbe7af9bf9ef7a978e380ad024421734"
+  :repos "mtstickney/cl-mtgnet"
+  :url "https://github.com/mtstickney/cl-mtgnet/archive/db423bcbfbe7af9bf9ef7a978e380ad024421734.tar.gz"
+  :ref "db423bcbfbe7af9bf9ef7a978e380ad024421734"))
+("cl-sodium" .
+ (:class qlot.source.github:source-github
+  :initargs (:project-name "cl-sodium" :repos "orthecreedence/cl-sodium" :ref nil :branch nil :tag nil)
+  :version "github-8223e0a958f59e991140a08a15cd4b7bc0a15b8e"
+  :repos "orthecreedence/cl-sodium"
+  :url "https://github.com/orthecreedence/cl-sodium/archive/8223e0a958f59e991140a08a15cd4b7bc0a15b8e.tar.gz"
+  :ref "8223e0a958f59e991140a08a15cd4b7bc0a15b8e"))
