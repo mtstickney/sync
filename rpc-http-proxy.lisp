@@ -70,15 +70,26 @@
                                                   (proxy-call con call)) request))))
     response-promise))
 
+(defun unmarshall-request-from-stream (stream)
+  (mtgnet-sys:build-rpc-request (json:decode-json stream)))
+
+(defun parse-body (req)
+  (let ((content-type (lack.request:request-content-type req))
+        (content-length (lack.request:request-content-length req)))
+    (first (first (http-body:parse content-type content-length (lack.request:request-raw-body req))))))
+
 (defun process-request (env)
-  (let ((body (getf env :raw-body))
-        request)
+  (let ((request (lack.request:make-request env))
+        rpc-request)
     (unless (member (getf env :request-method) '(:get :post))
       (return-from process-request `(405 (:allow "GET, POST")
                                          ,(format nil "Invalid HTTP request type ~A."
                                                   (symbol-name (getf env :request-method))))))
     (handler-case
-        (setf request (mtgnet-sys:unmarshall-rpc-request body))
+        ;; FIXME: This is way more complicated that it ought to be
+        ;; (try just using the raw-body stream with a flexi-stream and
+        ;; checking charset).
+        (setf rpc-request (mtgnet-sys:unmarshall-rpc-request (parse-body request)))
       (serious-condition (c)
         (format *debug-io* "Error decoding data: ~A~%." c)
         (return-from process-request '(400 () ("Undecodeable request data.")))))
@@ -93,7 +104,7 @@
           (:attach (con)
                    (mtgnet:connect con))
           (:attach ()
-                   (proxy-request con request))
+                   (proxy-request con rpc-request))
           (:attach (results)
                    ;; Disconnect.
                    (mtgnet:disconnect con)
