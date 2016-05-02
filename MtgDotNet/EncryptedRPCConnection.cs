@@ -81,18 +81,13 @@ namespace MtgDotNet
             await sendTask.ConfigureAwait(false);
         }
 
-        public byte[] EncryptData(byte[] data)
+        public byte[] EncryptData(byte[] data, out byte[] nonce)
         {
-            byte[] nonce = Sodium.PublicKeyBox.GenerateNonce();
-            byte[] encrypted = Sodium.PublicKeyBox.Create(data, nonce, this.ephemeralSecret, this.sessionPublic);
+            byte[] nonceBuf = Sodium.PublicKeyBox.GenerateNonce();
+            byte[] encrypted = Sodium.PublicKeyBox.Create(data, nonceBuf, this.ephemeralSecret, this.sessionPublic);
 
-            // Ugghhh, just expose the size constants already libsodium-net. Jeez. I'm not made of array copies here.
-            byte[] message = new byte[encrypted.Length + nonce.Length];
-            nonce.CopyTo(message, 0);
-
-            Array.Copy(encrypted, 0, message, nonce.Length, encrypted.Length);
-
-            return message;
+            nonce = nonceBuf;
+            return encrypted;
         }
 
         public byte[] DecryptData(byte[] message)
@@ -119,8 +114,9 @@ namespace MtgDotNet
         {
             string message = JsonConvert.SerializeObject(response);
             byte[] data = System.Text.UTF8Encoding.UTF8.GetBytes(message);
-            byte[] cipherText = this.EncryptData(data);
-            await this.SendFrameMulti(cipherText).ConfigureAwait(false);
+            byte[] nonce;
+            byte[] cipherText = this.EncryptData(data, out nonce);
+            await this.SendFrameMulti(nonce, cipherText).ConfigureAwait(false);
         }
 
         public async override Task<RPCResponse> ReceiveResponse()
@@ -140,8 +136,9 @@ namespace MtgDotNet
         {
             string message = JsonConvert.SerializeObject(request);
             byte[] data = System.Text.UTF8Encoding.UTF8.GetBytes(message);
-            byte[] cipherText = this.EncryptData(data);
-            await this.SendFrame(cipherText).ConfigureAwait(false);
+            byte[] nonce;
+            byte[] cipherText = this.EncryptData(data, out nonce);
+            await this.SendFrameMulti(nonce, cipherText).ConfigureAwait(false);
         }
 
         public async override Task<RPCRequest> ReceiveRequest()
