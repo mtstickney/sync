@@ -10,36 +10,18 @@ namespace MtgDotNet
 {
     public class EncryptedRPCConnection : RPCConnection, IRPCConnection
     {
-        protected byte[] localNonce;
-        protected byte[] remoteNonce;
         protected byte[] secretKey;
         protected byte[] publicKey;
-        protected byte[] sessionKey;
+        protected byte[] ephemeralSecret;
+        protected byte[] sessionPublic;
         protected byte[][] authorizedKeys;
-        protected const int paddingBytes = 16;
+        protected const int nonceBytes = 24;
 
         public EncryptedRPCConnection(MtgDotNet.Sys.IFramer framer, MtgDotNet.Sys.ITransport transport, byte[] secret, byte[][] authorizedKeys) : base(framer, transport)
         {
             this.authorizedKeys = authorizedKeys;
             this.secretKey = secret;
-            this.publicKey = Sodium.ScalarMult.Base(secret);
-        }
-
-        protected byte[] SharedNonce(byte[] local, byte[] remote)
-        {
-            byte[] shared = new byte[this.localNonce.Length];
-            for (int i = 0; i < shared.Length; i++)
-            {
-                shared[i] = (byte)(local[i] ^ remote[i]);
-            }
-            return shared;
-        }
-
-        protected byte[] GenerateSessionKey(byte[] remotePublicKey)
-        {
-            byte[] dhSecret = Sodium.ScalarMult.Mult(this.secretKey, remotePublicKey);
-            byte[] sharedNonce = this.SharedNonce(this.localNonce, this.remoteNonce);
-            return Sodium.GenericHash.Hash(sharedNonce, dhSecret, dhSecret.Length);
+            this.publicKey = Sodium.PublicKeyAuth.ExtractEd25519PublicKeyFromEd25519SecretKey(secret);
         }
 
         protected bool KeyEqual(byte[] key1, byte[]key2)
@@ -58,22 +40,31 @@ namespace MtgDotNet
 
         public async Task PerformHandshake()
         {
-            byte[] remoteNonce = new byte[this.localNonce.Length];
             byte[] remotePublicKey = new byte[this.publicKey.Length];
+            Sodium.KeyPair ephemeralPair = Sodium.PublicKeyBox.GenerateKeyPair();
+            byte[] signedSessionKey;
+            byte[] remoteSignedSessionKey;
+            byte[] remoteSessionKey;
             byte[] frame;
             Task sendTask;
 
-            // Send the nonce and public key
-            sendTask = this.SendFrameMulti(this.localNonce, this.publicKey);
+            // Store the ephemeral private key.
+            this.ephemeralSecret = ephemeralPair.PrivateKey;
+
+            signedSessionKey = Sodium.PublicKeyAuth.Sign(ephemeralPair.PublicKey, this.secretKey);
+            remoteSignedSessionKey = new byte[signedSessionKey.Length];
+
+            // Send the signing key and the signed session key.
+            sendTask = this.SendFrameMulti(this.publicKey, signedSessionKey);
 
             frame = await this.ReceiveFrame().ConfigureAwait(false);
-            if (frame.Length != (this.publicKey.Length + this.localNonce.Length))
+            if (frame.Length != (signedSessionKey.Length + this.publicKey.Length))
             {
                 throw new Exception("Handshake error: handshake data is the wrong length");
             }
 
-            Array.Copy(frame, remoteNonce, remoteNonce.Length);
-            Array.Copy(frame, remoteNonce.Length, remotePublicKey, 0, this.publicKey.Length);
+            Array.Copy(frame, remotePublicKey, remotePublicKey.Length);
+            Array.Copy(frame, remotePublicKey.Length, remoteSignedSessionKey, 0, remoteSignedSessionKey.Length);
 
             try
             {
@@ -83,89 +74,63 @@ namespace MtgDotNet
                 throw new ClientNotAuthorizedException(remotePublicKey);
             }
 
-            this.remoteNonce = remoteNonce;
-            this.sessionKey = this.GenerateSessionKey(remotePublicKey);
+            // We recognize the signing key, so retrieve the signed session key.
+            remoteSessionKey = Sodium.PublicKeyAuth.Verify(remoteSignedSessionKey, remotePublicKey);
+            this.sessionPublic = remoteSessionKey;
 
             await sendTask.ConfigureAwait(false);
         }
 
         public byte[] EncryptData(byte[] data)
         {
-            byte[] sharedNonce = new byte[this.localNonce.Length];
-
-            for (int i = 0; i < sharedNonce.Length; i++)
-            {
-                sharedNonce[i] = (byte)(this.localNonce[i] ^ this.remoteNonce[i]);
-            }
-
-            byte[] encrypted = Sodium.SecretBox.Create(data, sharedNonce, this.sessionKey);
+            byte[] nonce = Sodium.PublicKeyBox.GenerateNonce();
+            byte[] encrypted = Sodium.PublicKeyBox.Create(data, nonce, this.ephemeralSecret, this.sessionPublic);
 
             // Ugghhh, just expose the size constants already libsodium-net. Jeez. I'm not made of array copies here.
-            byte[] message = new byte[encrypted.Length - EncryptedRPCConnection.paddingBytes + sharedNonce.Length];
-            this.localNonce.CopyTo(message, 0);
+            byte[] message = new byte[encrypted.Length + nonce.Length];
+            nonce.CopyTo(message, 0);
 
-            // This fun little dance is because the libsodium-net author didn't use the *_easy API, so messages come out
-            // with paddingBytes of zero padding on the front, and need it added back on before decryption. Le sigh.
-            Array.Copy(encrypted, EncryptedRPCConnection.paddingBytes, message, this.localNonce.Length, encrypted.Length - EncryptedRPCConnection.paddingBytes);
+            Array.Copy(encrypted, 0, message, nonce.Length, encrypted.Length);
 
             return message;
         }
 
-        public byte[] DecryptData(byte[] message, out byte[] remoteNonce)
+        public byte[] DecryptData(byte[] message)
         {
-            byte[] sharedNonce = new byte[this.localNonce.Length];
-            byte[] cipherText = new byte[message.Length - sharedNonce.Length + EncryptedRPCConnection.paddingBytes];
+            byte[] nonce = new byte[EncryptedRPCConnection.nonceBytes];
+            byte[] cipherText = Enumerable.Repeat<byte>(0, message.Length - EncryptedRPCConnection.nonceBytes).ToArray();
             byte[] data;
 
-            for (int i = 0; i < sharedNonce.Length; i++)
-            {
-                sharedNonce[i] = (byte)(this.localNonce[i] ^ message[i]);
-            }
+            Array.Copy(message, nonce, nonce.Length);
+            Array.Copy(message, nonce.Length, cipherText, 0, cipherText.Length);
 
-            // Ciphertext needs to start with zero-padding.
-            for (int i = 0; i < EncryptedRPCConnection.paddingBytes; i++)
-            {
-                cipherText[i] = 0;
-            }
-
-            Array.Copy(message, sharedNonce.Length, cipherText, EncryptedRPCConnection.paddingBytes, cipherText.Length - EncryptedRPCConnection.paddingBytes);
-
-            data = Sodium.SecretBox.Open(cipherText, sharedNonce, this.sessionKey);
-
-            // Copy the remote nonce into the nonce buffer so we can return it.
-            Array.Copy(message, sharedNonce, sharedNonce.Length);
-            remoteNonce = sharedNonce;
+            data = Sodium.PublicKeyBox.Open(cipherText, nonce, this.ephemeralSecret, this.sessionPublic);
 
             return data;
         }
 
         public async override Task Connect()
         {
-            this.localNonce = Sodium.SecretBox.GenerateNonce();
             await base.Connect().ConfigureAwait(false);
             await this.PerformHandshake().ConfigureAwait(false);
         }
 
         public async override Task SendResponse(RPCResponse response)
         {
-            this.localNonce = Sodium.SecretBox.GenerateNonce();
-
             string message = JsonConvert.SerializeObject(response);
             byte[] data = System.Text.UTF8Encoding.UTF8.GetBytes(message);
             byte[] cipherText = this.EncryptData(data);
-            await this.SendFrame(cipherText).ConfigureAwait(false);
+            await this.SendFrameMulti(cipherText).ConfigureAwait(false);
         }
 
         public async override Task<RPCResponse> ReceiveResponse()
         {
-            byte[] remoteNonce;
             byte[] frame;
             byte[] data;
             string message;
             
             frame = await this.ReceiveFrame().ConfigureAwait(false);
-            data = this.DecryptData(frame, out remoteNonce);
-            this.remoteNonce = remoteNonce;
+            data = this.DecryptData(frame);
             message = System.Text.UTF8Encoding.UTF8.GetString(data);
 
             return JsonConvert.DeserializeObject<RPCResponse>(message);
@@ -173,8 +138,6 @@ namespace MtgDotNet
 
         public async override Task SendRequest(RPCRequest request)
         {
-            this.localNonce = Sodium.SecretBox.GenerateNonce();
-
             string message = JsonConvert.SerializeObject(request);
             byte[] data = System.Text.UTF8Encoding.UTF8.GetBytes(message);
             byte[] cipherText = this.EncryptData(data);
@@ -184,12 +147,11 @@ namespace MtgDotNet
         public async override Task<RPCRequest> ReceiveRequest()
         {
             byte[] frame;
-            byte[] sharedNonce;
             byte[] data;
             string message;
 
             frame = await this.ReceiveFrame().ConfigureAwait(false);
-            data = this.DecryptData(frame, out sharedNonce);
+            data = this.DecryptData(frame);
             message = System.Text.UTF8Encoding.UTF8.GetString(data);
             return JsonConvert.DeserializeObject<RPCRequest>(message);
         }
