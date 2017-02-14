@@ -124,3 +124,31 @@ thread, otherwise the MTA will be initialized."
         nil)))
 
 (cffi:defcfun (uninitialize-com "CoUninitialize" :convention :stdcall) :void)
+
+(cffi:defcfun (%clsid-from-progid "CLSIDFromProgID" :convention :stdcall)
+    hresult
+  (progid (:string :encoding #.+utf16-encoding+))
+  (out :pointer))
+
+(defun clsid-from-progid (progid)
+  (check-type progid string)
+  (cffi:with-foreign-object (clsid :uchar 16)
+    (let ((result (%clsid-from-progid progid clsid)))
+      (unless (zerop result)
+        (error 'com-error :code result))
+      (cffi:convert-from-foreign clsid 'guid))))
+
+(cffi:defcfun (%co-create-instance "CoCreateInstance" :convention :stdcall)
+    hresult
+  (clsid guid)
+  (outer :pointer)
+  (context class-context)
+  (iid guid)
+  (out :pointer))
+
+(defun co-create-instance (clsid iid &optional (context :local-server))
+  (cffi:with-foreign-object (ptr :pointer)
+    (let ((result (%co-create-instance clsid (cffi:null-pointer) context iid ptr)))
+      (unless (zerop result)
+        (error 'com-error :code result))
+      (cffi:mem-aref ptr :pointer))))
