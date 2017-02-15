@@ -194,7 +194,7 @@
        :error-no-interface)))
 
 (define-interface iclassfactory
-    ("{01000000-0000-0000-C000-000000000046}" iunknown)
+    ("{00000001-0000-0000-C000-000000000046}" iunknown)
   (create-instance hresult
                    (outer :pointer)
                    (iid guid)
