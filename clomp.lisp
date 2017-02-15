@@ -95,7 +95,7 @@
                  (dispatch-table obj) (concatenate 'vector parent-dispatch-table ,method-names)
                  (interface-vtable obj)
                  (cffi:foreign-alloc :pointer
-                                     :count ,(length methods)
+                                     :count (+ ,(length methods) parent-method-count)
                                      :initial-contents (list ,@(loop for cb-name in callback-names
                                                                   collect `(cffi:callback ,cb-name)))))
            ;; Initialize parent vtable entries.
