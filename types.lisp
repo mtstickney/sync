@@ -48,10 +48,32 @@
 (defmethod cffi:translate-into-foreign-memory (value (type guid) pointer)
   (assert (= (length value) 16) (value)
           "GUID arrays must be of length 16.")
+  ;; Note: the GUID structure uses a DWORD and two SHORTs followed by
+  ;; the remainder of the bytes. These first three fields ARE subject
+  ;; to endianness, but the curly-brace string representation is
+  ;; always big-endian.
+  #+big-endian
   (loop for byte across value
      for i from 0
      do (setf (cffi:mem-aref pointer :uchar i)
               (aref value i)))
+  #+little-endian
+  (progn
+    ;; Endian-reversed DWORD
+    (loop for i from 0 to 3
+       do (setf (cffi:mem-aref pointer :uchar
+                               #+little-endian (- 3 i)
+                               #+big-endian i)
+                (aref value i)))
+    ;; Two endian-reversed shorts
+    (setf (cffi:mem-aref pointer :uchar 4) (aref value 5)
+          (cffi:mem-aref pointer :uchar 5) (aref value 4)
+          (cffi:mem-aref pointer :uchar 6) (aref value 7)
+          (cffi:mem-aref pointer :uchar 7) (aref value 6))
+    ;; Remaining 8 bytes are a non-endian array.
+    (loop for i from 8 to 15
+       do (setf (cffi:mem-aref pointer :uchar i)
+                (aref value i))))
   (values))
 
 (defmethod cffi:translate-to-foreign (value (type guid))
@@ -61,9 +83,23 @@
 
 (defmethod cffi:translate-from-foreign (value (type guid))
   (let ((obj (make-array 16 :element-type '(unsigned-byte 8))))
+    #+big-endian
     (dotimes (i 16)
       (setf (aref obj i)
             (cffi:mem-aref value :uchar i)))
+    #+little-endian
+    (progn
+      ;; Endian-reversed DWORD
+      (loop for i from 0 to 3
+         do (setf (aref obj i) (cffi:mem-aref value :uchar (- 3 i))))
+      ;; Two endian-reversed SHORTs
+      (setf (aref obj 4) (cffi:mem-aref value :uchar 5)
+            (aref obj 5) (cffi:mem-aref value :uchar 4)
+            (aref obj 6) (cffi:mem-aref value :uchar 7)
+            (aref obj 7) (cffi:mem-aref value :uchar 6))
+      ;; Array of remaining 8 bytes (non-endian).
+      (loop for i from 8 to 15
+         do (setf (aref obj i) (cffi:mem-aref value :uchar i))))
     obj))
 
 (defmethod cffi:free-translated-object (value (type guid) param)
