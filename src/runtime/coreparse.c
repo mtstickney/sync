@@ -25,6 +25,10 @@
 #else
 #include <sys/mman.h>
 #endif
+#else
+#include <share.h>
+#include <io.h>
+#include <FileAPI.h>
 #endif
 
 #include <stdio.h>
@@ -58,14 +62,67 @@ unsigned char build_id[] =
 #include "../../output/build-id.tmp"
 ;
 
-int
-open_binary(char *filename, int mode)
-{
 #ifdef LISP_FEATURE_WIN32
-    mode |= O_BINARY;
+void
+set_file_errno()
+{
+    switch(GetLastError()) {
+    case ERROR_ACCESS_DENIED:
+        errno = EACCES;
+        return;
+    case ERROR_ALREADY_EXISTS:
+    case ERROR_FILE_CORRUPT:
+    case ERROR_FILE_EXISTS:
+        errno = EEXIST;
+        return;
+    case ERROR_INVALID_PARAMETER:
+    case ERROR_BAD_PIPE:
+        errno = EINVAL;
+        return;
+    case ERROR_TOO_MANY_OPEN_FILES:
+        errno = EMFILE;
+        return;
+    case ERROR_PATH_NOT_FOUND:
+    case ERROR_FILE_NOT_FOUND:
+    case ERROR_NETNAME_DELETED:
+    case ERROR_INVALID_NAME:
+    case ERROR_DEV_NOT_EXIST:
+    case ERROR_BAD_PATHNAME:
+    case ERROR_BAD_NET_NAME:
+    case ERROR_BAD_NETPATH:
+        errno = ENOENT;
+        return;
+    case ERROR_SUCCESS:
+        errno = 0;
+        return;
+    }
+}
 #endif
 
-    return open(filename, mode);
+int
+open_core(char *filename)
+{
+    int fd;
+#ifdef LISP_FEATURE_WIN32
+    HANDLE fh;
+
+    fh = CreateFileA(filename, GENERIC_READ, FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (fh == INVALID_HANDLE_VALUE) {
+        set_file_errno();
+        return -1;
+    }
+    fd = _open_osfhandle((intptr_t)fh, O_RDONLY | O_BINARY);
+    if (fd == -1)
+        goto lose;
+    return fd;
+
+lose:
+    CloseHandle(fh);
+    return -1;
+
+#else
+    return open(filename, O_RDONLY);
+#endif
 }
 
 
@@ -125,7 +182,7 @@ search_for_embedded_core(char *filename)
     os_vm_offset_t core_start, pos;
     int fd = -1;
 
-    if ((fd = open_binary(filename, O_RDONLY)) < 0)
+    if ((fd = open_core(filename)) < 0)
         goto lose;
 
     if (read(fd, &header, (size_t)lispobj_size) < lispobj_size)
@@ -423,7 +480,7 @@ load_core_file(char *file, os_vm_offset_t file_offset)
     u32 val, *ptr;
 #endif
     os_vm_size_t len, remaining_len;
-    int fd = open_binary(file, O_RDONLY);
+    int fd = open_core(file);
     ssize_t count;
     lispobj initial_function = NIL;
 
