@@ -497,7 +497,7 @@ union {
 
 (cffi:defcstruct variant-struct
   (type variant-type)
-  (reserved dword :count 3)
+  (reserved :ushort :count 3)
   (element (:union variant-element)))
 
 ;; TODO: finish this off
