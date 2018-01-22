@@ -125,12 +125,7 @@
     `(if ,value 1 0))
 
   (defmethod cffi:expand-from-foreign (value (type bool))
-    `(not (zerop ,value)))
-
-  (defmethod cffi:expand-to-foreign-dyn (value var body (type bool))
-    `(cffi:with-foreign-object (,var :int)
-       (setf (cffi:mem-aref ,var :int 0) ,(cffi:expand-to-foreign value type))
-       ,@body)))
+    `(not (zerop ,value))))
 
 (cffi:defctype hresult :ulong)
 (cffi:defctype dword :ulong)
