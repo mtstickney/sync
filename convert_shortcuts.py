@@ -1,7 +1,9 @@
 from win32com.shell import shell
+from win32com.taskscheduler import taskscheduler
 import pythoncom
 import sys
 from ctypes import *
+from uuid import UUID
 
 # Type definitions
 dword = c_ulong
@@ -141,6 +143,33 @@ def shortcut_info(path):
 
     pfile.Load(sys.argv[1])
     return (shortcut.GetPath(shell.SLGP_RAWPATH), shortcut.GetArguments(), shortcut.GetIconLocation())
+
+def parse_uuid(uuid_str):
+    return UUID(uuid_str).bytes
+
+def scheduled_tasks():
+    ts = pythoncom.CoCreateInstance(taskscheduler.CLSID_CTaskScheduler, None, pythoncom.CLSCTX_INPROC_SERVER, taskscheduler.IID_ITaskScheduler)
+    return [ts.Activate(name, taskscheduler.IID_ITask) for name in ts.Enum()]
+
+class ScheduledTask:
+    def __init__(self, task):
+        self.task = task
+
+    @property
+    def program(self):
+        self.task.GetApplicationName()
+
+    @program.setter
+    def set_program(self, value):
+        self.task.SetApplicationName(value)
+
+    @property
+    def arguments():
+        self.task.GetParameters()
+
+    @arguments.setter
+    def set_arguments(self, value):
+        self.task.SetParameters(value)
 
 if __name__ == '__main__':
     #sc_info = shortcut_info(sys.argv[1])
