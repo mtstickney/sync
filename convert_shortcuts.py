@@ -144,8 +144,129 @@ def shortcut_info(path):
     pfile.Load(sys.argv[1])
     return (shortcut.GetPath(shell.SLGP_RAWPATH), shortcut.GetArguments(), shortcut.GetIconLocation())
 
+# Technically a pointer to a struct, but meh. We have bytes instead.
+REFIID = POINTER(c_char)
+
+hresult = c_long
+class HResult:
+    def __init__(self, val=None):
+        self._as_parameter_ = hresult(val)
+
+    def __call__(self, val):
+        if val != 0:
+            raise OSError(val)
+
+VARTYPE = c_ushort
+class VarEnum:
+    VT_EMPTY = VARTYPE(0)
+    VT_NULL = VARTYPE(1)
+
+class BRecord (Structure):
+    _fields_ = [("record", c_void_p), ("irecordinfo", Interface)]
+
+class VariantUnion (Union):
+    _fields = [("llVal", c_longlong), ("pllVal", POINTER(c_longlong)), ("brecord", BRecord)]
+
+class VariantTagStruct (Structure):
+    _fields_ = [
+        ("vt", VARTYPE),
+        ("reserved1", c_short),
+        ("reserved2", c_short),
+        ("reserved3", c_short),
+        ("value", VariantUnion)]
+
+class Variant (Structure):
+    # Note that the real definition has at least two extra levels in
+    # here, but fuck that noise.
+    _fields_ = [("variantData", VariantTagStruct)]
+
+class BStr:
+    def __init__(self, str):
+        # A BStr is a 4-byte length header and a utf-16 string.
+        # 4 bytes == 2 utf-16 characters, so we'll pad, then scribble
+        # over the string to create the length header, and then do 
+        # sketchy pointer math to get a bstr. whee.
+        self.c_val = c_wchar_p("XX" + str)
+        lenp = cast(self.c_val, POINTER(c_ulong))
+        lenp[0] = 2 * len(str) # NUL is not included in the length
+
+        self._as_parameter_ = c_wchar_p.from_buffer(self.c_val, 4)
+
+class InterfaceStruct (Structure):
+    _fields_ = [("vtable", c_void_p)]
+
+Interface = POINTER(InterfaceStruct)
+
 def parse_uuid(uuid_str):
     return UUID(uuid_str).bytes
+
+class BaseInterface:
+    def __init__(self, sap):
+        self.sap = sap
+
+    def GetSap(self):
+        return self.sap
+
+    def MethodPointer(self, index):
+        vtable = cast(self.sap.contents.vtable, POINTER(c_void_p)
+        return vtable[index]
+
+class IUnknown(BaseInterface):
+    ADD_REF = WINFUNCTYPE(c_ulong, Interface)
+    RELEASE = WINFUNCTYPE(c_ulong, Interface)
+    QUERY_INTERFACE = WINFUNCTYPE(HResult(), Interface, REFIID, POINTER(Interface))
+
+    IID_IUnknown = parse_uuid("{00000000-0000-0000-C000-000000000046}")
+
+    @classmethod
+    def GetIID(klass):
+        return klass.IID_IUnknown
+
+    def QueryInterface(self, interface):
+        func = cast(self.MethodPointer(0), QUERY_INTERFACE)
+        sap = Interface()
+        func(self.sap, interface.GetIID(), byref(sap))
+        return interface.__init__(sap)
+
+    def AddRef(self):
+        func = cast(self.MethodPointer(1), ADD_REF)
+        return func(self.sap)
+
+    def Release(self):
+        func = cast(self.MethodPointer(2), RELEASE)
+        return func(self.sap)
+
+    def __del__(self):
+        self.Release()
+
+CLSID_TaskScheduler = parse_uuid("{0f87369f-a4e5-4cfc-bd3e-73e6154572dd}")
+
+class IDispatch (IUnknown):
+    pass
+
+class ITaskService (IDispatch):
+    IID_ITaskService = parse_uuid("{2faba4c7-4da9-4013-9697-20cc3fd40f85}")
+
+    CONNECT = WINFUNCTYPE(HResult(), Interface, Variant, Variant, Variant, Variant)
+    GET_FOLDER = WINFUNCTYPE(HResult(), Interface, BStr, POINTER(Interface))
+
+    @classmethod
+    def GetIID(klass):
+        return klass.IID_ITaskService
+
+    def Connect(self):
+        empty = Variant()
+        empty.variantData.vt = VarEnum.VT_EMPTY
+        func = cast(self.MethodPointer(7 + 3), CONNECT)
+        # Passing empty values for server, user, domain, and password means
+        # to use the local machine and the current user token.
+        func(self.sap, empty, empty, empty, empty)
+
+    def GetFolder(self, path):
+        folder_sap = Interface()
+        func = cast(self.MethodPointer(7 + 0), GET_FOLDER)
+        func(self.sap, path, byref(folder_sap))
+        return ITaskFolder(folder_sap)
 
 def scheduled_tasks():
     ts = pythoncom.CoCreateInstance(taskscheduler.CLSID_CTaskScheduler, None, pythoncom.CLSCTX_INPROC_SERVER, taskscheduler.IID_ITaskScheduler)
