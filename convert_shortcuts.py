@@ -244,17 +244,17 @@ class IUnknown(BaseInterface):
         return klass.IID_IUnknown
 
     def QueryInterface(self, interface):
-        func = cast(self.MethodPointer(0), QUERY_INTERFACE)
+        func = cast(self.MethodPointer(0), self.QUERY_INTERFACE)
         sap = Interface()
         func(self.sap, interface.GetIID(), byref(sap))
         return interface.__init__(sap)
 
     def AddRef(self):
-        func = cast(self.MethodPointer(1), ADD_REF)
+        func = cast(self.MethodPointer(1), self.ADD_REF)
         return func(self.sap)
 
     def Release(self):
-        func = cast(self.MethodPointer(2), RELEASE)
+        func = cast(self.MethodPointer(2), self.RELEASE)
         return func(self.sap)
 
     def __del__(self):
@@ -278,14 +278,14 @@ class ITaskService (IDispatch):
     def Connect(self):
         empty = Variant()
         empty.variantData.vt = VarEnum.VT_EMPTY
-        func = cast(self.MethodPointer(7 + 3), CONNECT)
+        func = cast(self.MethodPointer(7 + 3), self.CONNECT)
         # Passing empty values for server, user, domain, and password means
         # to use the local machine and the current user token.
         func(self.sap, empty, empty, empty, empty)
 
     def GetFolder(self, path):
         folder_sap = Interface()
-        func = cast(self.MethodPointer(7 + 0), GET_FOLDER)
+        func = cast(self.MethodPointer(7 + 0), self.GET_FOLDER)
         func(self.sap, path, byref(folder_sap))
         return ITaskFolder(folder_sap)
 
@@ -301,13 +301,13 @@ class ITaskFolder (IDispatch):
 
     def GetFolders(self, flags):
         folder_collection_sap = Interface()
-        func = cast(self.MethodPointer(7 + 3), GET_FOLDERS)
+        func = cast(self.MethodPointer(7 + 3), self.GET_FOLDERS)
         func(self.sap, flags, byref(folder_collection_sap))
         return ITaskFolderCollection(folder_collection_sap)
 
     def GetTasks(self, flags):
         task_collection_sap = Interface()
-        func = cast(self.MethodPointer(7 + 7), GET_TASKS)
+        func = cast(self.MethodPointer(7 + 7), self.GET_TASKS)
         func(self.sap, flags, byref(task_collection_sap))
         return IRegisteredTaskCollection(task_collection_sap)
 
