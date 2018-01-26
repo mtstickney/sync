@@ -289,6 +289,28 @@ class ITaskService (IDispatch):
         func(self.sap, path, byref(folder_sap))
         return ITaskFolder(folder_sap)
 
+class ITaskFolder (IDispatch):
+    IID_ITaskFolder = parse_uuid("{8cfac062-a080-4c15-9a88-aa7c2af80dfc}")
+
+    GET_FOLDERS = WINFUNCTYPE(HResult(), Interface, c_long, POINTER(Interface))
+    GET_TASKS = WINFUNCTYPE(HResult(), Interface, c_long, POINTER(Interface))
+
+    @classmethod
+    def GetIID(klass):
+        klass.IID_ITaskFolder
+
+    def GetFolders(self, flags):
+        folder_collection_sap = Interface()
+        func = cast(self.MethodPointer(7 + 3), GET_FOLDERS)
+        func(self.sap, flags, byref(folder_collection_sap))
+        return ITaskFolderCollection(folder_collection_sap)
+
+    def GetTasks(self, flags):
+        task_collection_sap = Interface()
+        func = cast(self.MethodPointer(7 + 7), GET_TASKS)
+        func(self.sap, flags, byref(task_collection_sap))
+        return IRegisteredTaskCollection(task_collection_sap)
+
 def scheduled_tasks():
     ts = pythoncom.CoCreateInstance(taskscheduler.CLSID_CTaskScheduler, None, pythoncom.CLSCTX_INPROC_SERVER, taskscheduler.IID_ITaskScheduler)
     return [ts.Activate(name, taskscheduler.IID_ITask) for name in ts.Enum()]
