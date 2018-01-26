@@ -211,7 +211,7 @@ class BaseInterface:
         return self.sap
 
     def MethodPointer(self, index):
-        vtable = cast(self.sap.contents.vtable, POINTER(c_void_p)
+        vtable = cast(self.sap.contents.vtable, POINTER(c_void_p))
         return vtable[index]
 
 class IUnknown(BaseInterface):
