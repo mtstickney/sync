@@ -147,6 +147,11 @@ def shortcut_info(path):
 # Technically a pointer to a struct, but meh. We have bytes instead.
 REFIID = POINTER(c_char)
 
+class InterfaceStruct (Structure):
+    _fields_ = [("vtable", c_void_p)]
+
+Interface = POINTER(InterfaceStruct)
+
 hresult = c_long
 class HResult:
     def __init__(self, val=None):
@@ -192,10 +197,7 @@ class BStr:
 
         self._as_parameter_ = c_wchar_p.from_buffer(self.c_val, 4)
 
-class InterfaceStruct (Structure):
-    _fields_ = [("vtable", c_void_p)]
 
-Interface = POINTER(InterfaceStruct)
 
 def parse_uuid(uuid_str):
     if sys.byteorder == 'little':
