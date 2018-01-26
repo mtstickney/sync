@@ -198,7 +198,10 @@ class InterfaceStruct (Structure):
 Interface = POINTER(InterfaceStruct)
 
 def parse_uuid(uuid_str):
-    return UUID(uuid_str).bytes
+    if sys.byteorder == 'little':
+        return UUID(uuid_str).bytes_le
+    else:
+        return UUID(uuid_str).bytes
 
 class BaseInterface:
     def __init__(self, sap):
