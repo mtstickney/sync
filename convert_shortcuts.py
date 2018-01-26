@@ -146,6 +146,7 @@ def shortcut_info(path):
 
 # Technically a pointer to a struct, but meh. We have bytes instead.
 REFIID = POINTER(c_char)
+REFCLSID = POINTER(c_char)
 
 class InterfaceStruct (Structure):
     _fields_ = [("vtable", c_void_p)]
@@ -205,6 +206,14 @@ class BStr:
         else:
             return self(obj)
 
+co_create_instance = windll.Ole32.CoCreateInstance
+co_create_instance.argtypes = [REFCLSID, c_void_p, dword, REFIID, POINTER(Interface)]
+co_create_instance.restype = HResult()
+
+def CreateInstance(clsid, interface):
+    sap = Interface()
+    co_create_instance(clsid, None, pythoncom.CLSCTX_INPROC_SERVER, interface.GetIID(), byref(sap))
+    return interface(sap)
 
 def parse_uuid(uuid_str):
     if sys.byteorder == 'little':
