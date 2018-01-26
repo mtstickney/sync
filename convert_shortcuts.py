@@ -155,7 +155,8 @@ Interface = POINTER(InterfaceStruct)
 hresult = c_long
 class HResult:
     def __init__(self, val=None):
-        self._as_parameter_ = hresult(val)
+        if val is not None:
+            self._as_parameter_ = hresult(val)
 
     def __call__(self, val):
         if val != 0:
