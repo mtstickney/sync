@@ -198,6 +198,12 @@ class BStr:
 
         self._as_parameter_ = c_wchar_p.from_buffer(self.c_val, 4)
 
+    @classmethod
+    def from_param(self, obj):
+        if isinstance(obj, BStr):
+            return obj
+        else:
+            return self(obj)
 
 
 def parse_uuid(uuid_str):
