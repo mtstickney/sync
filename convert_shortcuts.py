@@ -173,7 +173,7 @@ class BRecord (Structure):
     _fields_ = [("record", c_void_p), ("irecordinfo", Interface)]
 
 class VariantUnion (Union):
-    _fields = [
+    _fields_ = [
         ("llVal", c_longlong),
         ("ulval", c_ulong),
         ("pllVal", POINTER(c_longlong)),
