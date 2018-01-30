@@ -433,7 +433,7 @@ class TaskType:
 class IAction (IDispatch):
     IID_IAction = parse_uuid("{bae54997-48b1-4cbe-9965-d6be263ebea4}")
 
-    GET_TYPE = WINFUNCTYPE(HResult(), POINTER(c_int))
+    GET_TYPE = WINFUNCTYPE(HResult(), Interface, POINTER(c_int))
 
     @classmethod
     def GetIID(klass):
@@ -448,12 +448,12 @@ class IAction (IDispatch):
 class IExecAction (IAction):
     IID_IExecAction = parse_uuid("{4c3d624d-fd6b-49a3-b9b7-09cb3cd3f047}")
 
-    GET_PATH = WINFUNCTYPE(HResult(), POINTER(BStr))
-    PUT_PATH = WINFUNCTYPE(HResult(), BStr)
-    GET_ARGUMENTS = WINFUNCTYPE(HResult(), POINTER(BStr))
-    PUT_ARGUMENTS = WINFUNCTYPE(HResult(), BStr)
-    GET_WD = WINFUNCTYPE(HResult(), POINTER(BStr))
-    PUT_WD = WINFUNCTYPE(HResult(), BStr)
+    GET_PATH = WINFUNCTYPE(HResult(), Interface, POINTER(BStr))
+    PUT_PATH = WINFUNCTYPE(HResult(), Interface, BStr)
+    GET_ARGUMENTS = WINFUNCTYPE(HResult(), Interface, POINTER(BStr))
+    PUT_ARGUMENTS = WINFUNCTYPE(HResult(), Interface, BStr)
+    GET_WD = WINFUNCTYPE(HResult(), Interface, POINTER(BStr))
+    PUT_WD = WINFUNCTYPE(HResult(), Interface, BStr)
 
     @classmethod
     def GetIID(klass):
