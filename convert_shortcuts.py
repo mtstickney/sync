@@ -467,7 +467,7 @@ class IExecAction (IAction):
         return path.value
 
     @Path.setter
-    def SetPath(self, val):
+    def Path(self, val):
         path = BStr(val)
         func = cast(self.MethodPointer(10 + 1), self.PUT_PATH)
         func(self.sap, path)
@@ -481,7 +481,7 @@ class IExecAction (IAction):
         return args.value
 
     @Arguments.setter
-    def SetArguments(self, val):
+    def Arguments(self, val):
         args = BStr(val)
         func = cast(self.MethodPointer(10 + 3), self.PUT_ARGUMENTS)
         func(self.sap, args)
@@ -495,7 +495,7 @@ class IExecAction (IAction):
         return wd.value
 
     @WorkingDirectory.setter
-    def SetWorkingDirectory(self, val):
+    def WorkingDirectory(self, val):
         wd = BStr(val)
         func = cast(self.MethodPointer(10 + 5), self.PUT_WD)
         func(self.sap, wd)
