@@ -297,11 +297,30 @@ class ITaskService (IDispatch):
         func(self.sap, path, byref(folder_sap))
         return ITaskFolder(folder_sap)
 
+class TaskCreation:
+    VALIDATE_ONLY = 0x1
+    CREATE = 0x2
+    UPDATE = 0x4
+    CREATE_OR_UPDATE = 0x6
+    DISABLE = 0x8
+    DONT_ADD_PRINCIPLE_ACE = 0x10
+    IGNORE_REGISTRATION_TRIGGERS = 0x20
+
+class LogonType:
+    LOGON_NONE = 0x0
+    LOGON_PASSWORD = 0x1
+    LOGON_S4U = 0x2
+    LOGON_INTERACTIVE_TOKEN = 0x3
+    LOGON_GROUP = 0x4
+    LOGON_SERVICE_ACCOUNT = 0x5
+    LOGON_INTERACIVE_TOKEN_OR_PASSWORD = 0x6
+
 class ITaskFolder (IDispatch):
     IID_ITaskFolder = parse_uuid("{8cfac062-a080-4c15-9a88-aa7c2af80dfc}")
 
     GET_FOLDERS = WINFUNCTYPE(HResult(), Interface, c_long, POINTER(Interface))
     GET_TASKS = WINFUNCTYPE(HResult(), Interface, c_long, POINTER(Interface))
+    REGISTER_TASK_DEFINITION = WINFUNCTYPE(HResult(), Interface, BStr, Interface, c_long, Variant, Variant, c_int, Variant, POINTER(Interface))
 
     @classmethod
     def GetIID(klass):
@@ -318,6 +337,17 @@ class ITaskFolder (IDispatch):
         func = cast(self.MethodPointer(7 + 7), self.GET_TASKS)
         func(self.sap, 1 if show_hidden else 0, byref(task_collection_sap))
         return IRegisteredTaskCollection(task_collection_sap)
+
+    def RegisterTaskDefinition(self, task_path, definition, mode):
+        if not definition.instanceof(ITaskDefinition):
+            raise ValueError("{} is not an ITaskDefinition instance", definition)
+        sap = Interface()
+        func = cast(self.MethodPointer(7 + 10), self.REGISTER_TASK_DEFINITION)
+        empty = Variant()
+        empty.variantData.vt = VarEnum.VT_EMPTY
+        # FIXME: user/password, logon type, and maybe the SDDL should come from the original task.
+        func(self.sap, task_path, definition, mode, empty, empty, POINTER(sap))
+        return ITaskDefinition(sap)
 
 class TaskSchedCollection:
     GET_COUNT = WINFUNCTYPE(HResult(), Interface, POINTER(c_long))
