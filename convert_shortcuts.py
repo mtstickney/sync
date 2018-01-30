@@ -341,7 +341,7 @@ class ITaskFolder (IDispatch):
         return IRegisteredTaskCollection(task_collection_sap)
 
     def RegisterTaskDefinition(self, task_path, definition, mode):
-        if not definition.instanceof(ITaskDefinition):
+        if not isinstance(definition, ITaskDefinition):
             raise ValueError("{} is not an ITaskDefinition instance", definition)
         sap = Interface()
         func = cast(self.MethodPointer(7 + 10), self.REGISTER_TASK_DEFINITION)
