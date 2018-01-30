@@ -255,7 +255,7 @@ class IUnknown(BaseInterface):
         func = cast(self.MethodPointer(0), self.QUERY_INTERFACE)
         sap = Interface()
         func(self.sap, interface.GetIID(), byref(sap))
-        return interface.__init__(sap)
+        return interface(sap)
 
     def AddRef(self):
         func = cast(self.MethodPointer(1), self.ADD_REF)
