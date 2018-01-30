@@ -280,6 +280,7 @@ class ITaskService (IDispatch):
 
     CONNECT = WINFUNCTYPE(HResult(), Interface, Variant, Variant, Variant, Variant)
     GET_FOLDER = WINFUNCTYPE(HResult(), Interface, BStr, POINTER(Interface))
+    NEW_TASK = WINFUNCTYPE(HResult(), Interface, dword, POINTER(Interface))
 
     @classmethod
     def GetIID(klass):
@@ -298,6 +299,12 @@ class ITaskService (IDispatch):
         func = cast(self.MethodPointer(7 + 0), self.GET_FOLDER)
         func(self.sap, path, byref(folder_sap))
         return ITaskFolder(folder_sap)
+
+    def NewTask(self):
+        sap = Interface()
+        func = cast(self.MethodPointer(7 + 2), self.NEW_TASK)
+        func(self.sap, 0, byref(sap))
+        return ITaskDefinition(sap)
 
 class TaskCreation:
     VALIDATE_ONLY = 0x1
@@ -347,8 +354,19 @@ class ITaskFolder (IDispatch):
         func = cast(self.MethodPointer(7 + 10), self.REGISTER_TASK_DEFINITION)
         empty = Variant()
         empty.variantData.vt = VarEnum.VT_EMPTY
+
+        null = Variant()
+        null.variantData.vt = VarEnum.VT_NULL
+
         # FIXME: user/password, logon type, and maybe the SDDL should come from the original task.
-        func(self.sap, task_path, definition, mode, empty, empty, POINTER(sap))
+
+        principal = definition.Principal
+        userid = principal.GetUserid()
+        vUserid = Variant()
+        vUserid.variantData.vt = VarEnum.VT_BSTR
+        vUserid.variantData.value.bstrVal = BStr(userid)
+
+        func(self.sap, task_path, definition.sap, mode, vUserid, null, principal.GetLogonType(), empty, byref(sap))
         return ITaskDefinition(sap)
 
 class TaskSchedCollection:
@@ -407,6 +425,7 @@ class IRegisteredTask (IDispatch):
     GET_NAME = WINFUNCTYPE(HResult(), Interface, POINTER(BStr))
     GET_PATH = WINFUNCTYPE(HResult(), Interface, POINTER(BStr))
     GET_DEFINITION = WINFUNCTYPE(HResult(), Interface, POINTER(Interface))
+    GET_XML = WINFUNCTYPE(HResult(), Interface, POINTER(BStr))
 
     @classmethod
     def GetIID(klass):
@@ -430,20 +449,152 @@ class IRegisteredTask (IDispatch):
         func(self.sap, byref(sap))
         return ITaskDefinition(sap)
 
+    def GetXML(self):
+        text = BStr()
+        func = cast(self.MethodPointer(7 + 13), self.GET_XML)
+        func(self.sap, byref(text))
+        return text.value
+
 class ITaskDefinition (IDispatch):
     IID_ITaskDefinition = parse_uuid("{f5bc8fc5-536d-4f77-b852-fbc1356fdeb6}")
 
-    GET_ACTIONS = WINFUNCTYPE(HResult(), Interface, POINTER(Interface))
+    GET_INTERFACE = WINFUNCTYPE(HResult(), Interface, POINTER(Interface))
+    PUT_INTERFACE = WINFUNCTYPE(HResult(), Interface, Interface)
+    GET_XMLTEXT = WINFUNCTYPE(HResult(), Interface, POINTER(BStr))
+    SET_XMLTEXT = WINFUNCTYPE(HResult(), Interface, BStr)
 
     @classmethod
     def GetIID(klass):
         return klass.IID_ITaskDefinition
 
-    def GetActions(self):
+    @property
+    def RegistrationInfo(self):
         sap = Interface()
-        func = cast(self.MethodPointer(7 + 10), self.GET_ACTIONS)
+        func = cast(self.MethodPointer(7 + 0), self.GET_INTERFACE)
+        func(self.sap, byref(sap))
+        return sap
+
+    @RegistrationInfo.setter
+    def RegistrationInfo(self, val):
+        func = cast(self.MethodPointer(7 + 1), self.PUT_INTERFACE)
+        func(self.sap, val)
+
+    @property
+    def Triggers(self):
+        sap = Interface()
+        func = cast(self.MethodPointer(7 + 2), self.GET_INTERFACE)
+        func(self.sap, byref(sap))
+        return sap
+
+    @Triggers.setter
+    def Triggers(self, val):
+        func = cast(self.MethodPointer(7 + 3), self.PUT_INTERFACE)
+        func(self.sap, val)
+
+    @property
+    def Settings(self):
+        sap = Interface()
+        func = cast(self.MethodPointer(7 + 4), self.GET_INTERFACE)
+        func(self.sap, byref(sap))
+        return sap
+
+    @Settings.setter
+    def Settings(self, val):
+        func = cast(self.MethodPointer(7 + 5), self.PUT_INTERFACE)
+        func(self.sap, val)
+
+    @property
+    def Data(self):
+        sap = Interface()
+        func = cast(self.MethodPointer(7 + 6), self.GET_INTERFACE)
+        func(self.sap, byref(sap))
+        return sap
+
+    @Data.setter
+    def Data(self, val):
+        func = cast(self.MethodPointer(7 + 7), self.PUT_INTERFACE)
+        func(self.sap, val)
+
+    @property
+    def Principal(self):
+        sap = Interface()
+        func = cast(self.MethodPointer(7 + 8), self.GET_INTERFACE)
+        func(self.sap, byref(sap))
+        return IPrincipal(sap)
+
+    @Principal.setter
+    def Principal(self, val):
+        if not isinstance(val, IPrincipal):
+            raise TypeError()
+        func = cast(self.MethodPointer(7 + 9), self.PUT_INTERFACE)
+        func(self.sap, val.sap)
+
+    @property
+    def Actions(self):
+        sap = Interface()
+        func = cast(self.MethodPointer(7 + 10), self.GET_INTERFACE)
         func(self.sap, byref(sap))
         return IActionCollection(sap)
+
+    @Actions.setter
+    def Actions(self, val):
+        if not isinstance(val, IActionCollection):
+            raise TypeError()
+        func = cast(self.MethodPointer(7 + 11), self.PUT_INTERFACE)
+        func(self.sap, val.sap)
+        return None
+
+    @property
+    def XmlText(self):
+        text = BStr()
+        func = cast(self.MethodPointer(7 + 12), self.GET_XMLTEXT)
+        func(self.sap, byref(text))
+        return text.value
+
+    @XmlText.setter
+    def XmlText(self, val):
+        text = BStr(val)
+        func = cast(self.MethodPointer(7 + 13), self.SET_XMLTEXT)
+        func(self.sap, text)
+        return None
+
+    def copy_from(self, definition):
+        self.RegistrationInfo = definition.RegistrationInfo
+        self.Triggers = definition.Triggers
+        self.Settings = definition.Settings
+        self.Data = definition.Data
+        self.Principal = definition.Principal
+        self.Actions = definition.Actions
+        #self.XmlText = definition.XmlText
+
+class IPrincipal (IDispatch):
+    IID_IPrincipal = parse_uuid("{d98d51e5-c9b4-496a-a9c1-18980261cf0f}")
+
+    GET_ID = WINFUNCTYPE(HResult(), Interface, POINTER(BStr))
+    GET_USERID = WINFUNCTYPE(HResult(), Interface, POINTER(BStr))
+    GET_LOGON_TYPE = WINFUNCTYPE(HResult(), Interface, POINTER(c_int))
+
+    @classmethod
+    def GetIID(klass):
+        return klass.IID_IPrincipal
+
+    def GetID(self):
+        id = BStr()
+        func = cast(self.MethodPointer(7 + 0), self.GET_ID)
+        func(self.sap, byref(id))
+        return id.value
+
+    def GetUserid(self):
+        id = BStr()
+        func = cast(self.MethodPointer(7 + 4), self.GET_USERID)
+        func(self.sap, byref(id))
+        return id.value
+
+    def GetLogonType(self):
+        type = c_int()
+        func = cast(self.MethodPointer(7 + 6), self.GET_LOGON_TYPE)
+        func(self.sap, byref(type))
+        return type.value
 
 class IActionCollection (IDispatch):
     IID_IActionCollection = parse_uuid("{02820e19-7b98-4ed2-b2e8-fdccceff619b}")
