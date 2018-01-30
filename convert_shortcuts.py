@@ -193,7 +193,7 @@ class Variant (Structure):
     # here, but fuck that noise.
     _fields_ = [("variantData", VariantTagStruct)]
 
-class BStr(c_void_p):
+class BStr(c_wchar_p):
     def __init__(self, str):
         # A BStr is a 4-byte length header and a utf-16 string.
         # 4 bytes == 2 utf-16 characters, so we'll pad, then scribble
