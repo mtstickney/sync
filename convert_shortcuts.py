@@ -163,11 +163,33 @@ class HResult:
         if val != 0:
             raise OSError(val)
 
+class BStr(c_wchar_p):
+    def __init__(self, str=None):
+        if str is None:
+                return
+        # A BStr is a 4-byte length header and a utf-16 string.
+        # 4 bytes == 2 utf-16 characters, so we'll pad, then scribble
+        # over the string to create the length header, and then do
+        # sketchy pointer math to get a bstr. whee.
+        self.c_val = c_wchar_p("XX" + str)
+        lenp = cast(self.c_val, POINTER(c_ulong))
+        lenp[0] = 2 * len(str) # NUL is not included in the length
+
+        self._as_parameter_ = c_wchar_p.from_buffer(c_void_p(addressof(self.c_val) + 4))
+
+    @classmethod
+    def from_param(self, obj):
+        if isinstance(obj, BStr):
+            return obj
+        else:
+            return self(obj)
+
 VARTYPE = c_ushort
 class VarEnum:
     VT_EMPTY = VARTYPE(0)
     VT_NULL = VARTYPE(1)
     VT_UINT4 = VARTYPE(19)
+    VT_BSTR = VARTYPE(8)
 
 class BRecord (Structure):
     _fields_ = [("record", c_void_p), ("irecordinfo", Interface)]
@@ -177,6 +199,7 @@ class VariantUnion (Union):
         ("llVal", c_longlong),
         ("ulval", c_ulong),
         ("pllVal", POINTER(c_longlong)),
+        ("bstrVal", BStr),
         ("brecord", BRecord)
     ]
 
@@ -192,27 +215,6 @@ class Variant (Structure):
     # Note that the real definition has at least two extra levels in
     # here, but fuck that noise.
     _fields_ = [("variantData", VariantTagStruct)]
-
-class BStr(c_wchar_p):
-    def __init__(self, str=None):
-        if str is None:
-                return
-        # A BStr is a 4-byte length header and a utf-16 string.
-        # 4 bytes == 2 utf-16 characters, so we'll pad, then scribble
-        # over the string to create the length header, and then do 
-        # sketchy pointer math to get a bstr. whee.
-        self.c_val = c_wchar_p("XX" + str)
-        lenp = cast(self.c_val, POINTER(c_ulong))
-        lenp[0] = 2 * len(str) # NUL is not included in the length
-
-        self._as_parameter_ = c_wchar_p.from_buffer(c_void_p(addressof(self.c_val) + 4))
-
-    @classmethod
-    def from_param(self, obj):
-        if isinstance(obj, BStr):
-            return obj
-        else:
-            return self(obj)
 
 co_create_instance = windll.Ole32.CoCreateInstance
 co_create_instance.argtypes = [REFCLSID, c_void_p, dword, REFIID, POINTER(Interface)]
