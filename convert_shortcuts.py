@@ -413,16 +413,32 @@ class ITaskDefinition (IDispatch):
         func(self.sap, byref(sap))
         return IActionCollection(sap)
 
-class IActionCollection (IDispatch, TaskSchedCollection):
+class IActionCollection (IDispatch):
     IID_IActionCollection = parse_uuid("{02820e19-7b98-4ed2-b2e8-fdccceff619b}")
+
+    GET_COUNT = WINFUNCTYPE(HResult(), Interface, POINTER(c_long))
+    GET_ITEM = WINFUNCTYPE(HResult(), Interface, c_long, POINTER(Interface))
 
     @classmethod
     def GetIID(klass):
         return klass.IID_IActionCollection
 
-    def __init__(self, sap):
-        super().__init__(sap)
-        self.interface_class = IAction
+    def __len__(self):
+        len = c_long()
+        func = cast(self.MethodPointer(7 + 0), self.GET_COUNT)
+        func(self.sap, byref(len))
+        return len.value
+
+    def __getitem__(self, index):
+        if index < 0 or index >= len(self):
+            raise IndexError
+        sap = Interface()
+        func = cast(self.MethodPointer(7 + 1), self.GET_ITEM)
+        func(self.sap, index + 1, byref(sap))
+        return IAction(sap)
+
+    def __iter__(self):
+        return (self[i] for i in range(len(self)))
 
 class TaskType:
     EXEC = 0
