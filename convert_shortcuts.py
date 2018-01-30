@@ -167,12 +167,18 @@ VARTYPE = c_ushort
 class VarEnum:
     VT_EMPTY = VARTYPE(0)
     VT_NULL = VARTYPE(1)
+    VT_UINT4 = VARTYPE(19)
 
 class BRecord (Structure):
     _fields_ = [("record", c_void_p), ("irecordinfo", Interface)]
 
 class VariantUnion (Union):
-    _fields = [("llVal", c_longlong), ("pllVal", POINTER(c_longlong)), ("brecord", BRecord)]
+    _fields = [
+        ("llVal", c_longlong),
+        ("ulval", c_ulong),
+        ("pllVal", POINTER(c_longlong)),
+        ("brecord", BRecord)
+    ]
 
 class VariantTagStruct (Structure):
     _fields_ = [
@@ -322,7 +328,19 @@ class TaskSchedCollection:
         return size.value
 
     def __getitem__(self, index):
-        
+        if index < 0 or index >= len(self):
+            raise IndexError()
+
+        indexVar = Variant()
+        indexVar.variantData.vt = VarEnum.VT_UINT4
+        # This collection is 1-indexed.
+        indexVar.variantData.value.ulval = index + 1
+
+        folder_sap = Interface()
+
+        func = cast(self.MethodPointer(7 + 1), self.GET_ITEM)
+        func(self.sap, indexVar, byref(folder_sap))
+        return self.interface_class(folder_sap)
 
     def __iter__(self):
         return (self[i] for i in range(len(self)))
