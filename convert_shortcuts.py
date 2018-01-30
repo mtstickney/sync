@@ -311,15 +311,9 @@ class ITaskFolder (IDispatch):
         func(self.sap, flags, byref(task_collection_sap))
         return IRegisteredTaskCollection(task_collection_sap)
 
-class ITaskFolderCollection (IDispatch):
-    IID_ITaskFolderCollection = parse_uuid("{79184a66-8664-423f-97f1-637356a5d812}")
-
+class TaskSchedCollection:
     GET_COUNT = WINFUNCTYPE(HResult(), Interface, POINTER(c_long))
     GET_ITEM = WINFUNCTYPE(HResult(), Interface, Variant, POINTER(Interface))
-
-    @classmethod
-    def GetIID(klass):
-        return klass.IID_ITaskFolderCollection
 
     def __len__(self):
         size = c_long()
