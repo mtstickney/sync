@@ -345,6 +345,160 @@ class TaskSchedCollection:
     def __iter__(self):
         return (self[i] for i in range(len(self)))
 
+class ITaskFolderCollection (IDispatch, TaskSchedCollection):
+    IID_ITaskFolderCollection = parse_uuid("{79184a66-8664-423f-97f1-637356a5d812}")
+
+    @classmethod
+    def GetIID(klass):
+        return klass.IID_ITaskFolderCollection
+
+    def __init__(self, sap):
+        super().__init__(sap)
+        self.interface_class = ITaskFolder
+
+class IRegisteredTaskCollection (IDispatch, TaskSchedCollection):
+    IID_IRegisteredTaskCollection = parse_uuid("{86627eb4-42a7-41e4-a4d9-ac33a72f2d52}")
+
+    @classmethod
+    def GetIID(klass):
+        return klass.IID_IRegisteredTaskCollection
+
+    def __init__(self, sap):
+        super().__init__(sap)
+        self.interface_class = IRegisteredTask
+
+class IRegisteredTask (IDispatch):
+    IID_IRegisteredTask = parse_uuid("{9c86f320-dee3-4dd1-b972-a303f26b061e}")
+
+    GET_NAME = WINFUNCTYPE(HResult(), Interface, POINTER(BStr))
+    GET_PATH = WINFUNCTYPE(HResult(), Interface, POINTER(BStr))
+    GET_DEFINITION = WINFUNCTYPE(HResult(), Interface, POINTER(Interface))
+
+    @classmethod
+    def GetIID(klass):
+        return klass.IID_IRegisteredTask
+
+    def GetName(self):
+        name = BStr()
+        func = cast(self.MethodPointer(7 + 0), self.GET_NAME)
+        func(self.sap, byref(name))
+        return name.value
+
+    def GetPath(self):
+        name = BStr()
+        func = cast(self.MethodPointer(7 + 1), self.GET_PATH)
+        func(self.sap, byref(name))
+        return name.value
+
+    def GetDefinition(self):
+        sap = Interface()
+        func = case(self.MethodPointer(7 + 12), self.GET_DEFINITION)
+        func(self.sap, byref(sap))
+        return ITaskDefinition(sap)
+
+class ITaskDefinition (IDispatch):
+    IID_ITaskDefinition = parse_uuid("{f5bc8fc5-536d-4f77-b852-fbc1356fdeb6}")
+
+    GET_ACTIONS = WINFUNCTYPE(HResult(), Interface, POINTER(Interface))
+
+    @classmethod
+    def GetIID(klass):
+        return klass.IID_ITaskDefinition
+
+    def GetActions(self):
+        sap = Interface()
+        func = cast(self.MethodPointer(7 + 10), self.GET_ACTIONS)
+        func(self.sap, byref(sap))
+        return IActionCollection(sap)
+
+class IActionCollection (IDispatch, TaskSchedCollection):
+    IID_IActionCollection = parse_uuid("{02820e19-7b98-4ed2-b2e8-fdccceff619b}")
+
+    @classmethod
+    def GetIID(klass):
+        return klass.IID_IActionCollection
+
+    def __init__(self, sap):
+        super().__init__(sap)
+        self.interface_class = IAction
+
+class TaskType:
+    EXEC = 0
+    COM_HANDLER = 5
+    SEND_EMAIL = 6
+    SHOW_MESSAGE = 7
+
+class IAction (IDispatch):
+    IID_IAction = parse_uuid("{bae54997-48b1-4cbe-9965-d6be263ebea4}")
+
+    GET_TYPE = WINFUNCTYPE(HResult(), POINTER(c_int))
+
+    @classmethod
+    def GetIID(klass):
+        return klass.IID_IAction
+
+    def GetType(self):
+        task_type = c_int()
+        func = cast(self.MethodPointer(7 + 2), self.GET_TYPE)
+        func(self.sap, byref(task_type))
+        return task_type.value
+
+class IExecAction (IAction):
+    IID_IExecAction = parse_uuid("{4c3d624d-fd6b-49a3-b9b7-09cb3cd3f047}")
+
+    GET_PATH = WINFUNCTYPE(HResult(), POINTER(BStr))
+    PUT_PATH = WINFUNCTYPE(HResult(), BStr)
+    GET_ARGUMENTS = WINFUNCTYPE(HResult(), POINTER(BStr))
+    PUT_ARGUMENTS = WINFUNCTYPE(HResult(), BStr)
+    GET_WD = WINFUNCTYPE(HResult(), POINTER(BStr))
+    PUT_WD = WINFUNCTYPE(HResult(), BStr)
+
+    @classmethod
+    def GetIID(klass):
+        return klass.IID_IExecAction
+
+    @property
+    def Path(self):
+        path = BStr()
+        func = cast(self.MethodPointer(10 + 0), self.GET_PATH)
+        func(self.sap, byref(path))
+        return path.value
+
+    @Path.setter
+    def SetPath(self, val):
+        path = BStr(val)
+        func = cast(self.MethodPointer(10 + 1), self.PUT_PATH)
+        func(self.sap, path)
+        return None
+
+    @property
+    def Arguments(self):
+        args = BStr()
+        func = cast(self.MethodPointer(10 + 2), self.GET_ARGUMENTS)
+        func(self.sap, byref(args))
+        return args.value
+
+    @Arguments.setter
+    def SetArguments(self, val):
+        args = BStr(val)
+        func = cast(self.MethodPointer(10 + 3), self.PUT_ARGUMENTS)
+        func(self.sap, args)
+        return None
+
+    @property
+    def WorkingDirectory(self):
+        wd = BStr()
+        func = cast(self.MethodPointer(10 + 4), self.GET_WD)
+        func(self.sap, byref(wd))
+        return wd.value
+
+    @WorkingDirectory.setter
+    def SetWorkingDirectory(self, val):
+        wd = BStr(val)
+        func = cast(self.MethodPointer(10 + 5), self.PUT_WD)
+        func(self.sap, wd)
+        return None
+
 def scheduled_tasks():
     ts = pythoncom.CoCreateInstance(taskscheduler.CLSID_CTaskScheduler, None, pythoncom.CLSCTX_INPROC_SERVER, taskscheduler.IID_ITaskScheduler)
     return [ts.Activate(name, taskscheduler.IID_ITask) for name in ts.Enum()]
