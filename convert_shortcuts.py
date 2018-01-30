@@ -305,7 +305,7 @@ class TaskCreation:
     UPDATE = 0x4
     CREATE_OR_UPDATE = 0x6
     DISABLE = 0x8
-    DONT_ADD_PRINCIPLE_ACE = 0x10
+    DONT_ADD_PRINCIPAL_ACE = 0x10
     IGNORE_REGISTRATION_TRIGGERS = 0x20
 
 class LogonType:
