@@ -194,7 +194,9 @@ class Variant (Structure):
     _fields_ = [("variantData", VariantTagStruct)]
 
 class BStr(c_wchar_p):
-    def __init__(self, str):
+    def __init__(self, str=None):
+        if str is None:
+                return
         # A BStr is a 4-byte length header and a utf-16 string.
         # 4 bytes == 2 utf-16 characters, so we'll pad, then scribble
         # over the string to create the length header, and then do 
