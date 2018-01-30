@@ -205,7 +205,7 @@ class BStr(c_wchar_p):
         lenp = cast(self.c_val, POINTER(c_ulong))
         lenp[0] = 2 * len(str) # NUL is not included in the length
 
-        self._as_parameter_ = c_wchar_p.from_buffer(self.c_val, 4)
+        self._as_parameter_ = c_wchar_p.from_buffer(c_void_p(addressof(self.c_val) + 4))
 
     @classmethod
     def from_param(self, obj):
