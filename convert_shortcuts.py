@@ -394,7 +394,7 @@ class IRegisteredTask (IDispatch):
 
     def GetDefinition(self):
         sap = Interface()
-        func = case(self.MethodPointer(7 + 12), self.GET_DEFINITION)
+        func = cast(self.MethodPointer(7 + 12), self.GET_DEFINITION)
         func(self.sap, byref(sap))
         return ITaskDefinition(sap)
 
