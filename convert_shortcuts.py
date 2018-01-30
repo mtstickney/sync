@@ -313,10 +313,10 @@ class ITaskFolder (IDispatch):
         func(self.sap, flags, byref(folder_collection_sap))
         return ITaskFolderCollection(folder_collection_sap)
 
-    def GetTasks(self, flags):
+    def GetTasks(self, show_hidden=False):
         task_collection_sap = Interface()
         func = cast(self.MethodPointer(7 + 7), self.GET_TASKS)
-        func(self.sap, flags, byref(task_collection_sap))
+        func(self.sap, 1 if show_hidden else 0, byref(task_collection_sap))
         return IRegisteredTaskCollection(task_collection_sap)
 
 class TaskSchedCollection:
