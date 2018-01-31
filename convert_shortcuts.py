@@ -166,7 +166,9 @@ class HResult:
 class BStr(c_wchar_p):
     def __init__(self, str=None):
         if str is None:
+                super().__init__()
                 return
+
         # A BStr is a 4-byte length header and a utf-16 string.
         # 4 bytes == 2 utf-16 characters, so we'll pad, then scribble
         # over the string to create the length header, and then do
@@ -175,7 +177,9 @@ class BStr(c_wchar_p):
         lenp = cast(self.c_val, POINTER(c_ulong))
         lenp[0] = 2 * len(str) # NUL is not included in the length
 
-        self._as_parameter_ = c_wchar_p.from_buffer(c_void_p(addressof(self.c_val) + 4))
+        addr = cast(self.c_val, c_void_p).value + 4
+        super().__init__(addr)
+        self._as_parameter_ = self
 
     @classmethod
     def from_param(self, obj):
